@@ -65,6 +65,8 @@ export interface CanteenMenu {
   main: string;
   dessert: string;
   special?: string;
+  shootingLocation?: string;
+  canteenLocation?: string;
 }
 
 export interface DocumentEntry {
@@ -83,4 +85,22 @@ export interface AlertItem {
   message: string;
   department?: DepartmentSlug;
   timestamp: string;
+}
+
+export interface DailySequence {
+  id: string;
+  time: string;
+  label: string;
+  location: string;
+}
+
+export interface DailyShoot {
+  date: string;
+  projectTitle: string;
+  shootingDay: number;
+  location: string;
+  callTime: string;
+  mealTime: string;
+  sequences: DailySequence[];
+  isPublished: boolean;
 }

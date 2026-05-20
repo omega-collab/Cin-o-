@@ -2,6 +2,7 @@
 
 import { MapPin, Clock3, Utensils, Film } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
+import { useDailyStore } from "@/lib/store/useDailyStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
 
 function InfoPill({
@@ -24,17 +25,33 @@ function InfoPill({
   );
 }
 
-const TAGS = ["Caméra A", "25mm", "Steadicam", "2 3/8"];
-
 export function Hero() {
   const department = useUserStore((s) => s.department);
   const role = useUserStore((s) => s.role);
+  const shoot = useDailyStore((s) => s.shoot);
 
   const dept = DEPARTMENTS.find((d) => d.slug === department);
 
+  const title = shoot.isPublished && shoot.projectTitle
+    ? `${shoot.projectTitle} – Jour ${shoot.shootingDay}`
+    : "BANDI – Jour 12";
+
+  const location = shoot.isPublished && shoot.location
+    ? shoot.location
+    : "Plateaux des Lilas, Studio 3";
+
+  const callTime = shoot.isPublished ? shoot.callTime : "07:00";
+  const mealTime = shoot.isPublished ? shoot.mealTime : "12:30";
+
+  const nextSeq = shoot.isPublished ? (shoot.sequences[0] ?? null) : null;
+
+  const seqTitle = nextSeq?.label ?? "Séq. 32 – Scène 6";
+  const seqLocation = nextSeq?.location ?? "INT. APPARTEMENT – SALON – NUIT";
+  const seqTime = nextSeq?.time ?? "08:30";
+
   return (
     <div className="space-y-3">
-      {/* Department badge + title */}
+      {/* Dept badge + title */}
       <div>
         {dept && (
           <div className="flex items-center gap-2 mb-2">
@@ -42,34 +59,20 @@ export function Hero() {
             <span className="text-xs font-semibold text-cyan uppercase tracking-widest">
               {dept.name}
             </span>
-            {role && (
-              <span className="text-xs text-muted">· {role}</span>
-            )}
+            {role && <span className="text-xs text-muted">· {role}</span>}
           </div>
         )}
-        <h1 className="text-3xl font-bold text-gradient leading-tight">
-          BANDI – Jour 12
-        </h1>
+        <h1 className="text-3xl font-bold text-gradient leading-tight">{title}</h1>
         <div className="flex items-center gap-1.5 mt-1">
           <MapPin className="w-3.5 h-3.5 text-muted shrink-0" />
-          <span className="text-sm text-textSoft">
-            Plateaux des Lilas, Studio 3
-          </span>
+          <span className="text-sm text-textSoft">{location}</span>
         </div>
       </div>
 
       {/* Info pills */}
       <div className="grid grid-cols-2 gap-3">
-        <InfoPill
-          icon={<Clock3 className="w-4 h-4" />}
-          label="Call Time"
-          value="07:00"
-        />
-        <InfoPill
-          icon={<Utensils className="w-4 h-4" />}
-          label="Repas"
-          value="12:30"
-        />
+        <InfoPill icon={<Clock3 className="w-4 h-4" />} label="Call Time" value={callTime} />
+        <InfoPill icon={<Utensils className="w-4 h-4" />} label="Repas" value={mealTime} />
       </div>
 
       {/* Prochaine séquence */}
@@ -82,34 +85,22 @@ export function Hero() {
             </span>
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-cyanSoft text-cyan">
-            Dans 45 min
+            {seqTime}
           </span>
         </div>
 
         <div>
-          <p className="text-2xl font-bold text-white leading-tight">
-            Séq. 32 – Scène 6
-          </p>
+          <p className="text-2xl font-bold text-white leading-tight">{seqTitle}</p>
           <p className="text-sm font-medium text-muted mt-0.5 uppercase tracking-wide">
-            INT. APPARTEMENT – SALON – NUIT
+            {seqLocation}
           </p>
         </div>
 
-        <p className="text-sm text-textSoft leading-relaxed">
-          Confrontation entre Amara et sa mère. Lumière naturelle simulée,
-          ambiance intime. Priorité au jeu d'acteur.
-        </p>
-
-        <div className="flex flex-wrap gap-1.5">
-          {TAGS.map((tag) => (
-            <span
-              key={tag}
-              className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/5 text-textSoft border border-stroke"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
+        {!shoot.isPublished && (
+          <p className="text-xs text-muted italic">
+            L'admin n'a pas encore publié la feuille du jour.
+          </p>
+        )}
       </div>
     </div>
   );

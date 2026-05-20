@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Film } from "lucide-react";
 import { useCanteenStore } from "@/lib/store/useCanteenStore";
+import { DailySheetForm } from "./DailySheetForm";
 import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
 import { useHistoryStore } from "@/lib/store/useHistoryStore";
 import { useAccessStore } from "@/lib/store/useAccessStore";
@@ -98,6 +99,9 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           Déconnexion
         </button>
       </div>
+
+      {/* Feuille du jour */}
+      <DailySheetForm />
 
       {/* Menu cantine */}
       <div className="glass-card rounded-app p-5">
