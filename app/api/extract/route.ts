@@ -2,6 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import type { ExtractionResult } from "@/lib/types/shoot";
 
+export const maxDuration = 60;
+
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const EXTRACTION_PROMPT = `Tu es un assistant expert en production cinématographique française. Tu reçois jusqu'à trois documents complémentaires pour une même journée de tournage :
@@ -206,7 +208,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ result, skipped: skipped.length > 0 ? skipped : undefined });
   } catch (err) {
     const raw = err instanceof Error ? err.message : String(err);
-    // Anthropic APIError prepends the status code, e.g. "400 The string did not..."
     const message = raw.replace(/^\d{3} /, "");
     console.error("[extract] Anthropic error:", raw);
     return NextResponse.json({ error: message }, { status: 500 });
