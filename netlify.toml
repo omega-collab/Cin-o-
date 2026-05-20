@@ -6,8 +6,5 @@
   NODE_VERSION = "20"
   NEXT_PUBLIC_DEFAULT_DEPT_CODE = "0000"
 
-[functions]
-  timeout = 26
-
 [[plugins]]
   package = "@netlify/plugin-nextjs"
