@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-05-20T13:24:22.486Z",
+  "projectRoot": "/home/user/Cin-o-",
+  "structure": {
+    "hasPackageJson": true,
+    "hasTsConfig": true,
+    "hasClaudeConfig": true,
+    "hasClaudeFlow": true
+  },
+  "scannedAt": 1779283462486
+}
