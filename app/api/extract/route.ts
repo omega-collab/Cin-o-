@@ -1,12 +1,10 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { Mistral } from "@mistralai/mistralai";
 import { NextRequest, NextResponse } from "next/server";
 import type { ExtractionResult } from "@/lib/types/shoot";
 
 export const maxDuration = 60;
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-const EXTRACTION_PROMPT = `Tu es un assistant expert en production cinématographique française. Tu reçois jusqu'à trois documents complémentaires pour une même journée de tournage :
+const EXTRACTION_PROMPT = `Tu es un assistant expert en production cinématographique française. Tu reçois le contenu OCR de plusieurs documents complémentaires pour une même journée de tournage :
 
 1. FEUILLE DE SERVICE — document principal : titre, dates, horaires généraux (call time, repas, fin), lieu principal, météo, informations logistiques (loges, cantine, parking), liste des séquences avec horaires approximatifs, notes par département.
 2. JOUR-À-JOUR — détail séquence par séquence : description narrative de chaque scène, liste précise des comédiens par séquence, dialogues ou action clé, durée estimée, décors intérieurs/extérieurs.
@@ -43,7 +41,7 @@ Schéma JSON :
     "value": [
       {
         "id": "s1",
-        "time": "HH:MM — heure de début prévue",
+        "time": "HH:MM",
         "label": "string — ex: Séq. 802 – Découverte du corps",
         "location": "string — INT./EXT. DÉCOR – MOMENT",
         "cast": ["string — prénom ou nom du personnage"],
@@ -117,10 +115,9 @@ Règles de format :
 - Dates en YYYY-MM-DD
 - priority "critical" = danger/urgence, "warning" = attention requise, "info" = information générale`;
 
-type AllowedImageType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
-const ALLOWED_IMAGE_TYPES = new Set<string>(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+type AllowedMimeType = "application/pdf" | "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 
-function normalizeMediaType(raw: string): "application/pdf" | AllowedImageType | null {
+function normalizeMediaType(raw: string): AllowedMimeType | null {
   const t = raw.trim().toLowerCase();
   if (t === "application/pdf" || t === "application/x-pdf") return "application/pdf";
   if (t === "image/jpeg" || t === "image/jpg") return "image/jpeg";
@@ -149,13 +146,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Aucun document fourni" }, { status: 400 });
     }
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json({ error: "Clé API manquante — vérifiez la variable ANTHROPIC_API_KEY dans Netlify" }, { status: 500 });
+    if (!process.env.MISTRAL_API_KEY) {
+      return NextResponse.json({ error: "Clé API manquante — vérifiez la variable MISTRAL_API_KEY dans Netlify" }, { status: 500 });
     }
 
-    const contentBlocks: Anthropic.Messages.ContentBlockParam[] = [];
+    const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
     const skipped: string[] = [];
+    const docTexts: string[] = [];
 
+    // Step 1: OCR each document
     for (const doc of docs) {
       const mediaType = normalizeMediaType(doc.mediaType);
       const data = sanitizeBase64(doc.base64);
@@ -165,40 +164,50 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      if (mediaType === "application/pdf") {
-        contentBlocks.push({
-          type: "document",
-          source: { type: "base64", media_type: "application/pdf", data },
-        } as Anthropic.Messages.DocumentBlockParam);
-      } else if (mediaType && ALLOWED_IMAGE_TYPES.has(mediaType)) {
-        contentBlocks.push({
-          type: "image",
-          source: { type: "base64", media_type: mediaType as AllowedImageType, data },
-        });
-      } else {
+      if (!mediaType) {
         skipped.push(`${doc.filename} (format non supporté: ${doc.mediaType})`);
+        continue;
+      }
+
+      try {
+        const dataUrl = `data:${mediaType};base64,${data}`;
+        const isImage = mediaType !== "application/pdf";
+
+        const ocrResult = await client.ocr.process({
+          model: "mistral-ocr-latest",
+          document: isImage
+            ? { type: "image_url", imageUrl: dataUrl }
+            : { type: "document_url", documentUrl: dataUrl },
+        });
+
+        const text = ocrResult.pages.map((p) => p.markdown).join("\n\n---\n\n");
+        docTexts.push(`=== ${doc.filename} ===\n${text}`);
+      } catch {
+        skipped.push(`${doc.filename} (lecture échouée)`);
       }
     }
 
-    if (contentBlocks.length === 0) {
+    if (docTexts.length === 0) {
       const detail = skipped.length > 0 ? ` Fichiers ignorés: ${skipped.join(", ")}` : "";
       return NextResponse.json({ error: `Aucun document exploitable.${detail}` }, { status: 400 });
     }
 
-    contentBlocks.push({ type: "text", text: EXTRACTION_PROMPT });
+    // Step 2: Extract structured JSON from OCR text
+    const combinedText = docTexts.join("\n\n");
 
-    const message = await client.messages.create({
-      model: "claude-opus-4-5",
-      max_tokens: 4096,
-      messages: [{ role: "user", content: contentBlocks }],
+    const chatResponse = await client.chat.complete({
+      model: "mistral-small-latest",
+      messages: [
+        {
+          role: "user",
+          content: `${combinedText}\n\n${EXTRACTION_PROMPT}`,
+        },
+      ],
+      responseFormat: { type: "json_object" },
     });
 
-    const firstContent = message.content[0];
-    if (!firstContent || firstContent.type !== "text") {
-      return NextResponse.json({ error: "Réponse inattendue du modèle" }, { status: 500 });
-    }
+    const raw = (chatResponse.choices?.[0]?.message?.content ?? "").toString().trim();
 
-    const raw = firstContent.text.trim();
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch?.[0]) {
       return NextResponse.json({ error: "Impossible d'extraire le JSON de la réponse" }, { status: 500 });
@@ -208,8 +217,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ result, skipped: skipped.length > 0 ? skipped : undefined });
   } catch (err) {
     const raw = err instanceof Error ? err.message : String(err);
-    const message = raw.replace(/^\d{3} /, "");
-    console.error("[extract] Anthropic error:", raw);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[extract] Mistral error:", raw);
+    return NextResponse.json({ error: raw }, { status: 500 });
   }
 }

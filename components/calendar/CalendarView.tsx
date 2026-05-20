@@ -47,7 +47,7 @@ function frMonthYear(date: Date, offset: number): string {
   const d = new Date(date);
   const dow = d.getDay();
   const mondayDelta = dow === 0 ? -6 : 1 - dow;
-  d.setDate(d.getDate() + mondayDelta + offset * 7 + 3);
+  d.setDate(d.getDate() + mondayDelta + offset * 7 + 3); // mid-week
   return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 }
 
@@ -114,6 +114,7 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
       style={{ borderLeft: `3px solid ${s.border}` }}
     >
       <div className="p-4 space-y-3">
+        {/* Row 1: label + date + status */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-bold text-cyan">{day.label}</span>
           <span className="text-sm font-semibold text-white capitalize flex-1 truncate">
@@ -123,10 +124,14 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
             {s.label}
           </span>
         </div>
+
+        {/* Row 2: location */}
         <div className="flex items-center gap-1.5">
           <MapPin size={13} className="text-muted shrink-0" />
           <span className="text-xs text-muted truncate">{day.location}</span>
         </div>
+
+        {/* Row 3: scenes */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {day.scenes.map((scene) => (
             <span key={scene} className="text-xs px-2 py-0.5 rounded bg-white/5 text-muted">
@@ -134,6 +139,8 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
             </span>
           ))}
         </div>
+
+        {/* Row 4: times + period badge */}
         <div className="flex items-center justify-between pt-1">
           <span className="text-xs font-mono font-semibold text-textSoft">
             {day.startTime} — {day.endTime}
@@ -156,9 +163,12 @@ export function CalendarView() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [filterOpen, setFilterOpen] = useState(false);
 
+  // Build ProductionDay list from published shoot data
   const productionDays = useMemo<ProductionDay[]>(() => {
     if (!shoot.isPublished || !shoot.date) return [];
     const days: ProductionDay[] = [];
+
+    // Current shoot day
     days.push({
       id: `j${shoot.shootingDay}`,
       label: `J${shoot.shootingDay}`,
@@ -170,6 +180,8 @@ export function CalendarView() {
       period: "day",
       status: "confirmed",
     });
+
+    // Next days from extraction
     for (const nd of shoot.nextDays) {
       days.push({
         id: `j${nd.shootingDay}`,
@@ -183,6 +195,7 @@ export function CalendarView() {
         status: "confirmed",
       });
     }
+
     return days;
   }, [shoot]);
 
@@ -196,6 +209,7 @@ export function CalendarView() {
 
   return (
     <div className="space-y-5">
+      {/* Filter row */}
       <div className="grid grid-cols-3 gap-2">
         <button className="glass-card rounded-2xl px-3 py-2.5 text-xs text-muted text-left">
           Département
@@ -212,6 +226,7 @@ export function CalendarView() {
         </button>
       </div>
 
+      {/* Week strip */}
       <div className="glass-card rounded-app p-4">
         <div className="flex items-center justify-between mb-3">
           <button
@@ -230,6 +245,7 @@ export function CalendarView() {
             <ChevronRight size={16} />
           </button>
         </div>
+
         <div className="flex">
           {weekDays.map((day) => (
             <DayColumn
@@ -243,10 +259,12 @@ export function CalendarView() {
         </div>
       </div>
 
+      {/* Upcoming days */}
       <div className="space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-muted">
           Jours à venir
         </h2>
+
         {upcomingDays.length === 0 ? (
           <div className="glass-card rounded-app p-6 text-center space-y-2">
             <Film className="w-8 h-8 text-muted mx-auto" />
