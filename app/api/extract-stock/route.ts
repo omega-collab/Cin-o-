@@ -42,7 +42,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json() as { base64: string; mediaType: string; filename: string };
     const { base64, mediaType, filename } = body;
 
-    if (!base64) return NextResponse.json({ error: "Aucun document fourni" }, { status: 400 });
+    if (!base64 || typeof base64 !== "string") return NextResponse.json({ error: "Aucun document fourni" }, { status: 400 });
+    if (base64.length > 27_000_000) return NextResponse.json({ error: "Document trop volumineux (max 20 Mo)" }, { status: 413 });
+    if (typeof filename === "string" && !/^[\w\-. ]{1,200}$/.test(filename)) {
+      return NextResponse.json({ error: "Nom de fichier invalide" }, { status: 400 });
+    }
     if (!process.env.MISTRAL_API_KEY) return NextResponse.json({ error: "Clé API manquante — vérifiez MISTRAL_API_KEY dans Netlify" }, { status: 500 });
 
     const mimeType = normalizeMediaType(mediaType);
@@ -77,8 +81,7 @@ export async function POST(req: NextRequest) {
     const items = JSON.parse(jsonMatch[0]) as unknown[];
     return NextResponse.json({ items });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[extract-stock] error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error("[extract-stock] error:", err instanceof Error ? err.message : String(err));
+    return NextResponse.json({ error: "Erreur lors de l'extraction du stock" }, { status: 500 });
   }
 }

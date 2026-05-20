@@ -40,6 +40,7 @@ export type MovementType =
 
 export interface Movement {
   id: string;
+  deptSlug: string;
   itemId: string;
   itemName: string;
   type: MovementType;

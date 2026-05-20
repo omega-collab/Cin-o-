@@ -142,8 +142,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json() as { docs: DocInput[] };
     const { docs } = body;
 
-    if (!docs || docs.length === 0) {
+    if (!docs || !Array.isArray(docs) || docs.length === 0) {
       return NextResponse.json({ error: "Aucun document fourni" }, { status: 400 });
+    }
+    if (docs.length > 5) {
+      return NextResponse.json({ error: "Maximum 5 documents par extraction" }, { status: 400 });
     }
 
     if (!process.env.MISTRAL_API_KEY) {
@@ -216,8 +219,7 @@ export async function POST(req: NextRequest) {
     const result = JSON.parse(jsonMatch[0]) as ExtractionResult;
     return NextResponse.json({ result, skipped: skipped.length > 0 ? skipped : undefined });
   } catch (err) {
-    const raw = err instanceof Error ? err.message : String(err);
-    console.error("[extract] Mistral error:", raw);
-    return NextResponse.json({ error: raw }, { status: 500 });
+    console.error("[extract] error:", err instanceof Error ? err.message : String(err));
+    return NextResponse.json({ error: "Erreur lors du traitement des documents" }, { status: 500 });
   }
 }

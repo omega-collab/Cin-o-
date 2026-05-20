@@ -20,7 +20,9 @@ export function CanteenCard() {
     ? shoot.location
     : menu.shootingLocation;
 
-  const hasMenu = menu.main && menu.main.trim().length > 0;
+  const todayISO = new Date().toISOString().split("T")[0];
+  const menuIsToday = !menu.date || menu.date === todayISO;
+  const hasMenu = menuIsToday && menu.main && menu.main.trim().length > 0;
 
   return (
     <div className="glass-card rounded-app p-4 space-y-3">

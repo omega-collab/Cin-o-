@@ -47,6 +47,7 @@ export function HistoryList() {
   const entries = useHistoryStore((s) => s.entries);
   const clearHistory = useHistoryStore((s) => s.clearHistory);
   const [search, setSearch] = useState("");
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const filteredEntries = useMemo(() => {
     if (!search.trim()) return entries;
@@ -119,13 +120,30 @@ export function HistoryList() {
 
       {/* Clear button */}
       {entries.length > 0 && (
-        <div className="flex justify-end">
-          <button
-            onClick={clearHistory}
-            className="glass-card text-xs text-muted px-3 py-1.5 rounded-full border-stroke"
-          >
-            Effacer l&apos;historique
-          </button>
+        <div className="flex justify-end gap-2">
+          {confirmClear ? (
+            <>
+              <button
+                onClick={() => setConfirmClear(false)}
+                className="glass-card text-xs text-muted px-3 py-1.5 rounded-full"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => { clearHistory(); setConfirmClear(false); }}
+                className="text-xs text-redSoft bg-redSoft/10 border border-redSoft/20 px-3 py-1.5 rounded-full font-semibold"
+              >
+                Confirmer la suppression
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setConfirmClear(true)}
+              className="glass-card text-xs text-muted px-3 py-1.5 rounded-full border-stroke"
+            >
+              Effacer l&apos;historique
+            </button>
+          )}
         </div>
       )}
 
