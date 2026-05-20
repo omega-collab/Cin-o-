@@ -7,16 +7,16 @@ import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
 import { useHistoryStore } from "@/lib/store/useHistoryStore";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { Modal } from "@/components/ui/Modal";
+import { StatusPill } from "@/components/ui/StatusPill";
 
 interface DepartmentDetailProps {
   slug: DepartmentSlug;
 }
 
-const STATUS_CONFIG = {
-  ok: { label: "OK", bg: "rgba(0,212,180,0.15)", color: "#00D4B4" },
-  low: { label: "Bas", bg: "rgba(251,146,60,0.15)", color: "#FB923C" },
-  out: { label: "Vide", bg: "rgba(239,68,68,0.15)", color: "#EF4444" },
-} as const;
+const INPUT_CLS = "w-full rounded-2xl px-4 text-sm focus:outline-none bg-white/5 border border-stroke text-white min-h-[44px]";
+function ModalField({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><label className="block text-xs font-medium mb-1.5 text-muted">{label}</label>{children}</div>;
+}
 
 export function DepartmentDetail({ slug }: DepartmentDetailProps) {
   const hydrated = useHydrated();
@@ -67,119 +67,78 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
   const recentMovements = allMovements.slice(0, 5);
 
   return (
-    <div
-      className="min-h-screen px-4 pt-6 pb-10"
-      style={{ backgroundColor: "#0B0C14" }}
-    >
+    <div className="min-h-screen px-4 pt-6 pb-10">
       {/* Header */}
       <div className="flex items-center gap-4 mb-5">
         <span className="text-5xl leading-none select-none">{dept.icon}</span>
         <div>
-          <h2
-            className="text-xl font-bold leading-tight"
-            style={{ color: "#FFFFFF" }}
-          >
-            {dept.name}
-          </h2>
-          <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Gestion du matériel
-          </p>
+          <h2 className="text-xl font-bold text-white leading-tight">{dept.name}</h2>
+          <p className="text-sm mt-0.5 text-muted">Gestion du matériel</p>
         </div>
       </div>
 
       {/* Stats row */}
-      <div
-        className="flex items-center gap-2 px-4 py-3 rounded-xl mb-5"
-        style={{ backgroundColor: "#1C1D2B" }}
-      >
+      <div className="glass-card flex items-center gap-2 px-4 py-3 rounded-2xl mb-5">
         <span className="text-lg">📦</span>
-        <span className="text-sm font-medium" style={{ color: "#FFFFFF" }}>
+        <span className="text-sm font-medium text-white">
           {stock.length} article{stock.length > 1 ? "s" : ""} en stock
         </span>
       </div>
 
       {/* Stock list */}
-      <div className="space-y-2 mb-6">
-        <h3
-          className="text-xs font-semibold uppercase tracking-wider mb-3"
-          style={{ color: "rgba(255,255,255,0.35)" }}
-        >
+      <div className="mb-6">
+        <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 text-muted">
           Stock
         </h3>
-        {stock.map((item) => {
-          const pill = STATUS_CONFIG[item.status];
-          return (
+        <div className="space-y-2">
+          {stock.map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl"
-              style={{
-                backgroundColor: "#13141F",
-                border: "1px solid rgba(255,255,255,0.06)",
-              }}
+              className="glass-card flex items-center justify-between gap-3 p-4 rounded-2xl"
             >
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate" style={{ color: "#FFFFFF" }}>
-                  {item.name}
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                <p className="text-sm font-medium text-white truncate">{item.name}</p>
+                <p className="text-xs mt-0.5 text-muted">
                   {item.quantity} {item.unit}
                   {item.notes ? ` · ${item.notes}` : ""}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {/* Status pill */}
-                <span
-                  className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                  style={{ backgroundColor: pill.bg, color: pill.color }}
-                >
-                  {pill.label}
-                </span>
-                {/* Movement button */}
+                <StatusPill status={item.status} />
                 <button
                   onClick={() => openModal(item.id)}
-                  className="text-xs font-semibold px-3 rounded-full transition-opacity active:opacity-70"
-                  style={{
-                    backgroundColor: "#00D4B4",
-                    color: "#0B0C14",
-                    minHeight: "44px",
-                    display: "flex",
-                    alignItems: "center",
-                  }}
+                  className="active-pill px-3 py-1.5 text-xs font-semibold rounded-xl transition-opacity active:opacity-70"
                 >
                   Mouvement
                 </button>
               </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
 
       {/* Recent movements */}
       {recentMovements.length > 0 && (
-        <div className="space-y-2">
-          <h3
-            className="text-xs font-semibold uppercase tracking-wider mb-3"
-            style={{ color: "rgba(255,255,255,0.35)" }}
-          >
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 text-muted">
             Mouvements récents
           </h3>
-          {recentMovements.map((mov) => (
-            <div
-              key={mov.id}
-              className="flex items-center gap-3 px-4 py-2.5 rounded-xl"
-              style={{ backgroundColor: "#13141F" }}
-            >
-              <span className="text-base shrink-0">
-                {mov.type === "out" ? "↗️" : "↙️"}
-              </span>
-              <span className="flex-1 text-sm" style={{ color: "rgba(255,255,255,0.8)" }}>
-                {mov.itemName} × {mov.quantity}
-              </span>
-              <span className="text-xs shrink-0" style={{ color: "rgba(255,255,255,0.4)" }}>
-                {mov.operator}
-              </span>
-            </div>
-          ))}
+          <div className="space-y-2">
+            {recentMovements.map((mov) => (
+              <div
+                key={mov.id}
+                className="glass-card flex items-center gap-3 px-4 py-2.5 rounded-xl"
+              >
+                <span className="text-base shrink-0">
+                  {mov.type === "out" ? "↗️" : "↙️"}
+                </span>
+                <span className="flex-1 text-sm text-textSoft">
+                  {mov.itemName} × {mov.quantity}
+                </span>
+                <span className="text-xs text-muted shrink-0">{mov.operator}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -188,109 +147,44 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title="Enregistrer un mouvement"
-        className="!bg-[#13141F] !rounded-2xl border border-white/10"
+        className="glass-card-strong !rounded-app border-stroke"
       >
         <div className="space-y-4">
-          {/* Type toggle */}
           <div className="flex gap-2">
             {(["out", "in"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setMovType(t)}
-                className="flex-1 text-sm font-medium rounded-xl transition-all"
-                style={{
-                  minHeight: "44px",
-                  backgroundColor:
-                    movType === t ? "#00D4B4" : "rgba(255,255,255,0.06)",
-                  color: movType === t ? "#0B0C14" : "rgba(255,255,255,0.6)",
-                  border: "1px solid",
-                  borderColor:
-                    movType === t ? "#00D4B4" : "rgba(255,255,255,0.08)",
-                }}
+                className={`flex-1 text-sm font-medium rounded-xl transition-all min-h-[44px] border ${
+                  movType === t
+                    ? "active-pill border-cyan"
+                    : "border-stroke text-textSoft bg-white/5"
+                }`}
               >
                 {t === "out" ? "↗ Sortie" : "↙ Retour"}
               </button>
             ))}
           </div>
 
-          {/* Quantity */}
-          <div>
-            <label
-              className="block text-xs font-medium mb-1.5"
-              style={{ color: "rgba(255,255,255,0.5)" }}
-            >
-              Quantité
-            </label>
-            <input
-              type="number"
-              min={1}
-              value={quantity}
+          <ModalField label="Quantité">
+            <input type="number" min={1} value={quantity}
               onChange={(e) => setQuantity(Number(e.target.value))}
-              className="w-full rounded-xl px-4 text-sm focus:outline-none"
-              style={{
-                backgroundColor: "#1C1D2B",
-                color: "#FFFFFF",
-                border: "1px solid rgba(255,255,255,0.08)",
-                minHeight: "44px",
-              }}
-            />
-          </div>
-
-          {/* Operator */}
-          <div>
-            <label
-              className="block text-xs font-medium mb-1.5"
-              style={{ color: "rgba(255,255,255,0.5)" }}
-            >
-              Opérateur
-            </label>
-            <input
-              type="text"
-              value={operator}
+              className={INPUT_CLS} />
+          </ModalField>
+          <ModalField label="Opérateur">
+            <input type="text" value={operator} placeholder="Nom prénom"
               onChange={(e) => setOperator(e.target.value)}
-              placeholder="Nom prénom"
-              className="w-full rounded-xl px-4 text-sm focus:outline-none placeholder:text-white/25"
-              style={{
-                backgroundColor: "#1C1D2B",
-                color: "#FFFFFF",
-                border: "1px solid rgba(255,255,255,0.08)",
-                minHeight: "44px",
-              }}
-            />
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label
-              className="block text-xs font-medium mb-1.5"
-              style={{ color: "rgba(255,255,255,0.5)" }}
-            >
-              Notes (optionnel)
-            </label>
-            <input
-              type="text"
-              value={notes}
+              className={INPUT_CLS + " placeholder:text-white/25"} />
+          </ModalField>
+          <ModalField label="Notes (optionnel)">
+            <input type="text" value={notes} placeholder="Détails…"
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Détails…"
-              className="w-full rounded-xl px-4 text-sm focus:outline-none placeholder:text-white/25"
-              style={{
-                backgroundColor: "#1C1D2B",
-                color: "#FFFFFF",
-                border: "1px solid rgba(255,255,255,0.08)",
-                minHeight: "44px",
-              }}
-            />
-          </div>
+              className={INPUT_CLS + " placeholder:text-white/25"} />
+          </ModalField>
 
-          {/* Confirm */}
           <button
             onClick={handleSubmit}
-            className="w-full rounded-xl font-semibold text-sm transition-opacity active:opacity-80"
-            style={{
-              backgroundColor: "#00D4B4",
-              color: "#0B0C14",
-              minHeight: "52px",
-            }}
+            className="active-pill w-full rounded-2xl font-semibold text-sm transition-opacity active:opacity-80 min-h-[52px]"
           >
             Confirmer
           </button>

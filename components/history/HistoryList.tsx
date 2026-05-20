@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Search, SlidersHorizontal, CheckCircle2, FileText } from "lucide-react";
 import { useHistoryStore } from "@/lib/store/useHistoryStore";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { formatTime } from "@/lib/utils";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import type { HistoryEntry } from "@/lib/types";
+
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 function formatGroupDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", {
@@ -37,6 +40,8 @@ function groupEntriesByDate(
   });
 }
 
+// ── main component ────────────────────────────────────────────────────────────
+
 export function HistoryList() {
   const hydrated = useHydrated();
   const entries = useHistoryStore((s) => s.entries);
@@ -54,199 +59,104 @@ export function HistoryList() {
     );
   }, [entries, search]);
 
-  const groups = useMemo(
-    () => groupEntriesByDate(filteredEntries),
-    [filteredEntries]
-  );
+  const groups = useMemo(() => groupEntriesByDate(filteredEntries), [filteredEntries]);
 
   if (!hydrated) {
     return (
-      <div
-        className="min-h-screen px-4 pt-6"
-        style={{ backgroundColor: "#0B0C14" }}
-      >
-        <div
-          className="h-8 w-40 rounded-lg animate-pulse mb-4"
-          style={{ backgroundColor: "#13141F" }}
-        />
-        <div
-          className="h-12 w-full rounded-xl animate-pulse"
-          style={{ backgroundColor: "#13141F" }}
-        />
+      <div className="space-y-4">
+        <div className="glass-card rounded-2xl h-12 animate-pulse" />
+        <div className="glass-card rounded-app h-24 animate-pulse" />
+        <div className="glass-card rounded-app h-40 animate-pulse" />
       </div>
     );
   }
 
-  // Stats derived from all entries (not filtered)
   const joursTournes = new Set(entries.map((e) => e.timestamp.slice(0, 10))).size;
-  const incidents = entries.filter((e) =>
-    e.action.toLowerCase().includes("incident")
-  ).length;
-  const rapports = entries.filter((e) =>
-    e.action.toLowerCase().includes("rapport")
-  ).length;
+  const incidents = entries.filter((e) => e.action.toLowerCase().includes("incident")).length;
+  const rapports = entries.filter((e) => e.action.toLowerCase().includes("rapport")).length;
 
   return (
-    <div
-      className="min-h-screen px-4 pt-6 pb-10"
-      style={{ backgroundColor: "#0B0C14" }}
-    >
-      {/* Title row */}
-      <div className="flex items-center justify-between mb-4">
-        <h2
-          className="font-bold"
-          style={{ color: "#FFFFFF", fontSize: "24px" }}
-        >
-          Historique
-        </h2>
-        {entries.length > 0 && (
-          <button
-            onClick={clearHistory}
-            className="text-xs px-3 rounded-full transition-opacity active:opacity-60"
-            style={{
-              color: "rgba(255,255,255,0.4)",
-              minHeight: "36px",
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
-          >
-            Effacer
-          </button>
-        )}
-      </div>
-
-      {/* Stats pills */}
-      <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
-        {[
-          { label: "Jours tournés", value: joursTournes, icon: "🎬" },
-          { label: "Incidents", value: incidents, icon: "⚠️" },
-          { label: "Rapports", value: rapports, icon: "📄" },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full shrink-0"
-            style={{
-              backgroundColor: "#13141F",
-              border: "1px solid rgba(255,255,255,0.07)",
-            }}
-          >
-            <span className="text-base leading-none">{stat.icon}</span>
-            <span
-              className="text-sm font-semibold"
-              style={{ color: "#FFFFFF" }}
-            >
-              {stat.value}
-            </span>
-            <span
-              className="text-xs"
-              style={{ color: "rgba(255,255,255,0.4)" }}
-            >
-              {stat.label}
-            </span>
-          </div>
-        ))}
-      </div>
-
+    <div className="space-y-5">
       {/* Search bar */}
-      <div
-        className="flex items-center gap-2 px-4 mb-5 rounded-xl"
-        style={{
-          backgroundColor: "#13141F",
-          border: "1px solid rgba(255,255,255,0.07)",
-          minHeight: "48px",
-        }}
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 20 20"
-          fill="none"
-          aria-hidden="true"
-          style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0 }}
-        >
-          <circle
-            cx="8.5"
-            cy="8.5"
-            r="5.75"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M13 13L17 17"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
+      <div className="glass-card rounded-2xl px-4 py-3 flex items-center gap-2">
+        <Search size={15} className="text-muted shrink-0" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Rechercher une action…"
-          className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-white/25"
-          style={{ color: "#FFFFFF" }}
+          className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted text-textSoft"
         />
-        {search && (
+        {search ? (
           <button
             onClick={() => setSearch("")}
-            className="text-xs transition-opacity active:opacity-60"
-            style={{ color: "rgba(255,255,255,0.35)", minHeight: "36px", minWidth: "36px" }}
-            aria-label="Effacer la recherche"
+            className="text-muted text-xs px-2 py-1"
+            aria-label="Effacer"
           >
             ✕
+          </button>
+        ) : (
+          <button className="bg-cyanSoft text-cyan rounded-xl p-1.5">
+            <SlidersHorizontal size={14} />
           </button>
         )}
       </div>
 
+      {/* Stats glass-card */}
+      <div className="glass-card rounded-app p-4 grid grid-cols-3 gap-3 text-center">
+        {[
+          { value: joursTournes, label: "Jours terminés", icon: <CheckCircle2 size={16} className="text-cyan mx-auto mb-1" /> },
+          { value: incidents,    label: "Incidents",       icon: <span className="text-base leading-none block mb-1">⚠️</span> },
+          { value: rapports,     label: "Rapports",        icon: <FileText size={16} className="text-blueSoft mx-auto mb-1" /> },
+        ].map((stat) => (
+          <div key={stat.label}>
+            {stat.icon}
+            <p className="text-xl font-bold text-white">{stat.value}</p>
+            <p className="text-[11px] text-muted leading-tight mt-0.5">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Clear button */}
+      {entries.length > 0 && (
+        <div className="flex justify-end">
+          <button
+            onClick={clearHistory}
+            className="glass-card text-xs text-muted px-3 py-1.5 rounded-full border-stroke"
+          >
+            Effacer l&apos;historique
+          </button>
+        </div>
+      )}
+
       {/* Empty state */}
       {filteredEntries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <span className="text-5xl leading-none" role="img" aria-label="horloge">
-            🕐
-          </span>
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
-            {search ? "Aucun résultat trouvé" : "Aucune activité enregistrée"}
+          <span className="text-5xl leading-none" role="img" aria-label="horloge">🕐</span>
+          <p className="text-sm text-muted">
+            {search ? "Aucun résultat trouvé" : "Aucun historique"}
           </p>
         </div>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-5">
           {groups.map(({ dateLabel, items }) => (
             <div key={dateLabel}>
-              {/* Sticky date header */}
-              <div
-                className="sticky top-0 z-10 px-1 py-2 mb-1"
-                style={{ backgroundColor: "#0B0C14" }}
-              >
-                <p
-                  className="text-xs font-semibold uppercase tracking-wider"
-                  style={{ color: "rgba(255,255,255,0.35)" }}
-                >
-                  {dateLabel}
-                </p>
-              </div>
+              {/* Group header */}
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-2 px-1">
+                {dateLabel}
+              </p>
 
-              {/* Entries for this day */}
-              <div
-                className="rounded-2xl overflow-hidden"
-                style={{
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  backgroundColor: "#13141F",
-                }}
-              >
+              {/* Group card */}
+              <div className="glass-card rounded-app overflow-hidden">
                 {items.map((entry, idx) => {
-                  const dept = DEPARTMENTS.find(
-                    (d) => d.slug === entry.department
-                  );
+                  const dept = DEPARTMENTS.find((d) => d.slug === entry.department);
                   const isLast = idx === items.length - 1;
                   return (
                     <div
                       key={entry.id}
-                      className="flex items-start gap-3 px-4 py-3"
-                      style={{
-                        borderBottom: isLast
-                          ? "none"
-                          : "1px solid rgba(255,255,255,0.05)",
-                        minHeight: "56px",
-                      }}
+                      className={`flex items-start gap-3 p-4 min-h-[56px] ${
+                        isLast ? "" : "border-b border-stroke/50"
+                      }`}
                     >
                       {/* Dept icon */}
                       <span
@@ -259,25 +169,14 @@ export function HistoryList() {
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <p
-                          className="text-sm font-medium leading-tight"
-                          style={{ color: "#FFFFFF" }}
-                        >
-                          {entry.action}
-                        </p>
-                        <p
-                          className="text-xs mt-0.5 truncate"
-                          style={{ color: "rgba(255,255,255,0.4)" }}
-                        >
+                        <p className="text-sm font-medium text-white leading-tight">{entry.action}</p>
+                        <p className="text-xs text-muted mt-0.5 truncate">
                           {entry.departmentName} · {entry.details}
                         </p>
                       </div>
 
-                      {/* Timestamp */}
-                      <span
-                        className="text-xs shrink-0 mt-0.5"
-                        style={{ color: "rgba(255,255,255,0.3)" }}
-                      >
+                      {/* Time */}
+                      <span className="text-xs text-muted shrink-0 mt-0.5">
                         {formatTime(entry.timestamp)}
                       </span>
                     </div>

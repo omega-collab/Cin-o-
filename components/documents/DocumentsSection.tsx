@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { Card } from "@/components/ui/Card";
+import { useState, useCallback, useRef } from "react";
+import { FileText, Upload } from "lucide-react";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { formatDateTime } from "@/lib/utils";
 import { analyzeDocument } from "@/lib/services/document.service";
@@ -19,9 +19,20 @@ const INITIAL_DOCS: DocumentEntry[] = [
   },
 ];
 
+function docTypeBadge(type: DocumentEntry["type"]) {
+  if (type === "feuille_service") {
+    return <span className="text-xs font-semibold text-redSoft">PDF</span>;
+  }
+  if (type === "bon_commande" || type === "devis") {
+    return <span className="text-xs font-semibold text-emerald-400">XLSX</span>;
+  }
+  return <span className="text-xs font-semibold text-muted">{type}</span>;
+}
+
 export function DocumentsSection() {
   const [documents, setDocuments] = useState<DocumentEntry[]>(INITIAL_DOCS);
   const [analyzing, setAnalyzing] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,79 +70,70 @@ export function DocumentsSection() {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-900">Documents</h2>
-        <label className="inline-flex items-center justify-center font-medium rounded-lg transition-colors focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-1 focus-within:ring-purple-500 bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 gap-2 cursor-pointer">
-          <input
-            type="file"
-            className="sr-only"
-            accept=".pdf,.jpg,.jpeg,.png"
-            onChange={handleFileChange}
-          />
-          ＋ Importer
-        </label>
-      </div>
+    <div className="px-4 pt-6 pb-10 space-y-4">
+      <h2 className="text-xl font-bold text-white mb-1">Documents</h2>
 
-      <div className="grid gap-3">
+      {/* Document list */}
+      <div className="space-y-2">
         {documents.map((doc) => (
-          <Card key={doc.id} className="p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0">
-                <span className="text-2xl shrink-0">
-                  {doc.type === "feuille_service" ? "📋" : "📄"}
-                </span>
-                <div className="min-w-0">
-                  <p className="font-medium text-slate-900 text-sm truncate">
-                    {doc.name}
-                  </p>
-                  <p className="text-slate-400 text-xs mt-0.5">
-                    Importé {formatDateTime(doc.uploadedAt)}
-                  </p>
-                  {doc.extractedData && (
-                    <p className="text-slate-500 text-xs mt-1">
-                      {Object.entries(doc.extractedData)
-                        .filter(([k]) => k !== "note")
-                        .map(([k, v]) => `${k}: ${String(v)}`)
-                        .join(" · ")}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="shrink-0">
-                {analyzing === doc.id ? (
-                  <span className="text-xs text-slate-400 animate-pulse">
-                    Analyse…
-                  </span>
-                ) : (
-                  <StatusPill
-                    status={
-                      doc.status === "analyzed"
-                        ? "ok"
-                        : doc.status === "error"
-                        ? "critical"
-                        : "info"
-                    }
-                    label={
-                      doc.status === "analyzed"
-                        ? "Analysé"
-                        : doc.status === "error"
-                        ? "Erreur"
-                        : "En attente"
-                    }
-                  />
-                )}
-              </div>
+          <div
+            key={doc.id}
+            className="glass-card rounded-app flex items-center gap-3 p-3"
+          >
+            <FileText size={20} className="text-cyan shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{doc.name}</p>
+              <p className="text-xs text-muted mt-0.5">
+                Importé {formatDateTime(doc.uploadedAt)}
+              </p>
             </div>
-          </Card>
+            <div className="flex items-center gap-2 shrink-0">
+              {docTypeBadge(doc.type)}
+              {analyzing === doc.id ? (
+                <span className="text-xs text-muted animate-pulse">Analyse…</span>
+              ) : (
+                <StatusPill
+                  status={
+                    doc.status === "analyzed"
+                      ? "analyzed"
+                      : doc.status === "error"
+                      ? "error"
+                      : "pending"
+                  }
+                  label={
+                    doc.status === "analyzed"
+                      ? "Analysé"
+                      : doc.status === "error"
+                      ? "Erreur"
+                      : "En attente"
+                  }
+                />
+              )}
+            </div>
+          </div>
         ))}
 
         {documents.length === 0 && (
-          <Card className="p-8 text-center">
-            <p className="text-slate-400 text-sm">Aucun document importé</p>
-          </Card>
+          <div className="glass-card rounded-app p-8 text-center">
+            <p className="text-sm text-muted">Aucun document importé</p>
+          </div>
         )}
       </div>
+
+      {/* Upload button */}
+      <label className="block cursor-pointer">
+        <input
+          ref={inputRef}
+          type="file"
+          className="sr-only"
+          accept=".pdf,.jpg,.jpeg,.png"
+          onChange={handleFileChange}
+        />
+        <div className="border border-dashed border-cyan rounded-app p-5 bg-cyanSoft/20 flex flex-col items-center gap-2 transition-opacity active:opacity-70">
+          <Upload size={22} className="text-cyan" />
+          <span className="text-sm font-semibold text-cyan">Importer un document</span>
+        </div>
+      </label>
     </div>
   );
 }
