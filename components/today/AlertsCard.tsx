@@ -1,69 +1,35 @@
-import { TODAY_ALERTS } from "@/lib/data/schedule";
-import type { AlertItem } from "@/lib/types";
+import { Bell } from "lucide-react";
 
-export function AlertsCard() {
-  if (TODAY_ALERTS.length === 0) return null;
-
-  return (
-    <div
-      className="rounded-2xl p-4"
-      style={{ background: "#1C1D2B", border: "1px solid rgba(255,255,255,0.07)" }}
-    >
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
-        <h4 className="text-sm font-semibold text-white">Alertes</h4>
-        <span
-          className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-          style={{ background: "rgba(255,255,255,0.08)", color: "#8B8CA8" }}
-        >
-          {TODAY_ALERTS.length}
-        </span>
-      </div>
-
-      {/* Alert list */}
-      <div className="space-y-2.5">
-        {TODAY_ALERTS.map((alert) => (
-          <AlertRow key={alert.id} alert={alert} />
-        ))}
-      </div>
-    </div>
-  );
+interface AlertLine {
+  dot: string;
+  text: string;
 }
 
-function AlertRow({ alert }: { alert: AlertItem }) {
-  const dotColor =
-    alert.severity === "critical"
-      ? "#EF4444"
-      : alert.severity === "warning"
-      ? "#F97316"
-      : "#60A5FA";
+const ALERTS: AlertLine[] = [
+  { dot: "bg-orangeSoft", text: "Retard décor – 20 min" },
+  { dot: "bg-blueSoft", text: "Circulation dense" },
+];
 
-  const iconLabel =
-    alert.severity === "critical"
-      ? "▲"
-      : alert.severity === "warning"
-      ? "▲"
-      : "ℹ";
-
+export function AlertsCard() {
   return (
-    <div className="flex items-start gap-2.5">
-      {/* Severity dot */}
-      <div className="flex items-center gap-1 shrink-0 pt-0.5">
-        <span
-          className="text-[11px] font-bold leading-none"
-          style={{ color: dotColor }}
-        >
-          {iconLabel}
-        </span>
+    <div className="glass-card rounded-app p-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-3">
+        <Bell className="w-4 h-4 text-muted" />
+        <span className="text-sm text-textSoft font-medium">Alertes</span>
       </div>
 
-      {/* Message */}
-      <p
-        className="text-[13px] leading-snug flex-1"
-        style={{ color: "#C4C5D6" }}
-      >
-        {alert.message}
-      </p>
+      {/* Alert lines */}
+      <div className="space-y-2.5">
+        {ALERTS.map((alert, idx) => (
+          <div key={idx} className="flex items-start gap-2">
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 mt-1 ${alert.dot}`}
+            />
+            <p className="text-xs text-textSoft leading-snug">{alert.text}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

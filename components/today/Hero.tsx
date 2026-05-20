@@ -1,109 +1,94 @@
 "use client";
 
-import { TODAY_SCHEDULE } from "@/lib/data/schedule";
-import { useEffect, useState } from "react";
-
-export function Hero() {
-  const [time, setTime] = useState<string>("");
-
-  useEffect(() => {
-    const tick = () =>
-      setTime(
-        new Date().toLocaleTimeString("fr-FR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      );
-    tick();
-    const id = setInterval(tick, 30_000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Call time = first sequence of the day
-  const firstSeq = TODAY_SCHEDULE[0];
-  const callTime = firstSeq?.time ?? "07:00";
-
-  return (
-    <div
-      className="rounded-2xl p-5 relative overflow-hidden"
-      style={{ background: "#13141F", border: "1px solid rgba(255,255,255,0.07)" }}
-    >
-      {/* Top row */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          {/* Title + badge */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-base font-bold text-white tracking-tight">
-              🎬 BANDI — Jour 12
-            </span>
-            <span
-              className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full tracking-widest uppercase"
-              style={{ background: "rgba(0,212,180,0.15)", color: "#00D4B4" }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full animate-pulse"
-                style={{ background: "#00D4B4" }}
-              />
-              En tournage
-            </span>
-          </div>
-
-          {/* Location */}
-          <p
-            className="mt-1.5 text-sm"
-            style={{ color: "#8B8CA8" }}
-          >
-            📍 Plateaux des Lilas, Studio 3
-          </p>
-        </div>
-
-        {/* Live clock */}
-        {time && (
-          <div
-            className="font-mono text-3xl font-bold tabular-nums shrink-0 leading-none"
-            style={{ color: "#FFFFFF" }}
-          >
-            {time}
-          </div>
-        )}
-      </div>
-
-      {/* Info pills */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <InfoPill icon="⏰" label="CALL TIME" value={callTime} />
-        <InfoPill icon="🍽" label="REPAS" value="12:30" />
-      </div>
-    </div>
-  );
-}
+import { MapPin, Clock3, Utensils, Film } from "lucide-react";
 
 function InfoPill({
   icon,
   label,
   value,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   value: string;
 }) {
   return (
-    <div
-      className="flex items-center gap-2 px-3 py-2 rounded-xl"
-      style={{ background: "#1C1D2B" }}
-    >
-      <span className="text-sm">{icon}</span>
-      <span
-        className="text-[10px] font-semibold uppercase tracking-widest"
-        style={{ color: "#8B8CA8" }}
-      >
+    <div className="glass-card rounded-app flex items-center gap-2 px-3 py-2.5">
+      <span className="text-muted">{icon}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted">
         {label}
       </span>
-      <span
-        className="font-mono text-sm font-bold"
-        style={{ color: "#00D4B4" }}
-      >
-        {value}
-      </span>
+      <span className="font-mono text-sm font-bold text-cyan">{value}</span>
+    </div>
+  );
+}
+
+const TAGS = ["Caméra A", "25mm", "Steadicam", "2 3/8"];
+
+export function Hero() {
+  return (
+    <div className="space-y-3">
+      {/* Title + location */}
+      <div>
+        <h1 className="text-3xl font-bold text-gradient leading-tight">
+          BANDI – Jour 12
+        </h1>
+        <div className="flex items-center gap-1.5 mt-1">
+          <MapPin className="w-3.5 h-3.5 text-muted shrink-0" />
+          <span className="text-sm text-textSoft">
+            Plateaux des Lilas, Studio 3
+          </span>
+        </div>
+      </div>
+
+      {/* Info pills */}
+      <div className="grid grid-cols-2 gap-3">
+        <InfoPill icon={<Clock3 className="w-4 h-4" />} label="Call Time" value="07:00" />
+        <InfoPill icon={<Utensils className="w-4 h-4" />} label="Repas" value="12:30" />
+      </div>
+
+      {/* Prochaine séquence */}
+      <div className="glass-card-strong rounded-app p-4 space-y-3">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Film className="w-4 h-4 text-cyan" />
+            <span className="text-xs font-semibold text-textSoft uppercase tracking-wider">
+              Prochaine séquence
+            </span>
+          </div>
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-cyanSoft text-cyan">
+            Dans 45 min
+          </span>
+        </div>
+
+        {/* Sequence title */}
+        <div>
+          <p className="text-2xl font-bold text-white leading-tight">
+            Séq. 32 – Scène 6
+          </p>
+          <p className="text-sm font-medium text-muted mt-0.5 uppercase tracking-wide">
+            INT. APPARTEMENT – SALON – NUIT
+          </p>
+        </div>
+
+        {/* Description */}
+        <p className="text-sm text-textSoft leading-relaxed">
+          Confrontation entre Amara et sa mère. Lumière naturelle simulée,
+          ambiance intime. Priorité au jeu d'acteur.
+        </p>
+
+        {/* Tag chips */}
+        <div className="flex flex-wrap gap-1.5">
+          {TAGS.map((tag) => (
+            <span
+              key={tag}
+              className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/5 text-textSoft border border-stroke"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -6,21 +6,13 @@ import { AlertsCard } from "@/components/today/AlertsCard";
 
 export default function HomePage() {
   return (
-    <Shell title="Aujourd'hui">
-      {/* Mobile: stack — Desktop: 2-col grid */}
-      <div className="space-y-4 pb-20 md:pb-0">
+    <Shell title="Aujourd'hui" subtitle="Lundi 20 mai 2026">
+      <div className="space-y-4">
         <Hero />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-          {/* Left: schedule (takes 2/3 on desktop) */}
-          <div className="md:col-span-2">
-            <ScheduleList />
-          </div>
-
-          {/* Right sidebar: alerts + canteen */}
-          <div className="space-y-4">
-            <AlertsCard />
-            <CanteenCard />
-          </div>
+        <ScheduleList />
+        <div className="grid grid-cols-2 gap-3">
+          <AlertsCard />
+          <CanteenCard />
         </div>
       </div>
     </Shell>

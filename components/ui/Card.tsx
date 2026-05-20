@@ -3,21 +3,19 @@ import { cn } from "@/lib/utils";
 interface CardProps {
   children: React.ReactNode;
   className?: string;
+  strong?: boolean;
   onClick?: () => void;
 }
 
-export function Card({ children, className, onClick }: CardProps) {
+export function Card({ children, className, strong = false, onClick }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl",
-        onClick && "cursor-pointer transition-opacity hover:opacity-90",
+        strong ? "glass-card-strong" : "glass-card",
+        "rounded-app",
+        onClick && "cursor-pointer transition-opacity active:opacity-80",
         className
       )}
-      style={{
-        background: "#13141F",
-        border: "1px solid rgba(255,255,255,0.07)",
-      }}
       onClick={onClick}
     >
       {children}
