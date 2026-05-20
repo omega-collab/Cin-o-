@@ -5,11 +5,12 @@ import type { DepartmentSlug, MovementType } from "@/lib/types";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
 import { useHistoryStore } from "@/lib/store/useHistoryStore";
+import { useUserStore } from "@/lib/store/useUserStore";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { Modal } from "@/components/ui/Modal";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { StockImportPanel } from "./StockImportPanel";
-import { Upload, Camera, X } from "lucide-react";
+import { Upload, Camera, X, Check } from "lucide-react";
 
 interface DepartmentDetailProps {
   slug: DepartmentSlug;
@@ -52,6 +53,8 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
   const allMovements = useDepartmentStore((s) => s.movements);
   const addMovement = useDepartmentStore((s) => s.addMovement);
   const addHistory = useHistoryStore((s) => s.addEntry);
+  const userRole = useUserStore((s) => s.role);
+  const userDept = useUserStore((s) => s.department);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,23 +66,33 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
   const [operator, setOperator] = useState("");
   const [notes, setNotes] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
+  const [toast, setToast] = useState(false);
 
   if (!hydrated || !dept) return null;
+
+  const deptMovements = allMovements.filter((m) => m.deptSlug === slug).slice(0, 8);
 
   function openModal(itemId: string) {
     setSelectedItem(itemId);
     setMovType("depart");
     setQuantity(1);
-    setOperator("");
+    const deptName = dept?.name ?? "";
+    setOperator(userRole && userDept === slug ? `${userRole} — ${deptName}` : "");
     setNotes("");
     setPhoto(null);
     setModalOpen(true);
   }
 
   async function handlePhotoFile(file: File) {
-    if (file.size > 10 * 1024 * 1024) return;
+    if (file.size > 2 * 1024 * 1024) return;
     const dataUrl = await fileToBase64(file);
     setPhoto(dataUrl);
+  }
+
+  function handleQuantityChange(raw: string) {
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 0) return;
+    setQuantity(Math.max(0, Math.floor(n)));
   }
 
   function handleSubmit() {
@@ -93,7 +106,7 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
       itemName: item.name,
       type: movType,
       quantity,
-      operator: operator || "Inconnu",
+      operator: operator.trim() || "Inconnu",
       notes: notes || undefined,
       photo: photo ?? undefined,
     });
@@ -101,15 +114,22 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
       department: slug,
       departmentName: dept.name,
       action: typeLabel,
-      details: `${item.name} × ${quantity} — ${operator || "Inconnu"}`,
+      details: `${item.name} × ${quantity} — ${operator.trim() || "Inconnu"}`,
     });
     setModalOpen(false);
+    setToast(true);
+    setTimeout(() => setToast(false), 2500);
   }
-
-  const recentMovements = allMovements.slice(0, 8);
 
   return (
     <div className="min-h-screen px-4 pt-6 pb-10">
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-cyan text-appBg text-sm font-semibold px-4 py-2.5 rounded-2xl shadow-glow">
+          <Check className="w-4 h-4" />
+          Mouvement enregistré
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-4">
@@ -128,14 +148,12 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
         </button>
       </div>
 
-      {/* Import panel */}
       {importOpen && (
         <div className="mb-5">
           <StockImportPanel slug={slug} onClose={() => setImportOpen(false)} />
         </div>
       )}
 
-      {/* Stats */}
       <div className="glass-card flex items-center gap-2 px-4 py-3 rounded-2xl mb-5">
         <span className="text-lg">📦</span>
         <span className="text-sm font-medium text-white">
@@ -143,7 +161,6 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
         </span>
       </div>
 
-      {/* Empty state */}
       {stock.length === 0 && (
         <div className="glass-card rounded-app p-6 text-center space-y-3 mb-5">
           <Upload className="w-8 h-8 text-muted mx-auto" />
@@ -162,7 +179,6 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
         </div>
       )}
 
-      {/* Stock list */}
       {stock.length > 0 && (
         <div className="mb-6">
           <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 text-muted">Stock</h3>
@@ -191,14 +207,13 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
         </div>
       )}
 
-      {/* Recent movements */}
-      {recentMovements.length > 0 && (
+      {deptMovements.length > 0 && (
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 text-muted">
             Mouvements récents
           </h3>
           <div className="space-y-2">
-            {recentMovements.map((mov) => (
+            {deptMovements.map((mov) => (
               <div key={mov.id} className="glass-card rounded-2xl overflow-hidden">
                 <div className="flex items-center gap-3 px-4 py-2.5">
                   <span className="text-base shrink-0">{MOV_ICON[mov.type] ?? "📝"}</span>
@@ -223,7 +238,6 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
         </div>
       )}
 
-      {/* Movement modal */}
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -231,7 +245,6 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
         className="glass-card-strong !rounded-app border-stroke"
       >
         <div className="space-y-4">
-          {/* Type selector — 2 rows */}
           <div className="grid grid-cols-4 gap-1.5">
             {MOVEMENT_TYPES.map((t) => (
               <button
@@ -251,25 +264,37 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <ModalField label="Quantité">
-              <input type="number" min={1} value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className={INPUT_CLS} />
+              <input
+                type="number"
+                min={0}
+                value={quantity}
+                onChange={(e) => handleQuantityChange(e.target.value)}
+                className={INPUT_CLS}
+              />
             </ModalField>
             <ModalField label="Opérateur">
-              <input type="text" value={operator} placeholder="Nom prénom"
+              <input
+                type="text"
+                value={operator}
+                placeholder="Nom prénom"
+                maxLength={100}
                 onChange={(e) => setOperator(e.target.value)}
-                className={INPUT_CLS} />
+                className={INPUT_CLS}
+              />
             </ModalField>
           </div>
 
           <ModalField label="Note">
-            <input type="text" value={notes} placeholder="Détails, référence, observations…"
+            <input
+              type="text"
+              value={notes}
+              placeholder="Détails, référence, observations…"
               onChange={(e) => setNotes(e.target.value)}
-              className={INPUT_CLS} />
+              className={INPUT_CLS}
+            />
           </ModalField>
 
-          {/* Photo */}
-          <ModalField label="Photo (optionnel)">
+          <ModalField label="Photo (optionnel — max 2 Mo)">
             {photo ? (
               <div className="relative rounded-xl overflow-hidden">
                 <img src={photo} alt="Aperçu" className="w-full max-h-40 object-cover" />

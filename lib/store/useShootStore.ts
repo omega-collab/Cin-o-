@@ -203,6 +203,17 @@ export const useShootStore = create<ShootStore>()(
       resetFull: () =>
         set({ shoot: INITIAL, pendingExtraction: null }),
     }),
-    { name: "cin-o-shoot", version: 2 }
+    {
+      name: "cin-o-shoot",
+      version: 3,
+      partialize: (state) => ({
+        pendingExtraction: null,
+        shoot: {
+          ...state.shoot,
+          uploadedDocs: [],
+          auditLog: state.shoot.auditLog.slice(-100),
+        },
+      }),
+    }
   )
 );

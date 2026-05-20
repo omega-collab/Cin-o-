@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, MapPin, SlidersHorizontal, Film } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Film } from "lucide-react";
 import type { ProductionDay } from "@/lib/data/calendar";
 import { useShootStore } from "@/lib/store/useShootStore";
 
@@ -161,7 +161,6 @@ export function CalendarView() {
   const today = useMemo(() => toISODate(new Date()), []);
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [filterOpen, setFilterOpen] = useState(false);
 
   // Build ProductionDay list from published shoot data
   const productionDays = useMemo<ProductionDay[]>(() => {
@@ -209,23 +208,6 @@ export function CalendarView() {
 
   return (
     <div className="space-y-5">
-      {/* Filter row */}
-      <div className="grid grid-cols-3 gap-2">
-        <button className="glass-card rounded-2xl px-3 py-2.5 text-xs text-muted text-left">
-          Département
-        </button>
-        <button className="glass-card rounded-2xl px-3 py-2.5 text-xs text-muted text-left">
-          Jours prod.
-        </button>
-        <button
-          onClick={() => setFilterOpen(!filterOpen)}
-          className="glass-card rounded-2xl px-3 py-2.5 text-xs flex items-center justify-center gap-1.5 text-textSoft"
-        >
-          <SlidersHorizontal size={13} />
-          Filtres
-        </button>
-      </div>
-
       {/* Week strip */}
       <div className="glass-card rounded-app p-4">
         <div className="flex items-center justify-between mb-3">

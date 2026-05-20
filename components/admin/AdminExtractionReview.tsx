@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, Info, Plus, Trash2 } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
 import type { ShootSequence, CastMember, DeptNote, PlacePoint, ShootAlert } from "@/lib/types/shoot";
@@ -71,10 +71,15 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
   } = useShootStore();
 
   const [applied, setApplied] = useState(false);
+  const appliedRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Pre-apply extraction on mount so all sections are editable immediately
   useEffect(() => {
-    if (pendingExtraction) applyPendingExtraction();
+    if (!appliedRef.current && pendingExtraction) {
+      appliedRef.current = true;
+      applyPendingExtraction();
+    }
+    return () => clearTimeout(timerRef.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -85,11 +90,8 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
   const alerts = shoot.alerts;
 
   function handleApply() {
-    if (pendingExtraction) {
-      applyPendingExtraction();
-    }
     setApplied(true);
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setApplied(false);
       onApply();
     }, 1200);

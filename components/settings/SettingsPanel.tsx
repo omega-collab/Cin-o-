@@ -149,11 +149,9 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               label="Langue"
               subtitle="Interface uniquement"
             >
-              <SegmentControl
-                options={LANG_OPTIONS}
-                value={lang}
-                onChange={setLang}
-              />
+              <span className="text-[10px] text-muted bg-white/5 border border-stroke px-2 py-1 rounded-lg">
+                Bientôt disponible
+              </span>
             </Row>
           </div>
 

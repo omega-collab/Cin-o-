@@ -36,7 +36,7 @@ export function Nav() {
 
         <nav className="flex-1 p-3 space-y-1">
           {NAV_ITEMS.map(({ href, label, Icon }) => {
-            const active = pathname === href;
+            const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
               <Link
                 key={href}
@@ -67,7 +67,7 @@ export function Nav() {
       >
         <div className="grid grid-cols-5 h-[60px]">
           {NAV_ITEMS.map(({ href, label, Icon }) => {
-            const active = pathname === href;
+            const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
               <Link
                 key={href}
