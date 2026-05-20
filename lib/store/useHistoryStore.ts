@@ -27,6 +27,6 @@ export const useHistoryStore = create<HistoryState>()(
         })),
       clearHistory: () => set({ entries: [] }),
     }),
-    { name: "setflow-history" }
+    { name: "cin-o-history" }
   )
 );

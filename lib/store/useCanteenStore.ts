@@ -26,6 +26,6 @@ export const useCanteenStore = create<CanteenState>()(
         set((state) => ({ menu: { ...state.menu, ...updates } })),
       resetMenu: () => set({ menu: DEFAULT_MENU }),
     }),
-    { name: "setflow-canteen" }
+    { name: "cin-o-canteen" }
   )
 );

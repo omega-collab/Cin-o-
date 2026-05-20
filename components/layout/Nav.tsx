@@ -21,7 +21,7 @@ export function Nav() {
         <div className="p-4 border-b border-slate-200">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🎬</span>
-            <span className="font-bold text-slate-900 text-lg">SetFlow</span>
+            <span className="font-bold text-slate-900 text-lg">Cin-o-</span>
           </div>
           <p className="text-xs text-slate-400 mt-1">Feuille de service</p>
         </div>
@@ -43,7 +43,7 @@ export function Nav() {
           ))}
         </nav>
         <div className="p-4 border-t border-slate-200">
-          <p className="text-xs text-slate-400">SetFlow v0.1 — Proto</p>
+          <p className="text-xs text-slate-400">Cin-o- v0.1 — Proto</p>
         </div>
       </aside>
 
