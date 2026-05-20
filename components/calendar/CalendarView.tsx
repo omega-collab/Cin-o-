@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, MapPin, SlidersHorizontal } from "lucide-react";
-import { PRODUCTION_DAYS } from "@/lib/data/calendar";
+import { ChevronLeft, ChevronRight, MapPin, SlidersHorizontal, Film } from "lucide-react";
 import type { ProductionDay } from "@/lib/data/calendar";
+import { useShootStore } from "@/lib/store/useShootStore";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -23,12 +23,12 @@ interface WeekDay {
   hasEvent: boolean;
 }
 
-function getWeekDays(base: Date, offset: number): WeekDay[] {
+function getWeekDays(base: Date, offset: number, days: ProductionDay[] = []): WeekDay[] {
   const dow = base.getDay();
   const mondayDelta = dow === 0 ? -6 : 1 - dow;
   const monday = new Date(base);
   monday.setDate(base.getDate() + mondayDelta + offset * 7);
-  const eventDates = new Set(PRODUCTION_DAYS.map((d) => d.date));
+  const eventDates = new Set(days.map((d) => d.date));
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
@@ -157,17 +157,54 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
 // ── main component ────────────────────────────────────────────────────────────
 
 export function CalendarView() {
+  const { shoot } = useShootStore();
   const today = useMemo(() => toISODate(new Date()), []);
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [weekOffset, setWeekOffset] = useState(0);
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const weekDays = useMemo(() => getWeekDays(new Date(), weekOffset), [weekOffset]);
+  // Build ProductionDay list from published shoot data
+  const productionDays = useMemo<ProductionDay[]>(() => {
+    if (!shoot.isPublished || !shoot.date) return [];
+    const days: ProductionDay[] = [];
+
+    // Current shoot day
+    days.push({
+      id: `j${shoot.shootingDay}`,
+      label: `J${shoot.shootingDay}`,
+      date: shoot.date,
+      location: shoot.location || "—",
+      scenes: shoot.sequences.map((s) => s.label).slice(0, 5),
+      startTime: shoot.callTime || "00:00",
+      endTime: shoot.wrapTime || "00:00",
+      period: "day",
+      status: "confirmed",
+    });
+
+    // Next days from extraction
+    for (const nd of shoot.nextDays) {
+      days.push({
+        id: `j${nd.shootingDay}`,
+        label: `J${nd.shootingDay}`,
+        date: nd.date,
+        location: nd.location || "—",
+        scenes: [],
+        startTime: nd.callTime || "00:00",
+        endTime: "00:00",
+        period: "day",
+        status: "confirmed",
+      });
+    }
+
+    return days;
+  }, [shoot]);
+
+  const weekDays = useMemo(() => getWeekDays(new Date(), weekOffset, productionDays), [weekOffset, productionDays]);
   const monthYear = useMemo(() => frMonthYear(new Date(), weekOffset), [weekOffset]);
 
   const upcomingDays = useMemo(
-    () => PRODUCTION_DAYS.filter((d) => d.date >= today).sort((a, b) => a.date.localeCompare(b.date)),
-    [today]
+    () => productionDays.filter((d) => d.date >= today).sort((a, b) => a.date.localeCompare(b.date)),
+    [productionDays, today]
   );
 
   return (
@@ -229,7 +266,14 @@ export function CalendarView() {
         </h2>
 
         {upcomingDays.length === 0 ? (
-          <p className="text-sm text-muted">Aucun jour de tournage planifié.</p>
+          <div className="glass-card rounded-app p-6 text-center space-y-2">
+            <Film className="w-8 h-8 text-muted mx-auto" />
+            <p className="text-sm text-muted">
+              {shoot.isPublished
+                ? "Aucun jour de tournage à venir."
+                : "La feuille du jour n'a pas encore été publiée."}
+            </p>
+          </div>
         ) : (
           upcomingDays.map((day) => <ProductionDayCard key={day.id} day={day} />)
         )}
