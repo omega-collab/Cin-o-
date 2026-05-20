@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Cin-o- — Feuille de service",
+  title: "CinéO — Feuille de service",
   description: "Gestion interactive pour tournages cinéma et série",
 };
 
