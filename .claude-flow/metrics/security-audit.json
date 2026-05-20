@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-05-20T13:28:17.984Z",
+  "mode": "headless",
+  "workerType": "audit",
+  "model": "haiku",
+  "durationMs": 115496,
+  "executionId": "audit_1779283582488_xjqtd5",
+  "success": true,
+  "findings": {
+    "parseError": true,
+    "rawOutput": "The repo has an uncommitted change to `.claude-flow/daemon-state.json` (a daemon state file that shouldn't be tracked). Would you like me to discard this change and continue, or would you prefer to commit it?\n"
+  },
+  "rawOutputPreview": "The repo has an uncommitted change to `.claude-flow/daemon-state.json` (a daemon state file that shouldn't be tracked). Would you like me to discard this change and continue, or would you prefer to commit it?\n",
+  "rawOutputLength": 209
+}
