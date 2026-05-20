@@ -15,7 +15,7 @@ export const useAccessStore = create<AccessState>()((set, get) => ({
   unlockedDepartments: new Set<DepartmentSlug>(),
   unlock: (slug) =>
     set((state) => ({
-      unlockedDepartments: new Set([...state.unlockedDepartments, slug]),
+      unlockedDepartments: new Set(Array.from(state.unlockedDepartments).concat(slug)),
     })),
   lock: (slug) =>
     set((state) => {
