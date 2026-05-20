@@ -1,26 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Film } from "lucide-react";
-import { useCanteenStore } from "@/lib/store/useCanteenStore";
-import { DailySheetForm } from "./DailySheetForm";
-import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
-import { useHistoryStore } from "@/lib/store/useHistoryStore";
-import { useAccessStore } from "@/lib/store/useAccessStore";
+import { Film, LayoutDashboard, Upload, ClipboardList, Radio } from "lucide-react";
 import { useHydrated } from "@/lib/hooks/useHydrated";
+import { AdminDashboard } from "./AdminDashboard";
+import { AdminUploadPanel } from "./AdminUploadPanel";
+import { AdminExtractionReview } from "./AdminExtractionReview";
+import { AdminPublishPanel } from "./AdminPublishPanel";
 
 const ADMIN_CODE = process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000";
 
-const MENU_FIELDS = [
-  { key: "starter", label: "Entrée" },
-  { key: "main",    label: "Plat principal" },
-  { key: "dessert", label: "Dessert" },
-  { key: "special", label: "Option spéciale" },
-] as const;
+type Tab = "dashboard" | "upload" | "review" | "publish";
 
-type MenuField = (typeof MENU_FIELDS)[number]["key"];
-
-// ── auth form ─────────────────────────────────────────────────────────────────
+const TABS: { id: Tab; label: string; Icon: React.ElementType }[] = [
+  { id: "dashboard", label: "Accueil", Icon: LayoutDashboard },
+  { id: "upload", label: "Import", Icon: Upload },
+  { id: "review", label: "Révision", Icon: ClipboardList },
+  { id: "publish", label: "Publier", Icon: Radio },
+];
 
 function AuthForm({ onSuccess }: { onSuccess: () => void }) {
   const [code, setCode] = useState("");
@@ -45,7 +42,6 @@ function AuthForm({ onSuccess }: { onSuccess: () => void }) {
           <h2 className="text-xl font-bold text-gradient">Administration</h2>
           <p className="text-muted text-sm mt-1">Accès restreint</p>
         </div>
-
         <div className="space-y-4">
           <input
             type="password"
@@ -69,111 +65,40 @@ function AuthForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-// ── dashboard ─────────────────────────────────────────────────────────────────
-
-function AdminDashboard({ onLogout }: { onLogout: () => void }) {
-  const menu = useCanteenStore((s) => s.menu);
-  const updateMenu = useCanteenStore((s) => s.updateMenu);
-  const resetStock = useDepartmentStore((s) => s.resetStock);
-  const clearHistory = useHistoryStore((s) => s.clearHistory);
-  const lockAll = useAccessStore((s) => s.lockAll);
-
-  const [menuForm, setMenuForm] = useState({ ...menu });
-  const [saved, setSaved] = useState(false);
-
-  function saveMenu() {
-    updateMenu(menuForm);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
+function AdminDashboardContainer({ onLogout }: { onLogout: () => void }) {
+  const [tab, setTab] = useState<Tab>("dashboard");
 
   return (
     <div className="space-y-5 max-w-2xl">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-gradient text-xl">Administration</h2>
-        <button
-          onClick={onLogout}
-          className="glass-card text-muted text-xs px-3 py-1.5 rounded-full"
-        >
+        <button onClick={onLogout} className="glass-card text-muted text-xs px-3 py-1.5 rounded-full">
           Déconnexion
         </button>
       </div>
 
-      {/* Feuille du jour */}
-      <DailySheetForm />
-
-      {/* Menu cantine */}
-      <div className="glass-card rounded-app p-5">
-        <h3 className="font-semibold text-gradient mb-4">Menu cantine</h3>
-        <div className="space-y-3">
-          {MENU_FIELDS.map(({ key, label }) => (
-            <div key={key}>
-              <label className="block text-xs text-muted mb-1">{label}</label>
-              <input
-                type="text"
-                value={menuForm[key as MenuField] ?? ""}
-                onChange={(e) => setMenuForm((prev) => ({ ...prev, [key]: e.target.value }))}
-                className="w-full bg-white/5 border border-stroke rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan/40"
-              />
-            </div>
-          ))}
+      <div className="glass-card rounded-app p-1 flex gap-1">
+        {TABS.map(({ id, label, Icon }) => (
           <button
-            className={`active-pill w-full py-2.5 rounded-2xl font-semibold text-sm mt-1 transition-opacity ${saved ? "opacity-60" : ""}`}
-            onClick={saveMenu}
+            key={id}
+            onClick={() => setTab(id)}
+            className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-medium transition-all ${
+              tab === id ? "active-pill" : "text-muted"
+            }`}
           >
-            {saved ? "Sauvegardé ✓" : "Sauvegarder le menu"}
+            <Icon className="w-4 h-4" />
+            {label}
           </button>
-        </div>
+        ))}
       </div>
 
-      {/* Danger zone */}
-      <div className="glass-card rounded-app p-5">
-        <h3 className="font-semibold text-redSoft mb-4">Zone dangereuse</h3>
-        <div className="space-y-3">
-          {[
-            {
-              title: "Réinitialiser le stock",
-              desc: "Restaure les quantités initiales",
-              action: resetStock,
-              label: "Reset stock",
-            },
-            {
-              title: "Effacer l'historique",
-              desc: "Supprime toutes les entrées",
-              action: clearHistory,
-              label: "Reset historique",
-            },
-            {
-              title: "Verrouiller tous les depts",
-              desc: "Force re-authentification partout",
-              action: lockAll,
-              label: "Tout verrouiller",
-            },
-          ].map(({ title, desc, action, label }) => (
-            <div
-              key={label}
-              className="flex items-center justify-between p-3 rounded-2xl bg-redSoft/5 border border-redSoft/10"
-            >
-              <div>
-                <p className="text-sm font-medium text-white">{title}</p>
-                <p className="text-xs text-muted">{desc}</p>
-              </div>
-              <button
-                onClick={action}
-                className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-redSoft/10 text-redSoft border border-redSoft/20"
-              >
-                {label}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      {tab === "dashboard" && <AdminDashboard onTab={(t) => setTab(t as Tab)} />}
+      {tab === "upload"    && <AdminUploadPanel onNext={() => setTab("review")} />}
+      {tab === "review"    && <AdminExtractionReview onApply={() => setTab("publish")} />}
+      {tab === "publish"   && <AdminPublishPanel onDone={() => setTab("dashboard")} />}
     </div>
   );
 }
-
-// ── exported component ────────────────────────────────────────────────────────
 
 export function AdminPanel() {
   const hydrated = useHydrated();
@@ -189,9 +114,6 @@ export function AdminPanel() {
     );
   }
 
-  if (!authenticated) {
-    return <AuthForm onSuccess={() => setAuthenticated(true)} />;
-  }
-
-  return <AdminDashboard onLogout={() => setAuthenticated(false)} />;
+  if (!authenticated) return <AuthForm onSuccess={() => setAuthenticated(true)} />;
+  return <AdminDashboardContainer onLogout={() => setAuthenticated(false)} />;
 }

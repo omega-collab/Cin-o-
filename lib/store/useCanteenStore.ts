@@ -5,11 +5,11 @@ import { persist } from "zustand/middleware";
 import type { CanteenMenu } from "@/lib/types";
 
 const DEFAULT_MENU: CanteenMenu = {
-  date: new Date().toISOString().split("T")[0] ?? "",
-  starter: "Salade verte aux lardons",
-  main: "Poulet rôti, légumes de saison",
-  dessert: "Tarte aux pommes maison",
-  special: "Risotto aux champignons",
+  date: "",
+  starter: "",
+  main: "",
+  dessert: "",
+  special: "",
   shootingLocation: "",
   canteenLocation: "",
 };

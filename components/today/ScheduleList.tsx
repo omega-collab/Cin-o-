@@ -1,7 +1,6 @@
 "use client";
 
 import { useShootStore } from "@/lib/store/useShootStore";
-import { MOCK_SHOOT } from "@/lib/data/mockShoot";
 
 function activeIndex(rows: { time: string }[]): number {
   const now = new Date().toTimeString().slice(0, 5);
@@ -16,27 +15,23 @@ function activeIndex(rows: { time: string }[]): number {
 export function ScheduleList() {
   const shoot = useShootStore((s) => s.shoot);
 
-  const isLive = shoot.isPublished && shoot.sequences.length > 0;
-  const rows = isLive ? shoot.sequences : MOCK_SHOOT.sequences;
+  if (!shoot.isPublished || shoot.sequences.length === 0) return null;
+
+  const rows = shoot.sequences;
   const active = activeIndex(rows);
 
   return (
     <div className="glass-card rounded-app p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-white">
-          Déroulé de la journée
-        </h3>
-        {isLive && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyanSoft text-cyan">
-            En direct
-          </span>
-        )}
+        <h3 className="text-sm font-semibold text-white">Déroulé de la journée</h3>
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyanSoft text-cyan">
+          En direct
+        </span>
       </div>
 
       <div className="space-y-0">
         {rows.map((row, idx) => {
           const isActive = idx === active;
-
           return (
             <div
               key={row.id}
@@ -45,18 +40,10 @@ export function ScheduleList() {
               }`}
               style={{ gridTemplateColumns: "50px 1fr 72px" }}
             >
-              <span
-                className={`font-mono text-xs tabular-nums ${
-                  isActive ? "text-cyan font-semibold" : "text-muted"
-                }`}
-              >
+              <span className={`font-mono text-xs tabular-nums ${isActive ? "text-cyan font-semibold" : "text-muted"}`}>
                 {row.time}
               </span>
-              <span
-                className={`text-sm truncate ${
-                  isActive ? "text-cyan font-semibold" : "text-textSoft"
-                }`}
-              >
+              <span className={`text-sm truncate ${isActive ? "text-cyan font-semibold" : "text-textSoft"}`}>
                 {row.label}
               </span>
               <span className="text-xs text-muted text-right truncate">
