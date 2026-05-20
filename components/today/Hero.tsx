@@ -2,8 +2,9 @@
 
 import { MapPin, Clock3, Utensils, Film } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
-import { useDailyStore } from "@/lib/store/useDailyStore";
+import { useShootStore } from "@/lib/store/useShootStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
+import { MOCK_SHOOT } from "@/lib/data/mockShoot";
 
 function InfoPill({
   icon,
@@ -28,26 +29,27 @@ function InfoPill({
 export function Hero() {
   const department = useUserStore((s) => s.department);
   const role = useUserStore((s) => s.role);
-  const shoot = useDailyStore((s) => s.shoot);
+  const shoot = useShootStore((s) => s.shoot);
 
   const dept = DEPARTMENTS.find((d) => d.slug === department);
 
-  const title = shoot.isPublished && shoot.projectTitle
-    ? `${shoot.projectTitle} – Jour ${shoot.shootingDay}`
-    : "BANDI – Jour 12";
+  const demo = MOCK_SHOOT;
+  const isLive = shoot.isPublished && !!shoot.projectTitle;
 
-  const location = shoot.isPublished && shoot.location
-    ? shoot.location
-    : "Plateaux des Lilas, Studio 3";
+  const title = isLive
+    ? `${shoot.projectTitle}${shoot.series ? ` – ${shoot.series}` : ""} – Jour ${shoot.shootingDay}`
+    : `${demo.projectTitle} – Jour ${demo.shootingDay}`;
 
-  const callTime = shoot.isPublished ? shoot.callTime : "07:00";
-  const mealTime = shoot.isPublished ? shoot.mealTime : "12:30";
+  const location = isLive ? shoot.location : demo.location;
+  const callTime = isLive ? shoot.callTime : demo.callTime;
+  const mealTime = isLive ? shoot.mealTime : demo.mealTime;
 
-  const nextSeq = shoot.isPublished ? (shoot.sequences[0] ?? null) : null;
+  const sequences = isLive ? shoot.sequences : demo.sequences;
+  const nextSeq = sequences[0] ?? null;
 
-  const seqTitle = nextSeq?.label ?? "Séq. 32 – Scène 6";
-  const seqLocation = nextSeq?.location ?? "INT. APPARTEMENT – SALON – NUIT";
-  const seqTime = nextSeq?.time ?? "08:30";
+  const seqTitle = nextSeq?.label ?? "–";
+  const seqLocation = nextSeq?.location ?? "";
+  const seqTime = nextSeq?.time ?? "–";
 
   return (
     <div className="space-y-3">
@@ -96,9 +98,9 @@ export function Hero() {
           </p>
         </div>
 
-        {!shoot.isPublished && (
+        {!isLive && (
           <p className="text-xs text-muted italic">
-            L'admin n'a pas encore publié la feuille du jour.
+            Données démo — l'admin n'a pas encore publié la feuille du jour.
           </p>
         )}
       </div>

@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
             data: doc.base64,
           },
           title: doc.filename,
-        } as Anthropic.Messages.RequestDocumentBlock);
+        } as Anthropic.Messages.DocumentBlockParam);
       } else if (doc.mediaType.startsWith("image/")) {
         contentBlocks.push({
           type: "image",
