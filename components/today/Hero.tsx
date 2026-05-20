@@ -1,6 +1,8 @@
 "use client";
 
 import { MapPin, Clock3, Utensils, Film } from "lucide-react";
+import { useUserStore } from "@/lib/store/useUserStore";
+import { DEPARTMENTS } from "@/lib/data/departments";
 
 function InfoPill({
   icon,
@@ -25,10 +27,26 @@ function InfoPill({
 const TAGS = ["Caméra A", "25mm", "Steadicam", "2 3/8"];
 
 export function Hero() {
+  const department = useUserStore((s) => s.department);
+  const role = useUserStore((s) => s.role);
+
+  const dept = DEPARTMENTS.find((d) => d.slug === department);
+
   return (
     <div className="space-y-3">
-      {/* Title + location */}
+      {/* Department badge + title */}
       <div>
+        {dept && (
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-lg leading-none">{dept.icon}</span>
+            <span className="text-xs font-semibold text-cyan uppercase tracking-widest">
+              {dept.name}
+            </span>
+            {role && (
+              <span className="text-xs text-muted">· {role}</span>
+            )}
+          </div>
+        )}
         <h1 className="text-3xl font-bold text-gradient leading-tight">
           BANDI – Jour 12
         </h1>
@@ -42,13 +60,20 @@ export function Hero() {
 
       {/* Info pills */}
       <div className="grid grid-cols-2 gap-3">
-        <InfoPill icon={<Clock3 className="w-4 h-4" />} label="Call Time" value="07:00" />
-        <InfoPill icon={<Utensils className="w-4 h-4" />} label="Repas" value="12:30" />
+        <InfoPill
+          icon={<Clock3 className="w-4 h-4" />}
+          label="Call Time"
+          value="07:00"
+        />
+        <InfoPill
+          icon={<Utensils className="w-4 h-4" />}
+          label="Repas"
+          value="12:30"
+        />
       </div>
 
       {/* Prochaine séquence */}
       <div className="glass-card-strong rounded-app p-4 space-y-3">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Film className="w-4 h-4 text-cyan" />
@@ -61,7 +86,6 @@ export function Hero() {
           </span>
         </div>
 
-        {/* Sequence title */}
         <div>
           <p className="text-2xl font-bold text-white leading-tight">
             Séq. 32 – Scène 6
@@ -71,13 +95,11 @@ export function Hero() {
           </p>
         </div>
 
-        {/* Description */}
         <p className="text-sm text-textSoft leading-relaxed">
           Confrontation entre Amara et sa mère. Lumière naturelle simulée,
           ambiance intime. Priorité au jeu d'acteur.
         </p>
 
-        {/* Tag chips */}
         <div className="flex flex-wrap gap-1.5">
           {TAGS.map((tag) => (
             <span

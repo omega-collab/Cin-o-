@@ -2,6 +2,9 @@
 
 import { Nav } from "./Nav";
 import { Header } from "./Header";
+import { OnboardingScreen } from "@/components/onboarding/OnboardingScreen";
+import { useUserStore } from "@/lib/store/useUserStore";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 
 interface ShellProps {
   children: React.ReactNode;
@@ -10,6 +13,15 @@ interface ShellProps {
 }
 
 export function Shell({ children, title, subtitle }: ShellProps) {
+  const hydrated = useHydrated();
+  const onboardingDone = useUserStore((s) => s.onboardingDone);
+
+  // Wait for localStorage hydration to avoid flash
+  if (!hydrated) return null;
+
+  // New user → show onboarding before anything else
+  if (!onboardingDone) return <OnboardingScreen />;
+
   return (
     <div className="flex min-h-screen">
       <Nav />
