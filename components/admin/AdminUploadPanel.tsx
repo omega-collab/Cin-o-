@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, Trash2, FileText, Image, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
 import type { UploadedDoc } from "@/lib/types/shoot";
 
@@ -11,6 +11,19 @@ const TYPE_LABELS: Record<UploadedDoc["type"], string> = {
   implantation: "Implantation",
   autre: "Autre",
 };
+
+const TYPE_DESC: Record<UploadedDoc["type"], string> = {
+  feuille_service: "Horaires, lieux, séquences, notes depts",
+  jour_a_jour: "Détail scène par scène, casting précis",
+  implantation: "Plan des lieux, distances, stationnement",
+  autre: "",
+};
+
+const DOC_SLOTS: { type: UploadedDoc["type"]; icon: string; required: boolean }[] = [
+  { type: "feuille_service", icon: "📋", required: true },
+  { type: "jour_a_jour", icon: "🎬", required: true },
+  { type: "implantation", icon: "🗺️", required: false },
+];
 
 const ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp";
 
@@ -111,18 +124,59 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
 
   return (
     <div className="space-y-4">
-      {/* Drop zone */}
+      {/* Guide 3 documents */}
+      <div className="space-y-2">
+        {DOC_SLOTS.map((slot) => {
+          const loaded = docs.find((d) => d.type === slot.type);
+          return (
+            <div
+              key={slot.type}
+              className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                loaded
+                  ? "bg-cyanSoft/20 border-cyan/30"
+                  : "glass-card border-stroke"
+              }`}
+            >
+              <span className="text-xl shrink-0">{slot.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold ${loaded ? "text-cyan" : "text-white"}`}>
+                  {TYPE_LABELS[slot.type]}
+                  {slot.required && <span className="text-redSoft ml-1 text-xs">*</span>}
+                </p>
+                <p className="text-xs text-muted truncate">{TYPE_DESC[slot.type]}</p>
+              </div>
+              {loaded ? (
+                <div className="flex items-center gap-2 shrink-0">
+                  <p className="text-xs text-muted truncate max-w-[80px]">{loaded.filename}</p>
+                  <button onClick={() => removeDoc(loaded.id)} className="text-muted hover:text-redSoft">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => inputRef.current?.click()}
+                  className="text-xs text-cyan glass-card px-2.5 py-1 rounded-lg shrink-0"
+                >
+                  Importer
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Drop zone (si doc "autre" ou ajout supplémentaire) */}
       {docs.length < 3 && (
         <div
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           onClick={() => inputRef.current?.click()}
-          className="glass-card rounded-app border-2 border-dashed border-stroke hover:border-cyan/40 transition-colors p-8 flex flex-col items-center gap-3 cursor-pointer"
+          className="glass-card rounded-app border-2 border-dashed border-stroke hover:border-cyan/40 transition-colors p-5 flex items-center gap-3 cursor-pointer"
         >
-          <Upload className="w-8 h-8 text-muted" />
-          <div className="text-center">
-            <p className="text-sm text-textSoft font-medium">Déposer ou cliquer pour importer</p>
-            <p className="text-xs text-muted mt-1">PDF, JPG, PNG — max 20 Mo · {3 - docs.length} emplacement(s) libre(s)</p>
+          <Upload className="w-5 h-5 text-muted shrink-0" />
+          <div>
+            <p className="text-sm text-textSoft font-medium">Déposer un document</p>
+            <p className="text-xs text-muted">PDF, JPG, PNG — max 20 Mo</p>
           </div>
           <input
             ref={inputRef}
@@ -135,60 +189,12 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
         </div>
       )}
 
-      {/* Doc list */}
+      {/* Reset rapide */}
       {docs.length > 0 && (
-        <div className="space-y-2">
-          {docs.map((doc) => (
-            <div key={doc.id} className="glass-card rounded-app p-3 flex items-center gap-3">
-              {doc.mediaType?.startsWith("image/") ? (
-                <Image className="w-4 h-4 text-muted shrink-0" />
-              ) : (
-                <FileText className="w-4 h-4 text-muted shrink-0" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-white truncate">{doc.filename}</p>
-                <select
-                  value={doc.type}
-                  onChange={(e) => {
-                    const newType = e.target.value as UploadedDoc["type"];
-                    useShootStore.setState((s) => ({
-                      shoot: {
-                        ...s.shoot,
-                        uploadedDocs: s.shoot.uploadedDocs.map((d) =>
-                          d.id === doc.id ? { ...d, type: newType } : d
-                        ),
-                      },
-                    }));
-                  }}
-                  className="mt-1 text-xs bg-white/5 border border-stroke rounded-lg px-2 py-0.5 text-muted focus:outline-none"
-                >
-                  {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                    <option key={k} value={k} className="bg-appBg">
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <p className="text-xs text-muted shrink-0">
-                {(doc.size / 1024).toFixed(0)} Ko
-              </p>
-              <button
-                onClick={() => removeDoc(doc.id)}
-                className="text-muted hover:text-redSoft shrink-0"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={() => clearDocs()}
-              className="glass-card text-muted text-xs px-3 py-1.5 rounded-full"
-            >
-              Tout supprimer
-            </button>
-          </div>
+        <div className="flex justify-end">
+          <button onClick={() => clearDocs()} className="text-xs text-muted">
+            Tout effacer
+          </button>
         </div>
       )}
 

@@ -4,68 +4,116 @@ import type { ExtractionResult } from "@/lib/types/shoot";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const EXTRACTION_PROMPT = `Tu es un assistant spécialisé dans l'extraction de données de feuilles de service cinématographiques françaises.
+const EXTRACTION_PROMPT = `Tu es un assistant expert en production cinématographique française. Tu reçois jusqu'à trois documents complémentaires pour une même journée de tournage :
 
-Analyse le ou les documents fournis (feuilles de service, jour-à-jour, implantation) et extrais les informations structurées.
+1. FEUILLE DE SERVICE — document principal : titre, dates, horaires généraux (call time, repas, fin), lieu principal, météo, informations logistiques (loges, cantine, parking), liste des séquences avec horaires approximatifs, notes par département.
+2. JOUR-À-JOUR — détail séquence par séquence : description narrative de chaque scène, liste précise des comédiens par séquence, dialogues ou action clé, durée estimée, décors intérieurs/extérieurs.
+3. IMPLANTATION — plan des lieux : positions des véhicules (VL, PL), cantine, loges (HMC), groupe électro, distances, accès, contraintes de stationnement.
 
-Réponds UNIQUEMENT avec un objet JSON valide respectant exactement ce schéma. Pour chaque champ, indique une confiance : "high" (trouvé clairement), "medium" (déduit), "low" (incertain). Omets les champs introuvables.
+INSTRUCTIONS DE FUSION :
+- Prends la feuille de service comme base pour les informations générales (titre, jour, date, horaires, lieu, météo).
+- Enrichis chaque séquence avec les détails du jour-à-jour : fusionne les deux sur le numéro/label de séquence commun (ex : "Séq 802" apparaît dans les deux docs → une seule entrée enrichie).
+- Extrais tous les lieux/distances de l'implantation dans le champ "places".
+- Si une information apparaît dans plusieurs docs, privilégie la plus précise.
+- Ne crée pas de doublons : une séquence = une entrée dans "sequences".
+- Le casting global va dans "cast", le casting par séquence va dans "sequences[].cast".
+- Les notes logistiques par département vont dans "deptNotes".
+- Les contraintes météo, drone, sécurité vont dans "alerts".
+- Les jours suivants (J+1, J+2) mentionnés dans la feuille de service vont dans "nextDays".
 
-Schéma JSON à retourner :
+Réponds UNIQUEMENT avec un objet JSON valide. Pour chaque champ, indique la confiance : "high" (trouvé clairement), "medium" (déduit/croisé), "low" (incertain). Omets les champs introuvables.
+
+Schéma JSON :
 {
   "projectTitle": { "value": "string", "confidence": "high|medium|low" },
   "series": { "value": "string", "confidence": "high|medium|low" },
   "shootingDay": { "value": number, "confidence": "high|medium|low" },
   "totalDays": { "value": number, "confidence": "high|medium|low" },
   "date": { "value": "YYYY-MM-DD", "confidence": "high|medium|low" },
-  "location": { "value": "string", "confidence": "high|medium|low" },
+  "location": { "value": "string — lieu principal du tournage", "confidence": "high|medium|low" },
   "callTime": { "value": "HH:MM", "confidence": "high|medium|low" },
   "mealTime": { "value": "HH:MM", "confidence": "high|medium|low" },
   "wrapTime": { "value": "HH:MM", "confidence": "high|medium|low" },
   "weather": { "value": "string", "confidence": "high|medium|low" },
-  "logeLocation": { "value": "string", "confidence": "high|medium|low" },
-  "canteenLocation": { "value": "string", "confidence": "high|medium|low" },
+  "logeLocation": { "value": "string — adresse ou nom du lieu loges/HMC", "confidence": "high|medium|low" },
+  "canteenLocation": { "value": "string — emplacement de la cantine", "confidence": "high|medium|low" },
   "sequences": {
     "value": [
-      { "id": "uuid", "time": "HH:MM", "label": "string", "location": "string", "cast": ["string"], "notes": "string" }
+      {
+        "id": "s1",
+        "time": "HH:MM — heure de début prévue",
+        "label": "string — ex: Séq. 802 – Découverte du corps",
+        "location": "string — INT./EXT. DÉCOR – MOMENT",
+        "cast": ["string — prénom ou nom du personnage"],
+        "notes": "string — infos spécifiques à cette séquence (optionnel)"
+      }
     ],
     "confidence": "high|medium|low"
   },
   "cast": {
     "value": [
-      { "id": "uuid", "name": "string", "role": "string", "callTime": "HH:MM", "logeLocation": "string" }
+      {
+        "id": "c1",
+        "name": "string — nom du comédien",
+        "role": "string — nom du personnage",
+        "callTime": "HH:MM",
+        "logeLocation": "string — loge attribuée (optionnel)"
+      }
     ],
     "confidence": "high|medium|low"
   },
   "deptNotes": {
     "value": [
-      { "id": "uuid", "department": "string", "content": "string", "priority": "info|warning|critical" }
+      {
+        "id": "d1",
+        "department": "string — ex: Électro, Son, Régie, HMC, Caméra",
+        "content": "string — instruction ou info pour ce département",
+        "priority": "info|warning|critical"
+      }
     ],
     "confidence": "high|medium|low"
   },
   "places": {
     "value": [
-      { "id": "uuid", "label": "string", "description": "string", "distance": "string" }
+      {
+        "id": "p1",
+        "label": "string — ex: Parking VL, Cantine, HMC, Groupe électro",
+        "description": "string — adresse ou description précise",
+        "distance": "string — distance par rapport au décor (optionnel)"
+      }
     ],
     "confidence": "high|medium|low"
   },
   "alerts": {
     "value": [
-      { "id": "uuid", "severity": "info|warning|critical", "message": "string", "department": "string" }
+      {
+        "id": "a1",
+        "severity": "info|warning|critical",
+        "message": "string — message court et clair",
+        "department": "string — département concerné (optionnel)"
+      }
     ],
     "confidence": "high|medium|low"
   },
   "nextDays": {
     "value": [
-      { "date": "YYYY-MM-DD", "shootingDay": number, "location": "string", "callTime": "HH:MM", "summary": "string" }
+      {
+        "date": "YYYY-MM-DD",
+        "shootingDay": number,
+        "location": "string",
+        "callTime": "HH:MM",
+        "summary": "string — résumé du jour suivant (optionnel)"
+      }
     ],
     "confidence": "high|medium|low"
   }
 }
 
-Pour les champs "id" dans les tableaux, génère des identifiants courts uniques (ex: "s1", "c1", "d1").
-Convertis les heures en format HH:MM (ex: "8h30" → "08:30").
-Convertis les dates en format YYYY-MM-DD.
-Pour la priorité des notes départements : "critical" si urgent/danger, "warning" si attention requise, "info" sinon.`;
+Règles de format :
+- IDs courts et uniques : s1/s2… c1/c2… d1/d2… p1/p2… a1/a2…
+- Heures en HH:MM (ex: "8h30" → "08:30", "8H00" → "08:00")
+- Dates en YYYY-MM-DD
+- priority "critical" = danger/urgence, "warning" = attention requise, "info" = information générale`;
 
 interface DocInput {
   base64: string;
