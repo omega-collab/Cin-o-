@@ -43,6 +43,6 @@ export const useDepartmentStore = create<DepartmentState>()(
         }),
       resetStock: () => set({ stock: INITIAL_STOCK, movements: [] }),
     }),
-    { name: "cin-o-departments" }
+    { name: "cin-o-departments", version: 2 }
   )
 );

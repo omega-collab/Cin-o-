@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, Info, Plus, Trash2 } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
 import type { ShootSequence, CastMember, DeptNote, PlacePoint, ShootAlert } from "@/lib/types/shoot";
@@ -71,6 +71,12 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
   } = useShootStore();
 
   const [applied, setApplied] = useState(false);
+
+  // Pre-apply extraction on mount so all sections are editable immediately
+  useEffect(() => {
+    if (pendingExtraction) applyPendingExtraction();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const seqs = shoot.sequences;
   const cast = shoot.cast;
