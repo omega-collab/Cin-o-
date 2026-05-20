@@ -76,63 +76,13 @@ export const DEPARTMENTS: Department[] = [
 ];
 
 export const INITIAL_STOCK: Record<string, StockItem[]> = {
-  camera: [
-    { id: "c1", name: "Caméra principale ARRI Alexa", quantity: 1, unit: "unité", status: "ok" },
-    { id: "c2", name: "Objectifs Zeiss (set)", quantity: 1, unit: "set", status: "ok" },
-    { id: "c3", name: "Batteries V-Mount", quantity: 8, unit: "unités", status: "ok" },
-    { id: "c4", name: "Cartes CFexpress 256Go", quantity: 4, unit: "cartes", status: "low" },
-    { id: "c5", name: "Trépied Sachtler", quantity: 2, unit: "unités", status: "ok" },
-    { id: "c6", name: "Follow focus", quantity: 1, unit: "unité", status: "ok" },
-  ],
-  electro: [
-    { id: "e1", name: "HMI 1200W", quantity: 3, unit: "unités", status: "ok" },
-    { id: "e2", name: "LED ARRI SkyPanel S60", quantity: 4, unit: "unités", status: "ok" },
-    { id: "e3", name: "Câbles 63A (10m)", quantity: 6, unit: "câbles", status: "ok" },
-    { id: "e4", name: "Diffusion Chimera", quantity: 2, unit: "boîtes", status: "low" },
-    { id: "e5", name: "Gélatines (set)", quantity: 1, unit: "set", status: "ok" },
-  ],
-  machino: [
-    { id: "m1", name: "Dolly Chapman", quantity: 1, unit: "unité", status: "ok" },
-    { id: "m2", name: "Rails droits (1.2m)", quantity: 8, unit: "sections", status: "ok" },
-    { id: "m3", name: "Tête fluide", quantity: 2, unit: "unités", status: "ok" },
-    { id: "m4", name: "Steadicam Master", quantity: 1, unit: "unité", status: "ok" },
-    { id: "m5", name: "Bras télescopique", quantity: 1, unit: "unité", status: "ok" },
-  ],
-  son: [
-    { id: "s1", name: "Perche Rode NTG5", quantity: 2, unit: "unités", status: "ok" },
-    { id: "s2", name: "Enregistreur Sound Devices 833", quantity: 1, unit: "unité", status: "ok" },
-    { id: "s3", name: "Micros lavallier DPA 4060", quantity: 6, unit: "unités", status: "ok" },
-    { id: "s4", name: "Piles AA (pack)", quantity: 3, unit: "packs", status: "low" },
-    { id: "s5", name: "Câbles XLR (5m)", quantity: 10, unit: "câbles", status: "ok" },
-  ],
-  regie: [
-    { id: "r1", name: "Walkies Motorola (jeu)", quantity: 8, unit: "unités", status: "ok" },
-    { id: "r2", name: "Megaphone", quantity: 1, unit: "unité", status: "ok" },
-    { id: "r3", name: "Clapets de tournage", quantity: 4, unit: "unités", status: "ok" },
-    { id: "r4", name: "Feuilles de service (rame)", quantity: 2, unit: "rames", status: "ok" },
-  ],
-  deco: [
-    { id: "d1", name: "Peinture blanche (pot 5L)", quantity: 4, unit: "pots", status: "ok" },
-    { id: "d2", name: "Tissu fond noir (rouleau)", quantity: 2, unit: "rouleaux", status: "ok" },
-    { id: "d3", name: "Gaffer tape noir", quantity: 6, unit: "rouleaux", status: "low" },
-    { id: "d4", name: "Cadres photo (assortis)", quantity: 12, unit: "unités", status: "ok" },
-  ],
-  hmc: [
-    { id: "h1", name: "Fond de teint (gamme)", quantity: 1, unit: "set", status: "ok" },
-    { id: "h2", name: "Poudre fixante", quantity: 3, unit: "unités", status: "ok" },
-    { id: "h3", name: "Chaises maquillage", quantity: 2, unit: "unités", status: "ok" },
-    { id: "h4", name: "Miroirs éclairés", quantity: 2, unit: "unités", status: "ok" },
-  ],
-  production: [
-    { id: "p1", name: "Véhicules de prod (van)", quantity: 2, unit: "véhicules", status: "ok" },
-    { id: "p2", name: "Ordinateurs portables", quantity: 3, unit: "unités", status: "ok" },
-    { id: "p3", name: "Imprimante portable", quantity: 1, unit: "unité", status: "ok" },
-    { id: "p4", name: "Disques durs externes 4To", quantity: 4, unit: "unités", status: "ok" },
-  ],
-  cantine: [
-    { id: "ca1", name: "Eau en bouteille (pack 6x1.5L)", quantity: 20, unit: "packs", status: "ok" },
-    { id: "ca2", name: "Café (kg)", quantity: 3, unit: "kg", status: "ok" },
-    { id: "ca3", name: "Snacks assortis (boîte)", quantity: 5, unit: "boîtes", status: "low" },
-    { id: "ca4", name: "Gobelets jetables (pack 100)", quantity: 4, unit: "packs", status: "ok" },
-  ],
+  camera: [],
+  electro: [],
+  machino: [],
+  son: [],
+  regie: [],
+  deco: [],
+  hmc: [],
+  production: [],
+  cantine: [],
 };

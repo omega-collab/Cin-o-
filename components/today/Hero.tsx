@@ -51,7 +51,6 @@ export function Hero() {
           <div>
             <h1 className="text-3xl font-bold text-gradient leading-tight">
               {shoot.projectTitle}
-              {shoot.series ? ` – ${shoot.series}` : ""}
             </h1>
             <p className="text-sm text-cyan font-semibold mt-0.5">
               Jour {shoot.shootingDay}{shoot.totalDays ? `/${shoot.totalDays}` : ""}
