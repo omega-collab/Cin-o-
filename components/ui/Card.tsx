@@ -10,10 +10,14 @@ export function Card({ children, className, onClick }: CardProps) {
   return (
     <div
       className={cn(
-        "bg-white rounded-xl border border-slate-200 shadow-sm",
-        onClick && "cursor-pointer hover:shadow-md transition-shadow",
+        "rounded-2xl",
+        onClick && "cursor-pointer transition-opacity hover:opacity-90",
         className
       )}
+      style={{
+        background: "#13141F",
+        border: "1px solid rgba(255,255,255,0.07)",
+      }}
       onClick={onClick}
     >
       {children}

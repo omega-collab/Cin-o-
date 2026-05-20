@@ -17,6 +17,15 @@ const config: Config = {
           700: "#7e22ce",
           900: "#581c87",
         },
+        cineo: {
+          bg: "#0B0C14",
+          card: "#13141F",
+          "card-inner": "#1C1D2B",
+          teal: "#00D4B4",
+          "teal-hover": "#00BFA3",
+          muted: "#5A5B72",
+          border: "rgba(255,255,255,0.07)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],

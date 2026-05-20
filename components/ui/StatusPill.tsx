@@ -5,13 +5,16 @@ interface StatusPillProps {
   label?: string;
 }
 
-const STATUS_CONFIG = {
-  ok: { label: "OK", className: "bg-green-100 text-green-700" },
-  low: { label: "Bas", className: "bg-yellow-100 text-yellow-700" },
-  out: { label: "Épuisé", className: "bg-red-100 text-red-700" },
-  info: { label: "Info", className: "bg-blue-100 text-blue-700" },
-  warning: { label: "Attention", className: "bg-yellow-100 text-yellow-700" },
-  critical: { label: "Critique", className: "bg-red-100 text-red-700" },
+const STATUS_CONFIG: Record<
+  StatusPillProps["status"],
+  { label: string; style: React.CSSProperties }
+> = {
+  ok:       { label: "OK",       style: { background: "rgba(0,200,150,0.15)",  color: "#00C896" } },
+  low:      { label: "Bas",      style: { background: "rgba(245,158,11,0.15)", color: "#F59E0B" } },
+  out:      { label: "Épuisé",   style: { background: "rgba(239,68,68,0.15)",  color: "#EF4444" } },
+  info:     { label: "Info",     style: { background: "rgba(59,130,246,0.15)", color: "#3B82F6" } },
+  warning:  { label: "Attention",style: { background: "rgba(245,158,11,0.15)", color: "#F59E0B" } },
+  critical: { label: "Critique", style: { background: "rgba(239,68,68,0.15)",  color: "#EF4444" } },
 };
 
 export function StatusPill({ status, label }: StatusPillProps) {
@@ -19,9 +22,9 @@ export function StatusPill({ status, label }: StatusPillProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-        config.className
+        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
       )}
+      style={config.style}
     >
       {label ?? config.label}
     </span>

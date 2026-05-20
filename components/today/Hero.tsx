@@ -1,46 +1,109 @@
-import { formatDate } from "@/lib/utils";
-import { TODAY_ALERTS } from "@/lib/data/schedule";
+"use client";
+
+import { TODAY_SCHEDULE } from "@/lib/data/schedule";
+import { useEffect, useState } from "react";
 
 export function Hero() {
-  const today = formatDate(new Date().toISOString());
-  const criticalCount = TODAY_ALERTS.filter((a) => a.severity === "critical").length;
-  const warningCount = TODAY_ALERTS.filter((a) => a.severity === "warning").length;
+  const [time, setTime] = useState<string>("");
+
+  useEffect(() => {
+    const tick = () =>
+      setTime(
+        new Date().toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      );
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Call time = first sequence of the day
+  const firstSeq = TODAY_SCHEDULE[0];
+  const callTime = firstSeq?.time ?? "07:00";
 
   return (
-    <div className="bg-gradient-to-r from-purple-700 to-purple-900 rounded-2xl p-6 text-white">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-purple-300 text-sm font-medium uppercase tracking-wider">
-            Feuille de service
-          </p>
-          <h2 className="text-2xl font-bold mt-1 capitalize">{today}</h2>
-          <p className="text-purple-200 mt-2 text-sm">
-            Tournage en cours · Paris
-          </p>
-        </div>
-        <div className="text-right">
-          <div className="text-3xl font-mono font-bold">
-            {new Date().toLocaleTimeString("fr-FR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+    <div
+      className="rounded-2xl p-5 relative overflow-hidden"
+      style={{ background: "#13141F", border: "1px solid rgba(255,255,255,0.07)" }}
+    >
+      {/* Top row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          {/* Title + badge */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-base font-bold text-white tracking-tight">
+              🎬 BANDI — Jour 12
+            </span>
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full tracking-widest uppercase"
+              style={{ background: "rgba(0,212,180,0.15)", color: "#00D4B4" }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ background: "#00D4B4" }}
+              />
+              En tournage
+            </span>
           </div>
+
+          {/* Location */}
+          <p
+            className="mt-1.5 text-sm"
+            style={{ color: "#8B8CA8" }}
+          >
+            📍 Plateaux des Lilas, Studio 3
+          </p>
         </div>
+
+        {/* Live clock */}
+        {time && (
+          <div
+            className="font-mono text-3xl font-bold tabular-nums shrink-0 leading-none"
+            style={{ color: "#FFFFFF" }}
+          >
+            {time}
+          </div>
+        )}
       </div>
-      {(criticalCount > 0 || warningCount > 0) && (
-        <div className="mt-4 flex gap-2">
-          {criticalCount > 0 && (
-            <span className="bg-red-500/30 text-red-200 text-xs font-medium px-2.5 py-1 rounded-full">
-              🔴 {criticalCount} critique{criticalCount > 1 ? "s" : ""}
-            </span>
-          )}
-          {warningCount > 0 && (
-            <span className="bg-yellow-500/30 text-yellow-200 text-xs font-medium px-2.5 py-1 rounded-full">
-              ⚠️ {warningCount} attention{warningCount > 1 ? "s" : ""}
-            </span>
-          )}
-        </div>
-      )}
+
+      {/* Info pills */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <InfoPill icon="⏰" label="CALL TIME" value={callTime} />
+        <InfoPill icon="🍽" label="REPAS" value="12:30" />
+      </div>
+    </div>
+  );
+}
+
+function InfoPill({
+  icon,
+  label,
+  value,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-2 rounded-xl"
+      style={{ background: "#1C1D2B" }}
+    >
+      <span className="text-sm">{icon}</span>
+      <span
+        className="text-[10px] font-semibold uppercase tracking-widest"
+        style={{ color: "#8B8CA8" }}
+      >
+        {label}
+      </span>
+      <span
+        className="font-mono text-sm font-bold"
+        style={{ color: "#00D4B4" }}
+      >
+        {value}
+      </span>
     </div>
   );
 }

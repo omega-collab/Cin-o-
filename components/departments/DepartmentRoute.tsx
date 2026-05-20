@@ -7,8 +7,6 @@ import { DEPARTMENTS } from "@/lib/data/departments";
 import { useAccessStore } from "@/lib/store/useAccessStore";
 import { verifyDepartmentCode } from "@/lib/services/auth.service";
 import { DepartmentDetail } from "./DepartmentDetail";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 
 interface DepartmentRouteProps {
   slug: DepartmentSlug;
@@ -47,14 +45,45 @@ export function DepartmentRoute({ slug }: DepartmentRouteProps) {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <Card className="p-8 w-full max-w-sm">
-        <div className="text-center mb-6">
-          <span className="text-4xl">{dept.icon}</span>
-          <h2 className="mt-2 text-xl font-bold text-slate-900">{dept.name}</h2>
-          <p className="text-slate-500 text-sm mt-1">Accès protégé par code</p>
+    <div
+      className="flex items-center justify-center min-h-screen px-4"
+      style={{ backgroundColor: "#0B0C14" }}
+    >
+      {/* Central card */}
+      <div
+        className="w-full max-w-sm px-6 py-8"
+        style={{
+          backgroundColor: "#13141F",
+          borderRadius: "24px",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+          border: "1px solid rgba(255,255,255,0.07)",
+        }}
+      >
+        {/* Icon + name */}
+        <div className="flex flex-col items-center mb-7">
+          <span
+            className="text-6xl leading-none select-none mb-4"
+            role="img"
+            aria-label={dept.name}
+          >
+            {dept.icon}
+          </span>
+          <h2
+            className="text-xl font-bold text-center"
+            style={{ color: "#FFFFFF" }}
+          >
+            {dept.name}
+          </h2>
+          <p
+            className="text-sm mt-1 text-center"
+            style={{ color: "rgba(255,255,255,0.4)" }}
+          >
+            Accès protégé par code
+          </p>
         </div>
+
         <form onSubmit={handleUnlock} className="space-y-4">
+          {/* Code input */}
           <div>
             <input
               type="password"
@@ -62,25 +91,54 @@ export function DepartmentRoute({ slug }: DepartmentRouteProps) {
               maxLength={6}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="Code département"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-center text-2xl font-mono tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-purple-400"
+              placeholder="••••••"
+              className="w-full text-center font-mono focus:outline-none transition-all"
+              style={{
+                backgroundColor: "#1C1D2B",
+                color: "#FFFFFF",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "14px",
+                fontSize: "2em",
+                letterSpacing: "0.5em",
+                minHeight: "64px",
+                caretColor: "#00D4B4",
+              }}
               autoFocus
             />
             {error && (
-              <p className="text-red-500 text-sm mt-1.5 text-center">{error}</p>
+              <p
+                className="text-sm mt-2 text-center font-medium"
+                style={{ color: "#EF4444" }}
+              >
+                {error}
+              </p>
             )}
           </div>
-          <Button type="submit" className="w-full" disabled={loading || code.length === 0}>
+
+          {/* Submit button */}
+          <button
+            type="submit"
+            disabled={loading || code.length === 0}
+            className="w-full font-semibold text-base rounded-xl transition-opacity disabled:opacity-40"
+            style={{
+              backgroundColor: "#00D4B4",
+              color: "#0B0C14",
+              minHeight: "52px",
+            }}
+          >
             {loading ? "Vérification…" : "Accéder"}
-          </Button>
+          </button>
         </form>
+
+        {/* Back */}
         <button
           onClick={() => router.back()}
-          className="mt-4 w-full text-sm text-slate-400 hover:text-slate-600 transition-colors text-center"
+          className="mt-4 w-full text-sm text-center transition-opacity active:opacity-60"
+          style={{ color: "rgba(255,255,255,0.35)", minHeight: "44px" }}
         >
           ← Retour
         </button>
-      </Card>
+      </div>
     </div>
   );
 }
