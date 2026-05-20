@@ -7,8 +7,6 @@ import { DEPARTMENTS } from "@/lib/data/departments";
 import { useAccessStore } from "@/lib/store/useAccessStore";
 import { verifyDepartmentCode } from "@/lib/services/auth.service";
 import { DepartmentDetail } from "./DepartmentDetail";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 
 interface DepartmentRouteProps {
   slug: DepartmentSlug;
@@ -47,13 +45,21 @@ export function DepartmentRoute({ slug }: DepartmentRouteProps) {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <Card className="p-8 w-full max-w-sm">
-        <div className="text-center mb-6">
-          <span className="text-4xl">{dept.icon}</span>
-          <h2 className="mt-2 text-xl font-bold text-slate-900">{dept.name}</h2>
-          <p className="text-slate-500 text-sm mt-1">Accès protégé par code</p>
+    <div className="flex items-center justify-center min-h-screen px-4">
+      <div className="glass-card-strong w-full max-w-xs mx-auto rounded-app p-8">
+        {/* Icon + name */}
+        <div className="flex flex-col items-center mb-7">
+          <span
+            className="text-6xl leading-none select-none mb-4"
+            role="img"
+            aria-label={dept.name}
+          >
+            {dept.icon}
+          </span>
+          <h2 className="text-2xl font-bold text-center text-white">{dept.name}</h2>
+          <p className="text-sm mt-1 text-center text-muted">Accès protégé par code</p>
         </div>
+
         <form onSubmit={handleUnlock} className="space-y-4">
           <div>
             <input
@@ -62,25 +68,31 @@ export function DepartmentRoute({ slug }: DepartmentRouteProps) {
               maxLength={6}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="Code département"
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-center text-2xl font-mono tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-purple-400"
+              placeholder="••••••"
+              className="w-full h-16 rounded-2xl text-center text-2xl font-mono tracking-widest focus:outline-none bg-white/5 border border-stroke text-white placeholder:text-white/25 caret-cyan"
               autoFocus
             />
             {error && (
-              <p className="text-red-500 text-sm mt-1.5 text-center">{error}</p>
+              <p className="text-sm mt-2 text-center font-medium text-redSoft">{error}</p>
             )}
           </div>
-          <Button type="submit" className="w-full" disabled={loading || code.length === 0}>
+
+          <button
+            type="submit"
+            disabled={loading || code.length === 0}
+            className="active-pill w-full h-13 text-base font-semibold rounded-2xl transition-opacity disabled:opacity-40 min-h-[52px]"
+          >
             {loading ? "Vérification…" : "Accéder"}
-          </Button>
+          </button>
         </form>
+
         <button
           onClick={() => router.back()}
-          className="mt-4 w-full text-sm text-slate-400 hover:text-slate-600 transition-colors text-center"
+          className="mt-4 w-full text-sm text-center text-muted transition-opacity active:opacity-60 min-h-[44px]"
         >
           ← Retour
         </button>
-      </Card>
+      </div>
     </div>
   );
 }

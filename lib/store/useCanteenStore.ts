@@ -9,7 +9,9 @@ const DEFAULT_MENU: CanteenMenu = {
   starter: "Salade verte aux lardons",
   main: "Poulet rôti, légumes de saison",
   dessert: "Tarte aux pommes maison",
-  special: "Option végétarienne : Risotto aux champignons",
+  special: "Risotto aux champignons",
+  shootingLocation: "",
+  canteenLocation: "",
 };
 
 interface CanteenState {

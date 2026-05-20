@@ -1,39 +1,21 @@
-"use client";
-
-import { useCanteenStore } from "@/lib/store/useCanteenStore";
-import { Card } from "@/components/ui/Card";
-import { useHydrated } from "@/lib/hooks/useHydrated";
+import { Cloud } from "lucide-react";
 
 export function CanteenCard() {
-  const hydrated = useHydrated();
-  const menu = useCanteenStore((s) => s.menu);
-
-  if (!hydrated) return null;
-
   return (
-    <Card className="p-4">
-      <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-        🍽️ Menu cantine du jour
-      </h4>
-      <div className="space-y-1.5 text-sm">
-        <div className="flex gap-2">
-          <span className="text-slate-400 w-20 shrink-0">Entrée</span>
-          <span className="text-slate-700">{menu.starter}</span>
-        </div>
-        <div className="flex gap-2">
-          <span className="text-slate-400 w-20 shrink-0">Plat</span>
-          <span className="text-slate-700">{menu.main}</span>
-        </div>
-        <div className="flex gap-2">
-          <span className="text-slate-400 w-20 shrink-0">Dessert</span>
-          <span className="text-slate-700">{menu.dessert}</span>
-        </div>
-        {menu.special && (
-          <div className="mt-2 p-2 bg-green-50 rounded-lg text-green-700 text-xs">
-            🌱 {menu.special}
-          </div>
-        )}
+    <div className="glass-card rounded-app p-4">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-3">
+        <Cloud className="w-4 h-4 text-muted" />
+        <span className="text-sm text-textSoft font-medium">Météo</span>
       </div>
-    </Card>
+
+      {/* Temperature */}
+      <p className="text-3xl font-bold text-white leading-none">18°</p>
+
+      {/* Condition */}
+      <p className="text-xs text-muted mt-1.5 leading-snug">
+        Couvert · Vent 14 km/h
+      </p>
+    </div>
   );
 }

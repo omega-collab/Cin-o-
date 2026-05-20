@@ -1,0 +1,120 @@
+"use client";
+
+import { Radio, FileText, Users, AlertTriangle, MapPin, Calendar } from "lucide-react";
+import { useShootStore } from "@/lib/store/useShootStore";
+
+export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
+  const { shoot, publish, unpublish } = useShootStore();
+
+  const isReady = shoot.extractionStatus === "done" || shoot.sequences.length > 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Status card */}
+      <div className="glass-card-strong rounded-app p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-bold text-white text-lg leading-tight">
+              {shoot.projectTitle || "Aucune feuille chargée"}
+            </h3>
+            {shoot.series && <p className="text-xs text-muted mt-0.5">{shoot.series}</p>}
+          </div>
+          <button
+            onClick={shoot.isPublished ? unpublish : publish}
+            disabled={!isReady && !shoot.isPublished}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all disabled:opacity-30 ${
+              shoot.isPublished ? "bg-cyanSoft text-cyan" : "glass-card text-muted"
+            }`}
+          >
+            <Radio className="w-3.5 h-3.5" />
+            {shoot.isPublished ? "En ligne" : "Hors ligne"}
+          </button>
+        </div>
+
+        {shoot.projectTitle ? (
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="glass-card rounded-xl p-2.5">
+              <p className="text-muted mb-0.5">Jour de tournage</p>
+              <p className="text-white font-semibold">J{shoot.shootingDay}{shoot.totalDays ? `/${shoot.totalDays}` : ""}</p>
+            </div>
+            <div className="glass-card rounded-xl p-2.5">
+              <p className="text-muted mb-0.5">Call Time</p>
+              <p className="text-cyan font-semibold font-mono">{shoot.callTime}</p>
+            </div>
+            <div className="glass-card rounded-xl p-2.5 col-span-2">
+              <p className="text-muted mb-0.5">Lieu</p>
+              <p className="text-white font-medium truncate">{shoot.location}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted italic">
+            Importez des documents pour commencer.
+          </p>
+        )}
+      </div>
+
+      {/* Stats */}
+      {shoot.projectTitle && (
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { icon: FileText, label: "Séquences", value: shoot.sequences.length, tab: "review" },
+            { icon: Users, label: "Comédiens", value: shoot.cast.length, tab: "review" },
+            { icon: AlertTriangle, label: "Alertes", value: shoot.alerts.length, tab: "review" },
+            { icon: MapPin, label: "Lieux", value: shoot.places.length, tab: "review" },
+          ].map(({ icon: Icon, label, value, tab }) => (
+            <button
+              key={label}
+              onClick={() => onTab(tab)}
+              className="glass-card rounded-app p-3 text-left"
+            >
+              <Icon className="w-4 h-4 text-muted mb-2" />
+              <p className="text-2xl font-bold text-white">{value}</p>
+              <p className="text-xs text-muted">{label}</p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Next days */}
+      {shoot.nextDays.length > 0 && (
+        <div className="glass-card rounded-app p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Calendar className="w-4 h-4 text-muted" />
+            <span className="text-xs font-semibold text-textSoft uppercase tracking-widest">Prochains jours</span>
+          </div>
+          <div className="space-y-2">
+            {shoot.nextDays.map((d) => (
+              <div key={d.date} className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-white">J{d.shootingDay}</p>
+                  {d.location && <p className="text-xs text-muted truncate max-w-[180px]">{d.location}</p>}
+                </div>
+                {d.callTime && (
+                  <span className="font-mono text-xs text-cyan">{d.callTime}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="space-y-2">
+        <button
+          onClick={() => onTab("upload")}
+          className="active-pill w-full py-3 rounded-2xl font-semibold text-sm"
+        >
+          Importer des documents
+        </button>
+        {shoot.projectTitle && !shoot.isPublished && (
+          <button
+            onClick={() => onTab("publish")}
+            className="glass-card border-stroke text-textSoft w-full py-3 rounded-2xl text-sm font-medium"
+          >
+            Vérifier et publier
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

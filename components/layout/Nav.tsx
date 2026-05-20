@@ -3,67 +3,90 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import {
+  Home,
+  CalendarDays,
+  Users,
+  History,
+  MoreHorizontal,
+} from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Aujourd'hui", icon: "🏠" },
-  { href: "/documents", label: "Documents", icon: "📄" },
-  { href: "/departments", label: "Départements", icon: "🏗️" },
-  { href: "/history", label: "Historique", icon: "📜" },
-  { href: "/admin", label: "Admin", icon: "⚙️" },
+  { href: "/", label: "Aujourd'hui", Icon: Home },
+  { href: "/calendrier", label: "Calendrier", Icon: CalendarDays },
+  { href: "/departments", label: "Départements", Icon: Users },
+  { href: "/history", label: "Historique", Icon: History },
+  { href: "/admin", label: "Plus", Icon: MoreHorizontal },
 ];
 
 export function Nav() {
   const pathname = usePathname();
+
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-56 bg-white border-r border-slate-200 min-h-screen">
-        <div className="p-4 border-b border-slate-200">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🎬</span>
-            <span className="font-bold text-slate-900 text-lg">CinéO</span>
+      <aside className="hidden md:flex flex-col w-60 min-h-screen glass-card rounded-none border-r border-stroke/50">
+        <div className="p-5 flex items-center gap-2.5 border-b border-stroke/50">
+          <span className="text-2xl leading-none">🎬</span>
+          <div>
+            <span className="font-bold text-white text-lg leading-none">CinéO</span>
+            <p className="text-xs mt-0.5 text-muted">Feuille de service</p>
           </div>
-          <p className="text-xs text-slate-400 mt-1">Feuille de service</p>
         </div>
+
         <nav className="flex-1 p-3 space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                pathname === item.href
-                  ? "bg-purple-50 text-purple-700"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              )}
-            >
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
+          {NAV_ITEMS.map(({ href, label, Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                  active
+                    ? "text-cyan bg-cyanSoft"
+                    : "text-muted hover:text-textSoft hover:bg-white/5"
+                )}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
         </nav>
-        <div className="p-4 border-t border-slate-200">
-          <p className="text-xs text-slate-400">CinéO v0.1 — Proto</p>
+
+        <div className="p-4 border-t border-stroke/50">
+          <p className="text-xs text-muted">CinéO v0.1 — Proto</p>
         </div>
       </aside>
 
       {/* Mobile bottom bar */}
-      <nav className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-slate-200 flex z-50">
-        {NAV_ITEMS.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex-1 flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors",
-              pathname === item.href
-                ? "text-purple-700"
-                : "text-slate-500"
-            )}
-          >
-            <span className="text-lg leading-none">{item.icon}</span>
-            <span className="leading-none truncate">{item.label}</span>
-          </Link>
-        ))}
+      <nav
+        className="fixed bottom-0 left-0 right-0 md:hidden z-50 glass-card rounded-none border-t border-stroke/50"
+        style={{ backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}
+      >
+        <div className="grid grid-cols-5 h-[60px]">
+          {NAV_ITEMS.map(({ href, label, Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="flex flex-col items-center justify-center gap-1"
+                style={{ color: active ? "#00E0D0" : "#8E9AAF" }}
+              >
+                <Icon className="w-5 h-5" />
+                <span
+                  className="font-medium truncate"
+                  style={{ fontSize: "10px", lineHeight: "1" }}
+                >
+                  {label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+        <div style={{ height: "env(safe-area-inset-bottom, 0px)" }} />
       </nav>
     </>
   );
