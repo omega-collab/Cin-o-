@@ -10,6 +10,7 @@ interface DepartmentState {
   movements: Movement[];
   addMovement: (deptSlug: DepartmentSlug, movement: Omit<Movement, "id" | "timestamp">) => void;
   updateStockItem: (deptSlug: DepartmentSlug, itemId: string, updates: Partial<StockItem>) => void;
+  setStock: (deptSlug: DepartmentSlug, items: StockItem[]) => void;
   resetStock: () => void;
 }
 
@@ -41,6 +42,8 @@ export const useDepartmentStore = create<DepartmentState>()(
             },
           };
         }),
+      setStock: (deptSlug, items) =>
+        set((state) => ({ stock: { ...state.stock, [deptSlug]: items } })),
       resetStock: () => set({ stock: INITIAL_STOCK, movements: [] }),
     }),
     { name: "cin-o-departments", version: 2 }
