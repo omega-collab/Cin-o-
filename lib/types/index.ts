@@ -27,15 +27,27 @@ export interface StockItem {
   notes?: string;
 }
 
+export type MovementType =
+  | "depart"
+  | "retour"
+  | "reception"
+  | "emprunt"
+  | "casse"
+  | "defectueux"
+  | "note"
+  | "in"
+  | "out";
+
 export interface Movement {
   id: string;
   itemId: string;
   itemName: string;
-  type: "in" | "out";
+  type: MovementType;
   quantity: number;
   operator: string;
   timestamp: string;
   notes?: string;
+  photo?: string;
 }
 
 export interface HistoryEntry {

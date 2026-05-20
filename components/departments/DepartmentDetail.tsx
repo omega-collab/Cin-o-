@@ -1,21 +1,48 @@
 "use client";
 
-import { useState } from "react";
-import type { DepartmentSlug } from "@/lib/types";
+import { useRef, useState } from "react";
+import type { DepartmentSlug, MovementType } from "@/lib/types";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
 import { useHistoryStore } from "@/lib/store/useHistoryStore";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { Modal } from "@/components/ui/Modal";
 import { StatusPill } from "@/components/ui/StatusPill";
+import { StockImportPanel } from "./StockImportPanel";
+import { Upload, Camera, X } from "lucide-react";
 
 interface DepartmentDetailProps {
   slug: DepartmentSlug;
 }
 
-const INPUT_CLS = "w-full rounded-2xl px-4 text-sm focus:outline-none bg-white/5 border border-stroke text-white min-h-[44px]";
+const MOVEMENT_TYPES: { value: MovementType; label: string; icon: string; color: string }[] = [
+  { value: "depart",     label: "Départ",      icon: "↗",  color: "text-cyan" },
+  { value: "retour",     label: "Retour",       icon: "↙",  color: "text-green-400" },
+  { value: "reception",  label: "Réception",    icon: "📦", color: "text-blue-400" },
+  { value: "emprunt",    label: "Emprunt",      icon: "🤝", color: "text-purple-400" },
+  { value: "casse",      label: "Casse",        icon: "💥", color: "text-redSoft" },
+  { value: "defectueux", label: "Défectueux",   icon: "⚠️", color: "text-orangeSoft" },
+  { value: "note",       label: "Note",         icon: "📝", color: "text-muted" },
+];
+
+const MOV_ICON: Record<string, string> = {
+  depart: "↗️", retour: "↙️", reception: "📦", emprunt: "🤝",
+  casse: "💥", defectueux: "⚠️", note: "📝", in: "↙️", out: "↗️",
+};
+
+const INPUT_CLS = "w-full rounded-2xl px-4 text-sm focus:outline-none bg-white/5 border border-stroke text-white min-h-[44px] placeholder:text-white/25";
+
 function ModalField({ label, children }: { label: string; children: React.ReactNode }) {
   return <div><label className="block text-xs font-medium mb-1.5 text-muted">{label}</label>{children}</div>;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result as string);
+    reader.onerror = () => rej(new Error("Erreur lecture fichier"));
+    reader.readAsDataURL(file);
+  });
 }
 
 export function DepartmentDetail({ slug }: DepartmentDetailProps) {
@@ -26,96 +53,143 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
   const addMovement = useDepartmentStore((s) => s.addMovement);
   const addHistory = useHistoryStore((s) => s.addEntry);
 
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const [importOpen, setImportOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<string>("");
-  const [movType, setMovType] = useState<"in" | "out">("out");
+  const [movType, setMovType] = useState<MovementType>("depart");
   const [quantity, setQuantity] = useState(1);
   const [operator, setOperator] = useState("");
   const [notes, setNotes] = useState("");
+  const [photo, setPhoto] = useState<string | null>(null);
 
   if (!hydrated || !dept) return null;
 
   function openModal(itemId: string) {
     setSelectedItem(itemId);
-    setMovType("out");
+    setMovType("depart");
     setQuantity(1);
     setOperator("");
     setNotes("");
+    setPhoto(null);
     setModalOpen(true);
+  }
+
+  async function handlePhotoFile(file: File) {
+    if (file.size > 10 * 1024 * 1024) return;
+    const dataUrl = await fileToBase64(file);
+    setPhoto(dataUrl);
   }
 
   function handleSubmit() {
     const item = stock.find((i) => i.id === selectedItem);
     if (!item || !dept) return;
+
+    const typeLabel = MOVEMENT_TYPES.find((t) => t.value === movType)?.label ?? movType;
+
     addMovement(slug, {
       itemId: selectedItem,
       itemName: item.name,
       type: movType,
       quantity,
       operator: operator || "Inconnu",
-      notes,
+      notes: notes || undefined,
+      photo: photo ?? undefined,
     });
     addHistory({
       department: slug,
       departmentName: dept.name,
-      action: movType === "out" ? "Sortie matériel" : "Retour matériel",
+      action: typeLabel,
       details: `${item.name} × ${quantity} — ${operator || "Inconnu"}`,
     });
     setModalOpen(false);
   }
 
-  const recentMovements = allMovements.slice(0, 5);
+  const recentMovements = allMovements.slice(0, 8);
 
   return (
     <div className="min-h-screen px-4 pt-6 pb-10">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-5">
-        <span className="text-5xl leading-none select-none">{dept.icon}</span>
-        <div>
-          <h2 className="text-xl font-bold text-white leading-tight">{dept.name}</h2>
-          <p className="text-sm mt-0.5 text-muted">Gestion du matériel</p>
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-4">
+          <span className="text-5xl leading-none select-none">{dept.icon}</span>
+          <div>
+            <h2 className="text-xl font-bold text-white leading-tight">{dept.name}</h2>
+            <p className="text-sm mt-0.5 text-muted">Gestion du matériel</p>
+          </div>
         </div>
+        <button
+          onClick={() => setImportOpen(true)}
+          className="glass-card flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-cyan"
+        >
+          <Upload className="w-3.5 h-3.5" />
+          Importer
+        </button>
       </div>
 
-      {/* Stats row */}
+      {/* Import panel */}
+      {importOpen && (
+        <div className="mb-5">
+          <StockImportPanel slug={slug} onClose={() => setImportOpen(false)} />
+        </div>
+      )}
+
+      {/* Stats */}
       <div className="glass-card flex items-center gap-2 px-4 py-3 rounded-2xl mb-5">
         <span className="text-lg">📦</span>
         <span className="text-sm font-medium text-white">
-          {stock.length} article{stock.length > 1 ? "s" : ""} en stock
+          {stock.length} article{stock.length !== 1 ? "s" : ""} en stock
         </span>
       </div>
 
-      {/* Stock list */}
-      <div className="mb-6">
-        <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 text-muted">
-          Stock
-        </h3>
-        <div className="space-y-2">
-          {stock.map((item) => (
-            <div
-              key={item.id}
-              className="glass-card flex items-center justify-between gap-3 p-4 rounded-2xl"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                <p className="text-xs mt-0.5 text-muted">
-                  {item.quantity} {item.unit}
-                  {item.notes ? ` · ${item.notes}` : ""}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <StatusPill status={item.status} />
-                <button
-                  onClick={() => openModal(item.id)}
-                  className="active-pill px-3 py-1.5 text-xs font-semibold rounded-xl transition-opacity active:opacity-70"
-                >
-                  Mouvement
-                </button>
-              </div>
-            </div>
-          ))}
+      {/* Empty state */}
+      {stock.length === 0 && (
+        <div className="glass-card rounded-app p-6 text-center space-y-3 mb-5">
+          <Upload className="w-8 h-8 text-muted mx-auto" />
+          <div>
+            <p className="text-sm font-semibold text-white">Aucun stock configuré</p>
+            <p className="text-xs text-muted mt-1">
+              Importez votre feuille de stock matériel pour commencer la traçabilité.
+            </p>
+          </div>
+          <button
+            onClick={() => setImportOpen(true)}
+            className="active-pill px-4 py-2 text-sm font-semibold rounded-2xl"
+          >
+            Importer la feuille de stock
+          </button>
         </div>
-      </div>
+      )}
+
+      {/* Stock list */}
+      {stock.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 text-muted">Stock</h3>
+          <div className="space-y-2">
+            {stock.map((item) => (
+              <div key={item.id} className="glass-card flex items-center justify-between gap-3 p-4 rounded-2xl">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">{item.name}</p>
+                  <p className="text-xs mt-0.5 text-muted">
+                    {item.quantity} {item.unit}
+                    {item.notes ? ` · ${item.notes}` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <StatusPill status={item.status} />
+                  <button
+                    onClick={() => openModal(item.id)}
+                    className="active-pill px-3 py-1.5 text-xs font-semibold rounded-xl"
+                  >
+                    Mouvement
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent movements */}
       {recentMovements.length > 0 && (
@@ -125,17 +199,24 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
           </h3>
           <div className="space-y-2">
             {recentMovements.map((mov) => (
-              <div
-                key={mov.id}
-                className="glass-card flex items-center gap-3 px-4 py-2.5 rounded-xl"
-              >
-                <span className="text-base shrink-0">
-                  {mov.type === "out" ? "↗️" : "↙️"}
-                </span>
-                <span className="flex-1 text-sm text-textSoft">
-                  {mov.itemName} × {mov.quantity}
-                </span>
-                <span className="text-xs text-muted shrink-0">{mov.operator}</span>
+              <div key={mov.id} className="glass-card rounded-2xl overflow-hidden">
+                <div className="flex items-center gap-3 px-4 py-2.5">
+                  <span className="text-base shrink-0">{MOV_ICON[mov.type] ?? "📝"}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-textSoft">{mov.itemName}</span>
+                    {mov.notes && (
+                      <p className="text-xs text-muted truncate mt-0.5">{mov.notes}</p>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted shrink-0">{mov.operator}</span>
+                </div>
+                {mov.photo && (
+                  <img
+                    src={mov.photo}
+                    alt="Photo du mouvement"
+                    className="w-full max-h-48 object-cover border-t border-stroke"
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -150,41 +231,77 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
         className="glass-card-strong !rounded-app border-stroke"
       >
         <div className="space-y-4">
-          <div className="flex gap-2">
-            {(["out", "in"] as const).map((t) => (
+          {/* Type selector — 2 rows */}
+          <div className="grid grid-cols-4 gap-1.5">
+            {MOVEMENT_TYPES.map((t) => (
               <button
-                key={t}
-                onClick={() => setMovType(t)}
-                className={`flex-1 text-sm font-medium rounded-xl transition-all min-h-[44px] border ${
-                  movType === t
-                    ? "active-pill border-cyan"
-                    : "border-stroke text-textSoft bg-white/5"
+                key={t.value}
+                onClick={() => setMovType(t.value)}
+                className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-xs border transition-all ${
+                  movType === t.value
+                    ? "border-cyan bg-cyanSoft text-cyan font-semibold"
+                    : "border-stroke bg-white/5 text-textSoft"
                 }`}
               >
-                {t === "out" ? "↗ Sortie" : "↙ Retour"}
+                <span className="text-base leading-none">{t.icon}</span>
+                <span className="leading-tight text-center">{t.label}</span>
               </button>
             ))}
           </div>
 
-          <ModalField label="Quantité">
-            <input type="number" min={1} value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
+          <div className="grid grid-cols-2 gap-3">
+            <ModalField label="Quantité">
+              <input type="number" min={1} value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                className={INPUT_CLS} />
+            </ModalField>
+            <ModalField label="Opérateur">
+              <input type="text" value={operator} placeholder="Nom prénom"
+                onChange={(e) => setOperator(e.target.value)}
+                className={INPUT_CLS} />
+            </ModalField>
+          </div>
+
+          <ModalField label="Note">
+            <input type="text" value={notes} placeholder="Détails, référence, observations…"
+              onChange={(e) => setNotes(e.target.value)}
               className={INPUT_CLS} />
           </ModalField>
-          <ModalField label="Opérateur">
-            <input type="text" value={operator} placeholder="Nom prénom"
-              onChange={(e) => setOperator(e.target.value)}
-              className={INPUT_CLS + " placeholder:text-white/25"} />
-          </ModalField>
-          <ModalField label="Notes (optionnel)">
-            <input type="text" value={notes} placeholder="Détails…"
-              onChange={(e) => setNotes(e.target.value)}
-              className={INPUT_CLS + " placeholder:text-white/25"} />
+
+          {/* Photo */}
+          <ModalField label="Photo (optionnel)">
+            {photo ? (
+              <div className="relative rounded-xl overflow-hidden">
+                <img src={photo} alt="Aperçu" className="w-full max-h-40 object-cover" />
+                <button
+                  onClick={() => setPhoto(null)}
+                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1"
+                >
+                  <X className="w-3.5 h-3.5 text-white" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => photoInputRef.current?.click()}
+                className="w-full min-h-[44px] border border-dashed border-stroke rounded-2xl flex items-center justify-center gap-2 text-sm text-muted hover:border-cyan/40 transition-colors"
+              >
+                <Camera className="w-4 h-4" />
+                Ajouter une photo
+              </button>
+            )}
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => { if (e.target.files?.[0]) handlePhotoFile(e.target.files[0]); e.target.value = ""; }}
+            />
           </ModalField>
 
           <button
             onClick={handleSubmit}
-            className="active-pill w-full rounded-2xl font-semibold text-sm transition-opacity active:opacity-80 min-h-[52px]"
+            className="active-pill w-full rounded-2xl font-semibold text-sm min-h-[52px]"
           >
             Confirmer
           </button>
