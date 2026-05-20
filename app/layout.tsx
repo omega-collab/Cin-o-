@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeProvider } from "@/components/layout/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "CinéO — Feuille de service",
@@ -12,8 +13,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
-      <body className="min-h-screen text-white">{children}</body>
+    <html lang="fr" data-theme="dark" data-font="md">
+      <body className="min-h-screen text-white">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }
