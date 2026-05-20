@@ -27,17 +27,32 @@ const DOC_SLOTS: { type: UploadedDoc["type"]; icon: string; required: boolean }[
 
 const ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp";
 
+const MIME_NORMALIZE: Record<string, string> = {
+  "application/pdf": "application/pdf",
+  "application/x-pdf": "application/pdf",
+  "image/jpeg": "image/jpeg",
+  "image/jpg": "image/jpeg",
+  "image/png": "image/png",
+  "image/gif": "image/gif",
+  "image/webp": "image/webp",
+};
+
+const EXT_MAP: Record<string, string> = {
+  pdf: "application/pdf",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+};
+
 function detectMediaType(file: File): string {
-  if (file.type && file.type !== "") return file.type;
+  if (file.type) {
+    const normalized = MIME_NORMALIZE[file.type.toLowerCase()];
+    if (normalized) return normalized;
+  }
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  const map: Record<string, string> = {
-    pdf: "application/pdf",
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
-    png: "image/png",
-    webp: "image/webp",
-  };
-  return map[ext] ?? "application/pdf";
+  return EXT_MAP[ext] ?? "application/pdf";
 }
 
 function fileToBase64(file: File): Promise<string> {

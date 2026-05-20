@@ -115,6 +115,23 @@ Règles de format :
 - Dates en YYYY-MM-DD
 - priority "critical" = danger/urgence, "warning" = attention requise, "info" = information générale`;
 
+type AllowedImageType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+const ALLOWED_IMAGE_TYPES = new Set<string>(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+
+function normalizeMediaType(raw: string): "application/pdf" | AllowedImageType | null {
+  const t = raw.trim().toLowerCase();
+  if (t === "application/pdf" || t === "application/x-pdf") return "application/pdf";
+  if (t === "image/jpeg" || t === "image/jpg") return "image/jpeg";
+  if (t === "image/png") return "image/png";
+  if (t === "image/gif") return "image/gif";
+  if (t === "image/webp") return "image/webp";
+  return null;
+}
+
+function sanitizeBase64(data: string): string {
+  return data.replace(/[^A-Za-z0-9+/=]/g, "");
+}
+
 interface DocInput {
   base64: string;
   mediaType: string;
@@ -131,32 +148,39 @@ export async function POST(req: NextRequest) {
     }
 
     if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json({ error: "Clé API manquante" }, { status: 500 });
+      return NextResponse.json({ error: "Clé API manquante — vérifiez la variable ANTHROPIC_API_KEY dans Netlify" }, { status: 500 });
     }
 
     const contentBlocks: Anthropic.Messages.ContentBlockParam[] = [];
+    const skipped: string[] = [];
 
     for (const doc of docs) {
-      if (doc.mediaType === "application/pdf") {
+      const mediaType = normalizeMediaType(doc.mediaType);
+      const data = sanitizeBase64(doc.base64);
+
+      if (!data) {
+        skipped.push(`${doc.filename} (données vides)`);
+        continue;
+      }
+
+      if (mediaType === "application/pdf") {
         contentBlocks.push({
           type: "document",
-          source: {
-            type: "base64",
-            media_type: "application/pdf",
-            data: doc.base64,
-          },
-          title: doc.filename,
+          source: { type: "base64", media_type: "application/pdf", data },
         } as Anthropic.Messages.DocumentBlockParam);
-      } else if (doc.mediaType.startsWith("image/")) {
+      } else if (mediaType && ALLOWED_IMAGE_TYPES.has(mediaType)) {
         contentBlocks.push({
           type: "image",
-          source: {
-            type: "base64",
-            media_type: doc.mediaType as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
-            data: doc.base64,
-          },
+          source: { type: "base64", media_type: mediaType as AllowedImageType, data },
         });
+      } else {
+        skipped.push(`${doc.filename} (format non supporté: ${doc.mediaType})`);
       }
+    }
+
+    if (contentBlocks.length === 0) {
+      const detail = skipped.length > 0 ? ` Fichiers ignorés: ${skipped.join(", ")}` : "";
+      return NextResponse.json({ error: `Aucun document exploitable.${detail}` }, { status: 400 });
     }
 
     contentBlocks.push({ type: "text", text: EXTRACTION_PROMPT });
@@ -174,14 +198,17 @@ export async function POST(req: NextRequest) {
 
     const raw = firstContent.text.trim();
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch || !jsonMatch[0]) {
-      return NextResponse.json({ error: "Impossible d'extraire le JSON" }, { status: 500 });
+    if (!jsonMatch?.[0]) {
+      return NextResponse.json({ error: "Impossible d'extraire le JSON de la réponse" }, { status: 500 });
     }
 
     const result = JSON.parse(jsonMatch[0]) as ExtractionResult;
-    return NextResponse.json({ result });
+    return NextResponse.json({ result, skipped: skipped.length > 0 ? skipped : undefined });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erreur inconnue";
+    const raw = err instanceof Error ? err.message : String(err);
+    // Anthropic APIError prepends the status code, e.g. "400 The string did not..."
+    const message = raw.replace(/^\d{3} /, "");
+    console.error("[extract] Anthropic error:", raw);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
