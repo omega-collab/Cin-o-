@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { DEPT_ROLES } from "@/lib/data/roles";
@@ -12,6 +13,7 @@ export function OnboardingScreen() {
   const [selectedDept, setSelectedDept] = useState<DepartmentSlug | null>(null);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const setProfile = useUserStore((s) => s.setProfile);
+  const router = useRouter();
 
   const dept = DEPARTMENTS.find((d) => d.slug === selectedDept);
   const roles = selectedDept ? (DEPT_ROLES[selectedDept] ?? []) : [];
@@ -19,6 +21,7 @@ export function OnboardingScreen() {
   function handleConfirm() {
     if (selectedDept && selectedRole) {
       setProfile(selectedDept, selectedRole);
+      router.push("/");
     }
   }
 
