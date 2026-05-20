@@ -1,10 +1,8 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 import type { ExtractionResult } from "@/lib/types/shoot";
 
 export const maxDuration = 60;
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const EXTRACTION_PROMPT = `Tu es un assistant expert en production cinématographique française. Tu reçois jusqu'à trois documents complémentaires pour une même journée de tournage :
 
@@ -117,10 +115,9 @@ Règles de format :
 - Dates en YYYY-MM-DD
 - priority "critical" = danger/urgence, "warning" = attention requise, "info" = information générale`;
 
-type AllowedImageType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
-const ALLOWED_IMAGE_TYPES = new Set<string>(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+type AllowedMimeType = "application/pdf" | "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 
-function normalizeMediaType(raw: string): "application/pdf" | AllowedImageType | null {
+function normalizeMediaType(raw: string): AllowedMimeType | null {
   const t = raw.trim().toLowerCase();
   if (t === "application/pdf" || t === "application/x-pdf") return "application/pdf";
   if (t === "image/jpeg" || t === "image/jpg") return "image/jpeg";
@@ -149,11 +146,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Aucun document fourni" }, { status: 400 });
     }
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json({ error: "Clé API manquante — vérifiez la variable ANTHROPIC_API_KEY dans Netlify" }, { status: 500 });
+    if (!process.env.GEMINI_API_KEY) {
+      return NextResponse.json({ error: "Clé API manquante — vérifiez la variable GEMINI_API_KEY dans Netlify" }, { status: 500 });
     }
 
-    const contentBlocks: Anthropic.Messages.ContentBlockParam[] = [];
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    type GeminiPart = { text: string } | { inlineData: { mimeType: string; data: string } };
+    const parts: GeminiPart[] = [];
     const skipped: string[] = [];
 
     for (const doc of docs) {
@@ -165,40 +166,29 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      if (mediaType === "application/pdf") {
-        contentBlocks.push({
-          type: "document",
-          source: { type: "base64", media_type: "application/pdf", data },
-        } as Anthropic.Messages.DocumentBlockParam);
-      } else if (mediaType && ALLOWED_IMAGE_TYPES.has(mediaType)) {
-        contentBlocks.push({
-          type: "image",
-          source: { type: "base64", media_type: mediaType as AllowedImageType, data },
-        });
-      } else {
+      if (!mediaType) {
         skipped.push(`${doc.filename} (format non supporté: ${doc.mediaType})`);
+        continue;
       }
+
+      parts.push({
+        inlineData: {
+          mimeType: mediaType,
+          data,
+        },
+      });
     }
 
-    if (contentBlocks.length === 0) {
+    if (parts.length === 0) {
       const detail = skipped.length > 0 ? ` Fichiers ignorés: ${skipped.join(", ")}` : "";
       return NextResponse.json({ error: `Aucun document exploitable.${detail}` }, { status: 400 });
     }
 
-    contentBlocks.push({ type: "text", text: EXTRACTION_PROMPT });
+    parts.push({ text: EXTRACTION_PROMPT });
 
-    const message = await client.messages.create({
-      model: "claude-opus-4-5",
-      max_tokens: 4096,
-      messages: [{ role: "user", content: contentBlocks }],
-    });
+    const response = await model.generateContent(parts);
+    const raw = response.response.text().trim();
 
-    const firstContent = message.content[0];
-    if (!firstContent || firstContent.type !== "text") {
-      return NextResponse.json({ error: "Réponse inattendue du modèle" }, { status: 500 });
-    }
-
-    const raw = firstContent.text.trim();
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch?.[0]) {
       return NextResponse.json({ error: "Impossible d'extraire le JSON de la réponse" }, { status: 500 });
@@ -208,9 +198,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ result, skipped: skipped.length > 0 ? skipped : undefined });
   } catch (err) {
     const raw = err instanceof Error ? err.message : String(err);
-    // Anthropic APIError prepends the status code, e.g. "400 The string did not..."
-    const message = raw.replace(/^\d{3} /, "");
-    console.error("[extract] Anthropic error:", raw);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[extract] Gemini error:", raw);
+    return NextResponse.json({ error: raw }, { status: 500 });
   }
 }
