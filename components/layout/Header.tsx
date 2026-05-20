@@ -5,6 +5,7 @@ import { Film, Settings } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { ProfileModal } from "@/components/profile/ProfileModal";
+import { SettingsPanel } from "@/components/settings/SettingsPanel";
 
 interface HeaderProps {
   title?: string;
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 export function Header({ title, subtitle }: HeaderProps) {
   const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const department = useUserStore((s) => s.department);
   const dept = DEPARTMENTS.find((d) => d.slug === department);
 
@@ -28,20 +30,21 @@ export function Header({ title, subtitle }: HeaderProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Avatar département */}
+            {/* Avatar — accès rapide au profil */}
             <button
               onClick={() => setShowProfile(true)}
               className="relative w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-sm overflow-hidden"
-              title="Modifier le profil"
+              title="Mon profil"
             >
               {dept?.icon ?? "👤"}
               <span className="absolute right-0 bottom-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#060b12]" />
             </button>
 
-            {/* Bouton paramètres */}
+            {/* Roue — Paramètres complets */}
             <button
-              onClick={() => setShowProfile(true)}
+              onClick={() => setShowSettings(true)}
               className="w-9 h-9 rounded-2xl glass-card flex items-center justify-center"
+              title="Paramètres"
             >
               <Settings className="w-4 h-4 text-textSoft" />
             </button>
@@ -61,6 +64,7 @@ export function Header({ title, subtitle }: HeaderProps) {
       </header>
 
       {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
+      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </>
   );
 }
