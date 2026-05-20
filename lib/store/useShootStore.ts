@@ -203,6 +203,6 @@ export const useShootStore = create<ShootStore>()(
       resetFull: () =>
         set({ shoot: INITIAL, pendingExtraction: null }),
     }),
-    { name: "cin-o-shoot" }
+    { name: "cin-o-shoot", version: 2 }
   )
 );

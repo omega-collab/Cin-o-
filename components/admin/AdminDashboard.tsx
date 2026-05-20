@@ -1,12 +1,22 @@
 "use client";
 
-import { Radio, FileText, Users, AlertTriangle, MapPin, Calendar } from "lucide-react";
+import { useState } from "react";
+import { Radio, FileText, Users, AlertTriangle, MapPin, Calendar, RotateCcw } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
+import { useCanteenStore } from "@/lib/store/useCanteenStore";
 
 export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
-  const { shoot, publish, unpublish } = useShootStore();
+  const { shoot, publish, unpublish, resetFull } = useShootStore();
+  const resetMenu = useCanteenStore((s) => s.resetMenu);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const isReady = shoot.extractionStatus === "done" || shoot.sequences.length > 0;
+
+  function handleReset() {
+    resetFull();
+    resetMenu();
+    setConfirmReset(false);
+  }
 
   return (
     <div className="space-y-4">
@@ -19,16 +29,18 @@ export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
             </h3>
             {shoot.series && <p className="text-xs text-muted mt-0.5">{shoot.series}</p>}
           </div>
-          <button
-            onClick={shoot.isPublished ? unpublish : publish}
-            disabled={!isReady && !shoot.isPublished}
-            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all disabled:opacity-30 ${
-              shoot.isPublished ? "bg-cyanSoft text-cyan" : "glass-card text-muted"
-            }`}
-          >
-            <Radio className="w-3.5 h-3.5" />
-            {shoot.isPublished ? "En ligne" : "Hors ligne"}
-          </button>
+          {shoot.projectTitle && (
+            <button
+              onClick={shoot.isPublished ? unpublish : publish}
+              disabled={!isReady && !shoot.isPublished}
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all disabled:opacity-30 ${
+                shoot.isPublished ? "bg-cyanSoft text-cyan" : "glass-card text-muted"
+              }`}
+            >
+              <Radio className="w-3.5 h-3.5" />
+              {shoot.isPublished ? "En ligne" : "Hors ligne"}
+            </button>
+          )}
         </div>
 
         {shoot.projectTitle ? (
@@ -48,7 +60,7 @@ export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
           </div>
         ) : (
           <p className="text-sm text-muted italic">
-            Importez des documents pour commencer.
+            Importez vos documents pour commencer.
           </p>
         )}
       </div>
@@ -75,7 +87,7 @@ export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
         </div>
       )}
 
-      {/* Next days */}
+      {/* Prochains jours */}
       {shoot.nextDays.length > 0 && (
         <div className="glass-card rounded-app p-4">
           <div className="flex items-center gap-2 mb-3">
@@ -89,9 +101,7 @@ export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
                   <p className="text-sm text-white">J{d.shootingDay}</p>
                   {d.location && <p className="text-xs text-muted truncate max-w-[180px]">{d.location}</p>}
                 </div>
-                {d.callTime && (
-                  <span className="font-mono text-xs text-cyan">{d.callTime}</span>
-                )}
+                {d.callTime && <span className="font-mono text-xs text-cyan">{d.callTime}</span>}
               </div>
             ))}
           </div>
@@ -113,6 +123,40 @@ export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
           >
             Vérifier et publier
           </button>
+        )}
+
+        {/* Nouveau projet / reset */}
+        {!confirmReset ? (
+          <button
+            onClick={() => setConfirmReset(true)}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-2xl text-xs text-muted glass-card"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Nouveau projet (tout effacer)
+          </button>
+        ) : (
+          <div className="glass-card rounded-app p-4 space-y-3">
+            <p className="text-sm text-white text-center font-medium">
+              Supprimer toutes les données ?
+            </p>
+            <p className="text-xs text-muted text-center">
+              La feuille, les séquences, le menu cantine — tout sera remis à zéro.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmReset(false)}
+                className="flex-1 py-2 rounded-xl glass-card text-sm text-muted"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleReset}
+                className="flex-1 py-2 rounded-xl bg-redSoft/20 text-redSoft border border-redSoft/30 text-sm font-semibold"
+              >
+                Tout effacer
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
