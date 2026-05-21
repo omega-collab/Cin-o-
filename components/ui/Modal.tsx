@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ModalProps {
@@ -26,23 +27,28 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? "modal-title" : undefined}
         className={cn(
-          "relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6",
+          "relative glass-card-strong rounded-2xl w-full max-w-md p-6",
           className
         )}
       >
         {title && (
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+            <h2 id="modal-title" className="text-lg font-semibold text-white">{title}</h2>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+              aria-label="Fermer"
+              className="text-muted hover:text-textSoft transition-colors p-1 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl"
             >
-              ✕
+              <X className="w-5 h-5" />
             </button>
           </div>
         )}

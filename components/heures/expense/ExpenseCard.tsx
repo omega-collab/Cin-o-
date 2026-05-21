@@ -43,7 +43,7 @@ export function ExpenseCard({ entry }: { entry: ExpenseEntry }) {
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center gap-3 p-3 text-left"
       >
-        <span className="text-xl leading-none shrink-0">{cat.emoji}</span>
+        <cat.icon className="w-5 h-5 shrink-0 text-muted" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-white truncate">{entry.description}</p>
           <p className="text-[10px] text-muted mt-0.5">{cat.label} · {entry.date}</p>

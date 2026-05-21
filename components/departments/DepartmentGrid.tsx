@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { DEPARTMENTS } from "@/lib/data/departments";
+import { DEPT_ICONS } from "@/lib/data/departmentIcons";
 import { useAccessStore } from "@/lib/store/useAccessStore";
 
 const DEPT_ROLES: Record<string, string> = {
@@ -40,13 +41,9 @@ export function DepartmentGrid() {
                 />
 
                 {/* Icon */}
-                <span
-                  className="text-3xl leading-none select-none mt-1"
-                  role="img"
-                  aria-label={dept.name}
-                >
-                  {dept.icon}
-                </span>
+                <div className="mt-1 w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                  {(() => { const Icon = DEPT_ICONS[dept.slug as keyof typeof DEPT_ICONS]; return Icon ? <Icon className="w-5 h-5 text-cyan" aria-label={dept.name} /> : null; })()}
+                </div>
 
                 {/* Name */}
                 <p className="text-base font-semibold mt-2 text-center leading-tight text-white">

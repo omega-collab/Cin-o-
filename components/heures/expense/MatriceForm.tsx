@@ -34,12 +34,16 @@ const EMPTY_NEW: Omit<FraisEntryInsert, "project_id" | "releve_numero"> = {
 
 interface CoherenceIssue { line: number; msg: string; }
 
+function escHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 // ── component ──────────────────────────────────────────────────────────────────
 
 export function MatriceForm() {
   const { department, role } = useUserStore();
   const { data, setField } = useMatriceStore();
-  const { entries, loading, addEntry, deleteEntry, updateEntry } = useFraisEntries();
+  const { entries, loading, error: supabaseError, addEntry, deleteEntry, updateEntry } = useFraisEntries();
 
   const [showAdd, setShowAdd] = useState(false);
   const [newLine, setNewLine] = useState(EMPTY_NEW);
@@ -115,16 +119,16 @@ export function MatriceForm() {
       .filter((e) => (e.montant_ttc ?? 0) > 0 || e.fournisseur)
       .map((e, i) => `<tr>
         <td>${i + 1}</td>
-        <td>${e.date ?? ""}</td>
-        <td>${e.fournisseur ?? ""}</td>
-        <td>${e.nature ?? ""}</td>
+        <td>${escHtml(e.date ?? "")}</td>
+        <td>${escHtml(e.fournisseur ?? "")}</td>
+        <td>${escHtml(e.nature ?? "")}</td>
         <td style="text-align:right">${(e.montant_ttc ?? 0).toFixed(2)}</td>
-        <td>${e.plaque_immat ?? "—"}</td>
+        <td>${escHtml(e.plaque_immat ?? "—")}</td>
       </tr>`)
       .join("");
 
     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-    <title>Note de frais — ${data.nom}</title>
+    <title>Note de frais — ${escHtml(data.nom ?? "")}</title>
     <style>
       body{font-family:Arial,sans-serif;font-size:10px;padding:16px;color:#111}
       h2{font-size:13px;margin:4px 0}
@@ -142,10 +146,10 @@ export function MatriceForm() {
     <div class="company">FEDERATION STUDIO France — 10 rue Royale 75008 Paris — SIRET 922 429 097 00012</div>
     <h2>NOTE DE FRAIS — Films « Tropiques Criminels » Saison 8</h2>
     <div class="meta">
-      <div>N° : <strong>${data.numero}</strong> &nbsp; Date : <strong>${data.dateReleve}</strong></div>
-      <div>Région : <strong>${data.regionGlobale}</strong></div>
-      <div>NOM &amp; PRÉNOM : <strong>${data.nom}</strong></div>
-      <div>Département : <strong>${effectiveDept}</strong> &nbsp; Emploi : <strong>${effectiveEmploi}</strong></div>
+      <div>N° : <strong>${escHtml(data.numero ?? "")}</strong> &nbsp; Date : <strong>${escHtml(data.dateReleve ?? "")}</strong></div>
+      <div>Région : <strong>${escHtml(data.regionGlobale ?? "")}</strong></div>
+      <div>NOM &amp; PRÉNOM : <strong>${escHtml(data.nom ?? "")}</strong></div>
+      <div>Département : <strong>${escHtml(effectiveDept)}</strong> &nbsp; Emploi : <strong>${escHtml(effectiveEmploi)}</strong></div>
     </div>
     <table>
       <thead><tr><th>N°</th><th>Date</th><th>Fournisseur</th><th>Nature dépense</th><th>TTC (€)</th><th>Plaque</th></tr></thead>
@@ -158,7 +162,7 @@ export function MatriceForm() {
     </table>
     <p style="font-size:9px;font-style:italic">Je certifie que les dépenses ci-dessus représentent des fonds déboursés uniquement pour les affaires de la société et que les justificatifs sont joints.</p>
     <div class="sign">
-      <div>Bénéficiaire<br><br>${data.nom}</div>
+      <div>Bénéficiaire<br><br>${escHtml(data.nom ?? "")}</div>
       <div>Visa chef département<br><br>&nbsp;</div>
       <div>Direction de production<br><br>&nbsp;</div>
     </div>
@@ -193,6 +197,14 @@ export function MatriceForm() {
 
   return (
     <div className="space-y-4">
+      {/* Supabase error */}
+      {supabaseError && (
+        <div className="glass-card rounded-2xl p-3 flex items-start gap-2 border border-danger/20 bg-danger/5">
+          <AlertTriangle className="w-4 h-4 text-danger shrink-0 mt-0.5" />
+          <p className="text-xs text-textSoft">{supabaseError}</p>
+        </div>
+      )}
+
       {/* Production info */}
       <div className="glass-card rounded-2xl p-4 space-y-3">
         <div>

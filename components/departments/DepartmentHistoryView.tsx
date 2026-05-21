@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { DepartmentSlug } from "@/lib/types";
 import { DEPARTMENTS } from "@/lib/data/departments";
+import { DEPT_ICONS } from "@/lib/data/departmentIcons";
 import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { ArrowLeft, Search, Filter, Package, ArrowUpRight, ArrowDownLeft, Handshake, AlertOctagon, TriangleAlert, FileText } from "lucide-react";
@@ -79,8 +80,9 @@ export function DepartmentHistoryView({ slug }: Props) {
           <ArrowLeft className="w-4 h-4 text-textSoft" />
         </button>
         <div>
-          <h2 className="text-lg font-bold text-white leading-tight">
-            {dept.icon} Historique — {dept.name}
+          <h2 className="text-lg font-bold text-white leading-tight flex items-center gap-2">
+            {(() => { const Icon = DEPT_ICONS[dept.slug as keyof typeof DEPT_ICONS]; return Icon ? <Icon className="w-4 h-4 text-cyan shrink-0" /> : null; })()}
+            Historique — {dept.name}
           </h2>
           <p className="text-xs text-muted">{deptMovements.length} mouvement{deptMovements.length !== 1 ? "s" : ""} total</p>
         </div>

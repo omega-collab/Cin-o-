@@ -82,7 +82,9 @@ export function FraisImportModal({ onClose, onConfirm }: Props) {
   const [plaqueIgnored, setPlaqueIgnored] = useState(false);
   const ticketRef = useRef<HTMLInputElement>(null);
 
-  const plaqueAbsente = !extracted.plaqueImmat && !plaqueManuelle && !plaqueIgnored;
+  const naturesVehicule = ["Carburant", "Péage", "Transport"];
+  const needsPlaque = naturesVehicule.includes(extracted.nature ?? "");
+  const plaqueAbsente = needsPlaque && !extracted.plaqueImmat && !plaqueManuelle && !plaqueIgnored;
   const plaqueEffective = extracted.plaqueImmat ?? plaqueManuelle ?? null;
 
   async function handleCapture(file: File) {

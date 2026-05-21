@@ -67,6 +67,13 @@ body::-webkit-scrollbar {
   color: #ffffff;
 }
 
+/* ── Focus visible global ──────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #00E0D0;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 /* ── Taille de texte ───────────────────────────────────────────── */
 [data-font="sm"] { font-size: 14px; }
 [data-font="md"] { font-size: 16px; }

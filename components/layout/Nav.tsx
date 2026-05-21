@@ -72,8 +72,7 @@ export function Nav() {
             return (
               <button
                 key={href}
-                onTouchEnd={() => router.push(href)}
-                onClick={() => router.push(href)}
+                onTouchEnd={(e) => { e.preventDefault(); router.push(href); }}
                 className="flex flex-col items-center justify-center gap-1 w-full h-full"
                 style={{
                   color: active ? "#00E0D0" : "#8E9AAF",

@@ -117,7 +117,7 @@ export function ExpenseForm({ onClose }: Props) {
                 category === c.id ? "active-pill" : "glass-card text-muted"
               }`}
             >
-              <span className="text-base leading-none">{c.emoji}</span>
+              <c.icon className="w-4 h-4" />
               <span className="truncate w-full text-center px-0.5">{c.label.split(" ")[0]}</span>
             </button>
           ))}

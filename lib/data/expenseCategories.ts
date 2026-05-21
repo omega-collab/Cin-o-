@@ -1,21 +1,23 @@
+import { Fuel, Utensils, Hotel, Car, ParkingCircle, Wrench, Smartphone, Package } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { ExpenseCategory } from "@/lib/types/expense";
 
 export interface CategoryDef {
   id: ExpenseCategory;
   label: string;
-  emoji: string;
-  color: string; // Tailwind text color
+  icon: LucideIcon;
+  color: string;
 }
 
 export const EXPENSE_CATEGORIES: CategoryDef[] = [
-  { id: "carburant",      label: "Carburant",       emoji: "⛽", color: "text-orange-400" },
-  { id: "repas",          label: "Repas",            emoji: "🍽️", color: "text-yellow-400" },
-  { id: "hebergement",    label: "Hébergement",      emoji: "🏨", color: "text-blue-400"   },
-  { id: "transport",      label: "Transport",        emoji: "🚗", color: "text-purple-400" },
-  { id: "peage_parking",  label: "Péage / Parking",  emoji: "🅿️", color: "text-pink-400"   },
-  { id: "materiel",       label: "Matériel",         emoji: "🔧", color: "text-cyan-400"   },
-  { id: "communication",  label: "Communication",    emoji: "📱", color: "text-green-400"  },
-  { id: "divers",         label: "Divers",           emoji: "📦", color: "text-muted"      },
+  { id: "carburant",      label: "Carburant",       icon: Fuel,          color: "text-orange-400" },
+  { id: "repas",          label: "Repas",            icon: Utensils,      color: "text-yellow-400" },
+  { id: "hebergement",    label: "Hébergement",      icon: Hotel,         color: "text-blue-400"   },
+  { id: "transport",      label: "Transport",        icon: Car,           color: "text-purple-400" },
+  { id: "peage_parking",  label: "Péage / Parking",  icon: ParkingCircle, color: "text-pink-400"   },
+  { id: "materiel",       label: "Matériel",         icon: Wrench,        color: "text-cyan-400"   },
+  { id: "communication",  label: "Communication",    icon: Smartphone,    color: "text-green-400"  },
+  { id: "divers",         label: "Divers",           icon: Package,       color: "text-muted"      },
 ];
 
 export function getCategoryDef(id: ExpenseCategory): CategoryDef {

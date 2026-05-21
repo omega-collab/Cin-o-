@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { DepartmentSlug } from "@/lib/types";
 import { DEPARTMENTS } from "@/lib/data/departments";
+import { DEPT_ICONS } from "@/lib/data/departmentIcons";
 import { useAccessStore } from "@/lib/store/useAccessStore";
 import { verifyDepartmentCode } from "@/lib/services/auth.service";
 import { DepartmentDetail } from "./DepartmentDetail";
@@ -50,13 +51,12 @@ export function DepartmentRoute({ slug }: DepartmentRouteProps) {
       <div className="glass-card-strong w-full max-w-xs mx-auto rounded-app p-8">
         {/* Icon + name */}
         <div className="flex flex-col items-center mb-7">
-          <span
-            className="text-6xl leading-none select-none mb-4"
-            role="img"
+          <div
+            className="w-16 h-16 rounded-2xl bg-cyan/10 flex items-center justify-center mb-4"
             aria-label={dept.name}
           >
-            {dept.icon}
-          </span>
+            {(() => { const Icon = DEPT_ICONS[dept.slug as keyof typeof DEPT_ICONS]; return Icon ? <Icon className="w-8 h-8 text-cyan" /> : null; })()}
+          </div>
           <h2 className="text-2xl font-bold text-center text-white">{dept.name}</h2>
           <p className="text-sm mt-1 text-center text-muted">Accès protégé par code</p>
         </div>

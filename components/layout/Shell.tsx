@@ -17,7 +17,11 @@ export function Shell({ children, title, subtitle }: ShellProps) {
   const hydrated = useHydrated();
   const onboardingDone = useUserStore((s) => s.onboardingDone);
 
-  if (!hydrated) return null;
+  if (!hydrated) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "#071018" }}>
+      <div className="w-6 h-6 rounded-full border-2 border-cyan/30 border-t-cyan animate-spin" />
+    </div>
+  );
 
   // ProjectGate gère l'auth en premier : AuthModal si non connecté, ProjectSelector si pas de projet
   // L'onboarding (département + poste) n'apparaît qu'après connexion + projet

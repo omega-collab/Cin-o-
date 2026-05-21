@@ -33,20 +33,9 @@ function minutesAfter22(startMin: number, endMin: number): number {
 
 export function computeDay(day: WorkDay): ComputedDay {
   const start = toMinutes(day.startTime);
-  const end = toMinutes(day.endTime);
-
-  if (end <= start) {
-    return {
-      effectiveMinutes: 0,
-      heuresNormales: 0,
-      heuresSup: 0,
-      heuresAnticipees: 0,
-      heuresDeNuit: 0,
-      lunchMinutes: 0,
-      isJourneeContinue: false,
-      coefficient: 1,
-    };
-  }
+  // Handle overnight shifts (e.g. 23:00 → 06:00 = +24h on end)
+  let end = toMinutes(day.endTime);
+  if (end <= start) end += 24 * 60;
 
   // Lunch pause
   let lunchMinutes = 0;

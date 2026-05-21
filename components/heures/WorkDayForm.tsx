@@ -171,9 +171,10 @@ export function WorkDayForm() {
 
       <button
         type="submit"
-        className="active-pill w-full py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2"
+        disabled={alreadyExists}
+        className="active-pill w-full py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {saved ? <><Check className="w-4 h-4" /> Enregistré</> : "Enregistrer la journée"}
+        {saved ? <><Check className="w-4 h-4" /> Enregistré</> : alreadyExists ? "Journée déjà saisie" : "Enregistrer la journée"}
       </button>
     </form>
   );
