@@ -25,6 +25,9 @@ export function WorkDayForm() {
 
   const alreadyExists = workDays.some((d) => d.date === date);
 
+  const lunchInvalid =
+    hasPause && (!lunchStart || !lunchEnd || lunchEnd <= lunchStart);
+
   const preview = computeDay({
     id: "",
     date,
@@ -115,15 +118,23 @@ export function WorkDayForm() {
           </button>
         </div>
         {hasPause && (
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-xs text-muted block mb-1">Début repas</label>
-              <input type="time" value={lunchStart} onChange={(e) => setLunchStart(e.target.value)} className={INPUT} />
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-muted block mb-1">Début repas</label>
+                <input type="time" value={lunchStart} onChange={(e) => setLunchStart(e.target.value)} className={INPUT} />
+              </div>
+              <div>
+                <label className="text-xs text-muted block mb-1">Fin repas</label>
+                <input type="time" value={lunchEnd} onChange={(e) => setLunchEnd(e.target.value)} className={INPUT} />
+              </div>
             </div>
-            <div>
-              <label className="text-xs text-muted block mb-1">Fin repas</label>
-              <input type="time" value={lunchEnd} onChange={(e) => setLunchEnd(e.target.value)} className={INPUT} />
-            </div>
+            {lunchInvalid && (
+              <p className="text-xs text-orangeSoft flex items-center gap-1">
+                <AlertCircle className="w-3 h-3 shrink-0" />
+                L&apos;heure de fin doit être après le début de la pause.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -171,7 +182,7 @@ export function WorkDayForm() {
 
       <button
         type="submit"
-        disabled={alreadyExists}
+        disabled={alreadyExists || lunchInvalid}
         className="active-pill w-full py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {saved ? <><Check className="w-4 h-4" /> Enregistré</> : alreadyExists ? "Journée déjà saisie" : "Enregistrer la journée"}
