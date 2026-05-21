@@ -373,7 +373,7 @@ Utiliser skeleton (pas spinner) pour les chargements > 200ms.
 
 ---
 
-## 10. Patterns métier
+## 10. Patterns métier et flux récents
 
 ### Carte de séquence
 
@@ -416,6 +416,116 @@ Fond : `bg-danger/8 border border-danger/20` (PAS de border-left).
 │ [Clock] Call 06:30 → Wrap ~18:00        │
 │ [UtensilsCrossed] 12:30  [Sun] 29°C    │
 │ [Film] 8 séquences                     │
+└─────────────────────────────────────────┘
+```
+
+### Badge convention IDCC
+
+```tsx
+// IDCC 2642 (audiovisuel) — violet
+<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+  IDCC 2642
+</span>
+
+// IDCC 3097 (cinéma) — cyan
+<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan/10 text-cyan border border-cyan/20">
+  IDCC 3097
+</span>
+```
+
+### Carte LegalDocumentChunk (info juridique)
+
+Structure : titre + tag + texte condensé + bouton "Voir plus" + données salariales si présentes.
+
+```
+┌─────────────────────────────────────────┐
+│ [Scale] Durée du travail    [IDCC 3097] │
+│ Art. L3121-10 · durée-travail           │
+│ Durée hebdomadaire de référence : 39h.  │
+│ ▼ Voir plus                             │
+└─────────────────────────────────────────┘
+```
+Données salariales (SalaryData) : tableau inline `Poste / Montant / Fréquence / Indicatif`.
+
+### Flux OCR scan frais (multi-étapes)
+
+**Étape 1 — Capture**
+```
+┌─────────────────────────────────────────┐
+│  [Camera] Photo du ticket *             │
+│  ┌──────────────────────┐               │
+│  │  [Upload] Ajouter    │ ou aperçu     │
+│  └──────────────────────┘               │
+│  [FileText] Facture (optionnel)         │
+│                                         │
+│  [ScanLine] Analyser avec l'IA ▶        │
+└─────────────────────────────────────────┘
+```
+
+**Étape 2 — Vérification**
+```
+┌─────────────────────────────────────────┐
+│  Aperçu ticket (image 80px)             │
+│                                         │
+│  ┌── Plaque d'immatriculation ──────┐   │
+│  │ [Car cyan] AB-123-CD             │  ← auto-détectée (cyan)
+│  └──────────────────────────────────┘   │
+│                                         │
+│  ┌── Plaque d'immatriculation ──────┐   │
+│  │ [Car amber] Non détectée         │  ← absente (amber warning)
+│  │ [Input] Saisir manuellement      │   │
+│  │ [Checkbox] Non-véhicule / bypass │   │
+│  └──────────────────────────────────┘   │
+│                                         │
+│  Date   [2024-01-20]                    │
+│  Fournisseur  [TOTAL CAP TAUPIN...]     │
+│  Nature  [Carburant ▾]                  │
+│  Montant TTC  [67.50 €]                 │
+│                                         │
+│  [Check] Confirmer                      │
+└─────────────────────────────────────────┘
+```
+
+Règles :
+- Plaque auto-détectée → border cyan + texte cyan + icône Car cyan
+- Plaque absente → border amber + fond amber/5 + warning + champ manuel
+- Bouton "Confirmer" désactivé si plaque absente et non bypassée
+- Bypass "non-véhicule" = checkbox qui libère la confirmation
+
+### Entrée frais (EntryCard — liste Matrice)
+
+```
+┌─────────────────────────────────────────┐
+│ [1]  TOTAL CAP TAUPIN…   [Pencil] [Trash] │
+│      2024-01-20 · Carburant              │
+│      AB-123-CD (cyan mono)               │  ← si plaque présente
+│                                    67.50 € │
+└─────────────────────────────────────────┘
+```
+
+Mode édition inline :
+```
+┌── ring cyan/30 ──────────────────────────┐
+│  Date  [input]  Fournisseur  [input]     │
+│  Nature [select▾]  TTC [number input]   │
+│  Plaque [input]                          │
+│  [Enregistrer]  [X]                     │
+└─────────────────────────────────────────┘
+```
+
+### Matrice note de frais (tableau TTC uniquement)
+
+Colonnes PDF : N° | Date | Fournisseur | Nature dépense | TTC (€) | Plaque
+Pas de colonnes TVA/HT — le calcul TVA est géré par le tableur de la production.
+
+Contrôle cohérence avant impression :
+```
+┌─────────────────────────────────────────┐
+│ [AlertTriangle amber] Problèmes détectés │
+│  [3] Montant nul ou négatif             │
+│  [5] Fournisseur manquant               │
+│                                         │
+│  [Imprimer quand même]  [Corriger]      │
 └─────────────────────────────────────────┘
 ```
 
@@ -621,4 +731,4 @@ Avant tout merge d'un composant UI :
 
 ---
 
-*CinéO Design System v1.0 — Mai 2026*
+*CinéO Design System v1.1 — 21 mai 2026 — Ajouts : badge IDCC, flux OCR frais, EntryCard, matrice TTC*
