@@ -188,24 +188,24 @@ export function ProjectSelector() {
         )}
 
         {/* Actions */}
-        <div className="glass-card rounded-2xl p-1 flex gap-1">
+        <div className="glass-card rounded-2xl p-1 flex gap-1 overflow-hidden">
           {projects.length > 0 && (
             <button
               onClick={() => { setTab("list"); setError(""); }}
-              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${tab === "list" ? "active-pill" : "text-muted"}`}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all truncate ${tab === "list" ? "active-pill" : "text-muted"}`}
             >
-              Mes projets
+              Projets
             </button>
           )}
           <button
             onClick={() => { setTab("create"); setError(""); }}
-            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${tab === "create" ? "active-pill" : "text-muted"}`}
+            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all truncate ${tab === "create" ? "active-pill" : "text-muted"}`}
           >
             Créer
           </button>
           <button
             onClick={() => { setTab("join"); setError(""); }}
-            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${tab === "join" ? "active-pill" : "text-muted"}`}
+            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all truncate ${tab === "join" ? "active-pill" : "text-muted"}`}
           >
             Rejoindre
           </button>
