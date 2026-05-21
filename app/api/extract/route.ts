@@ -2,7 +2,8 @@ import { Mistral } from "@mistralai/mistralai";
 import { NextRequest, NextResponse } from "next/server";
 import type { ExtractionResult } from "@/lib/types/shoot";
 
-export const maxDuration = 60;
+export const runtime = "edge";
+export const maxDuration = 30;
 
 const EXTRACTION_PROMPT = `Tu es un assistant expert en production cinématographique française. Tu reçois le contenu OCR de plusieurs documents complémentaires pour une même journée de tournage :
 
@@ -115,88 +116,36 @@ Règles de format :
 - Dates en YYYY-MM-DD
 - priority "critical" = danger/urgence, "warning" = attention requise, "info" = information générale`;
 
-type AllowedMimeType = "application/pdf" | "image/jpeg" | "image/png" | "image/gif" | "image/webp";
-
-function normalizeMediaType(raw: string): AllowedMimeType | null {
-  const t = raw.trim().toLowerCase();
-  if (t === "application/pdf" || t === "application/x-pdf") return "application/pdf";
-  if (t === "image/jpeg" || t === "image/jpg") return "image/jpeg";
-  if (t === "image/png") return "image/png";
-  if (t === "image/gif") return "image/gif";
-  if (t === "image/webp") return "image/webp";
-  return null;
-}
-
-function sanitizeBase64(data: string): string {
-  return data.replace(/[^A-Za-z0-9+/=]/g, "");
-}
-
-interface DocInput {
-  base64: string;
-  mediaType: string;
+interface TextInput {
+  text: string;
   filename: string;
+  type: string;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { docs: DocInput[] };
-    const { docs } = body;
+    const body = await req.json() as { texts: TextInput[] };
+    const { texts } = body;
 
-    if (!docs || !Array.isArray(docs) || docs.length === 0) {
-      return NextResponse.json({ error: "Aucun document fourni" }, { status: 400 });
+    if (!texts || !Array.isArray(texts) || texts.length === 0) {
+      return NextResponse.json({ error: "Aucun texte fourni" }, { status: 400 });
     }
-    if (docs.length > 5) {
+    if (texts.length > 5) {
       return NextResponse.json({ error: "Maximum 5 documents par extraction" }, { status: 400 });
     }
 
     if (!process.env.MISTRAL_API_KEY) {
-      return NextResponse.json({ error: "Clé API manquante — vérifiez la variable MISTRAL_API_KEY dans Netlify" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Clé API manquante — configurez MISTRAL_API_KEY dans les variables d'environnement Netlify" },
+        { status: 500 }
+      );
     }
 
     const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY });
-    const skipped: string[] = [];
-    const docTexts: string[] = [];
 
-    // Step 1: OCR each document
-    for (const doc of docs) {
-      const mediaType = normalizeMediaType(doc.mediaType);
-      const data = sanitizeBase64(doc.base64);
-
-      if (!data) {
-        skipped.push(`${doc.filename} (données vides)`);
-        continue;
-      }
-
-      if (!mediaType) {
-        skipped.push(`${doc.filename} (format non supporté: ${doc.mediaType})`);
-        continue;
-      }
-
-      try {
-        const dataUrl = `data:${mediaType};base64,${data}`;
-        const isImage = mediaType !== "application/pdf";
-
-        const ocrResult = await client.ocr.process({
-          model: "mistral-ocr-latest",
-          document: isImage
-            ? { type: "image_url", imageUrl: dataUrl }
-            : { type: "document_url", documentUrl: dataUrl },
-        });
-
-        const text = ocrResult.pages.map((p) => p.markdown).join("\n\n---\n\n");
-        docTexts.push(`=== ${doc.filename} ===\n${text}`);
-      } catch {
-        skipped.push(`${doc.filename} (lecture échouée)`);
-      }
-    }
-
-    if (docTexts.length === 0) {
-      const detail = skipped.length > 0 ? ` Fichiers ignorés: ${skipped.join(", ")}` : "";
-      return NextResponse.json({ error: `Aucun document exploitable.${detail}` }, { status: 400 });
-    }
-
-    // Step 2: Extract structured JSON from OCR text
-    const combinedText = docTexts.join("\n\n");
+    const combinedText = texts
+      .map((t) => `=== ${t.filename} (${t.type}) ===\n${t.text}`)
+      .join("\n\n");
 
     const chatResponse = await client.chat.complete({
       model: "mistral-small-latest",
@@ -210,16 +159,17 @@ export async function POST(req: NextRequest) {
     });
 
     const raw = (chatResponse.choices?.[0]?.message?.content ?? "").toString().trim();
-
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch?.[0]) {
-      return NextResponse.json({ error: "Impossible d'extraire le JSON de la réponse" }, { status: 500 });
+      return NextResponse.json({ error: "Impossible d'extraire le JSON de la réponse IA" }, { status: 500 });
     }
 
     const result = JSON.parse(jsonMatch[0]) as ExtractionResult;
-    return NextResponse.json({ result, skipped: skipped.length > 0 ? skipped : undefined });
+    return NextResponse.json({ result });
   } catch (err) {
-    console.error("[extract] error:", err instanceof Error ? err.message : String(err));
-    return NextResponse.json({ error: "Erreur lors du traitement des documents" }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[extract] error:", msg);
+    const safe = msg.length < 120 && !/https?:|at \w/.test(msg) ? msg : "Erreur serveur — réessayez dans quelques instants.";
+    return NextResponse.json({ error: safe }, { status: 500 });
   }
 }

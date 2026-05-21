@@ -12,7 +12,7 @@ const DEPT_ICONS: Record<string, React.ElementType> = {
   cantine: UtensilsCrossed,
 };
 
-export function DeptIcon({ slug, className = "w-5 h-5" }: { slug: string; className?: string }) {
+export function DeptIcon({ slug, className = "w-5 h-5", style }: { slug: string; className?: string; style?: React.CSSProperties }) {
   const Icon = DEPT_ICONS[slug] ?? HelpCircle;
-  return <Icon className={className} />;
+  return <Icon className={className} style={style} />;
 }
