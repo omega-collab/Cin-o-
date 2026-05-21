@@ -9,12 +9,15 @@ const INPUT = "w-full bg-white/5 border border-stroke rounded-xl px-3 py-2 text-
 export function SalarySettings() {
   const { settings, updateSettings } = useIntermittentStore();
   const [local, setLocal] = useState({
-    tauxJournalier: settings.tauxJournalier,
-    tauxHoraire: settings.tauxHoraire,
+    tauxJournalier: String(settings.tauxJournalier),
+    tauxHoraire: String(settings.tauxHoraire),
   });
 
   function save() {
-    updateSettings({ ...local });
+    updateSettings({
+      tauxHoraire: parseFloat(local.tauxHoraire.replace(",", ".")) || 0,
+      tauxJournalier: parseFloat(local.tauxJournalier.replace(",", ".")) || 0,
+    });
   }
 
   return (
@@ -46,11 +49,10 @@ export function SalarySettings() {
           <div>
             <label className="text-xs text-muted block mb-1">Taux horaire brut (€)</label>
             <input
-              type="number"
-              step="0.5"
-              min="0"
+              type="text"
+              inputMode="decimal"
               value={local.tauxHoraire}
-              onChange={(e) => setLocal((p) => ({ ...p, tauxHoraire: Number(e.target.value) }))}
+              onChange={(e) => setLocal((p) => ({ ...p, tauxHoraire: e.target.value }))}
               className={INPUT}
             />
             <p className="text-xs text-muted mt-1">
@@ -61,11 +63,10 @@ export function SalarySettings() {
           <div>
             <label className="text-xs text-muted block mb-1">MG journalier brut (€)</label>
             <input
-              type="number"
-              step="5"
-              min="0"
+              type="text"
+              inputMode="decimal"
               value={local.tauxJournalier}
-              onChange={(e) => setLocal((p) => ({ ...p, tauxJournalier: Number(e.target.value) }))}
+              onChange={(e) => setLocal((p) => ({ ...p, tauxJournalier: e.target.value }))}
               className={INPUT}
             />
             <p className="text-xs text-muted mt-1">
