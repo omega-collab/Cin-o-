@@ -85,6 +85,7 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
   const dropRef = useRef<HTMLInputElement>(null);
 
   const [extracting, setExtracting] = useState(false);
+  const [extractStep, setExtractStep] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -145,29 +146,88 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
     if (docs.length === 0) return;
     setExtracting(true);
     setError(null);
+    setSkipped([]);
     setExtractionStatus("extracting");
 
     try {
-      const payload = docs.map((d) => ({
-        base64: d.base64 ?? "",
-        mediaType: d.mediaType ?? "application/pdf",
-        filename: d.filename,
-        type: d.type,
-      }));
+      // Step 1: OCR each document individually (avoids 6MB Netlify payload limit)
+      const texts: Array<{ text: string; filename: string; type: string }> = [];
+      const skippedFiles: string[] = [];
 
-      const res = await fetch("/api/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ docs: payload }),
-      });
+      for (let i = 0; i < docs.length; i++) {
+        const doc = docs[i]!;
+        setExtractStep(`Lecture ${i + 1}/${docs.length} — ${doc.filename}…`);
 
-      const json = await res.json() as { result?: unknown; error?: string; skipped?: string[] };
-      if (!res.ok || json.error) throw new Error(json.error ?? "Erreur extraction");
+        try {
+          const ocrRes = await fetch("/api/ocr", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              base64: doc.base64 ?? "",
+              mediaType: doc.mediaType ?? "application/pdf",
+              filename: doc.filename,
+            }),
+          });
 
-      // E4: display skipped files
-      if (json.skipped && json.skipped.length > 0) setSkipped(json.skipped);
+          let ocrJson: { text?: string; error?: string };
+          try {
+            ocrJson = await ocrRes.json() as typeof ocrJson;
+          } catch {
+            skippedFiles.push(`${doc.filename} — erreur serveur (${ocrRes.status})`);
+            continue;
+          }
 
-      setPendingExtraction(json.result as Parameters<typeof setPendingExtraction>[0]);
+          if (!ocrRes.ok || ocrJson.error) {
+            skippedFiles.push(`${doc.filename} — ${ocrJson.error ?? `erreur ${ocrRes.status}`}`);
+            continue;
+          }
+
+          if (ocrJson.text) {
+            texts.push({ text: ocrJson.text, filename: doc.filename, type: doc.type });
+          } else {
+            skippedFiles.push(`${doc.filename} — texte vide après OCR`);
+          }
+        } catch {
+          skippedFiles.push(`${doc.filename} — connexion échouée`);
+        }
+      }
+
+      if (skippedFiles.length > 0) setSkipped(skippedFiles);
+
+      if (texts.length === 0) {
+        throw new Error(`Aucun document exploitable.${skippedFiles.length > 0 ? " " + skippedFiles[0] : ""}`);
+      }
+
+      // Step 2: Extract structured data from combined OCR text
+      setExtractStep("Extraction des données par IA…");
+
+      let extractRes: Response;
+      try {
+        extractRes = await fetch("/api/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texts }),
+        });
+      } catch {
+        throw new Error("Connexion échouée pendant l'extraction — vérifiez votre réseau.");
+      }
+
+      let extractJson: { result?: unknown; error?: string };
+      try {
+        extractJson = await extractRes.json() as typeof extractJson;
+      } catch {
+        const status = extractRes.status;
+        if (status === 504 || status === 524 || status === 408) {
+          throw new Error("Délai d'attente dépassé — le serveur a pris trop de temps. Réessayez.");
+        }
+        throw new Error(`Erreur serveur (${status}) — réessayez.`);
+      }
+
+      if (!extractRes.ok || extractJson.error) {
+        throw new Error(extractJson.error ?? `Erreur extraction (${extractRes.status})`);
+      }
+
+      setPendingExtraction(extractJson.result as Parameters<typeof setPendingExtraction>[0]);
       setExtractionStatus("review");
       onNext();
     } catch (err) {
@@ -176,6 +236,7 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
       setExtractionStatus("error", msg);
     } finally {
       setExtracting(false);
+      setExtractStep(null);
     }
   }
 
@@ -322,7 +383,7 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
         {extracting ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Extraction en cours…
+            <span className="truncate">{extractStep ?? "Extraction en cours…"}</span>
           </>
         ) : (
           "Extraire avec Claude AI"
