@@ -130,6 +130,9 @@ export async function POST(req: NextRequest) {
     if (!texts || !Array.isArray(texts) || texts.length === 0) {
       return NextResponse.json({ error: "Aucun texte fourni" }, { status: 400 });
     }
+    if (texts.length > 5) {
+      return NextResponse.json({ error: "Maximum 5 documents par extraction" }, { status: 400 });
+    }
 
     if (!process.env.MISTRAL_API_KEY) {
       return NextResponse.json(
@@ -166,6 +169,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[extract] error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const safe = msg.length < 120 && !/https?:|at \w/.test(msg) ? msg : "Erreur serveur — réessayez dans quelques instants.";
+    return NextResponse.json({ error: safe }, { status: 500 });
   }
 }

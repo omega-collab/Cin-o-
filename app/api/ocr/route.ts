@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[ocr] error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const safe = msg.length < 120 && !/https?:|at \w/.test(msg) ? msg : "Erreur OCR — réessayez ou vérifiez le fichier.";
+    return NextResponse.json({ error: safe }, { status: 500 });
   }
 }

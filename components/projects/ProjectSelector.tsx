@@ -5,6 +5,7 @@ import { Plus, Hash, Loader2, Copy, Check, FolderOpen, Film } from "lucide-react
 import { supabase } from "@/lib/supabase/client";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import type { Project } from "@/lib/supabase/types";
+import { extractMsg } from "@/lib/utils";
 
 const INPUT =
   "w-full bg-white/5 border border-stroke rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-cyan/40";
@@ -71,7 +72,7 @@ export function ProjectSelector() {
       addProject(proj);
       setCreatedProject(proj);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? "Erreur inconnue";
+      const msg = extractMsg(err);
       setError(msg);
     } finally {
       setLoading(false);
@@ -108,7 +109,7 @@ export function ProjectSelector() {
       addProject(proj);
       setActiveProject(proj.id);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? "Erreur inconnue";
+      const msg = extractMsg(err);
       setError(msg);
     } finally {
       setLoading(false);

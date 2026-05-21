@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useSettingsStore, resolveLoginBg } from "@/lib/store/useSettingsStore";
+import { extractMsg } from "@/lib/utils";
 
 // ── Lens "O" ──────────────────────────────────────────────────────────────────
 function LensO({ size = 52 }: { size?: number }) {
@@ -115,6 +116,30 @@ function UnderlineInput({ type, placeholder, value, onChange, icon, required, mi
 // ── Main component ────────────────────────────────────────────────────────────
 type Screen = "splash" | "login" | "register";
 
+// ── Fond partagé (extrait hors du composant pour éviter les remounts) ─────────
+function AuthBg({ bgUrl, screen }: { bgUrl: string; screen: Screen }) {
+  return (
+    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      <div className="absolute inset-0" style={{
+        backgroundImage: `url('${bgUrl}')`,
+        backgroundSize: "cover", backgroundPosition: "top center",
+      }} />
+      <div className="absolute inset-0" style={{
+        background: screen === "splash"
+          ? "linear-gradient(to bottom, rgba(4,13,23,0.38) 0%, rgba(4,13,23,0.06) 28%, rgba(4,13,23,0.62) 60%, #040d17 80%)"
+          : "linear-gradient(to bottom, transparent 28%, rgba(4,13,23,0.62) 50%, rgba(4,13,23,0.92) 68%, #040d17 85%)",
+      }} />
+      <svg className="absolute inset-0 w-full h-full" style={{ opacity: 0.04, mixBlendMode: "overlay" }}>
+        <filter id="grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#grain)" />
+      </svg>
+    </div>
+  );
+}
+
 export function AuthModal() {
   const loginBg = useSettingsStore((s) => s.loginBg);
   const bgUrl = resolveLoginBg(loginBg);
@@ -151,7 +176,7 @@ export function AuthModal() {
         if (err) throw err;
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? "Erreur inconnue";
+      const msg = extractMsg(err);
       if (msg.includes("Invalid login")) setError("Email ou mot de passe incorrect.");
       else if (msg.includes("already registered")) setError("Cet email est déjà utilisé.");
       else if (msg.includes("Password should be")) setError("Mot de passe trop court (6 caractères min).");
@@ -161,33 +186,11 @@ export function AuthModal() {
     }
   }
 
-  // ── Fond partagé ─────────────────────────────────────────────────────────────
-  const Bg = () => (
-    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      <div className="absolute inset-0" style={{
-        backgroundImage: `url('${bgUrl}')`,
-        backgroundSize: "cover", backgroundPosition: "top center",
-      }} />
-      <div className="absolute inset-0" style={{
-        background: screen === "splash"
-          ? "linear-gradient(to bottom, rgba(4,13,23,0.38) 0%, rgba(4,13,23,0.06) 28%, rgba(4,13,23,0.62) 60%, #040d17 80%)"
-          : "linear-gradient(to bottom, transparent 28%, rgba(4,13,23,0.62) 50%, rgba(4,13,23,0.92) 68%, #040d17 85%)",
-      }} />
-      <svg className="absolute inset-0 w-full h-full" style={{ opacity: 0.04, mixBlendMode: "overlay" }}>
-        <filter id="grain">
-          <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#grain)" />
-      </svg>
-    </div>
-  );
-
   // ── Écran d'accueil (splash) ─────────────────────────────────────────────────
   if (screen === "splash") {
     return (
       <div className="relative min-h-screen flex flex-col" style={{ background: "#040d17" }}>
-        <Bg />
+        <AuthBg bgUrl={bgUrl} screen={screen} />
 
         {/* Clap + marque centrés */}
         <div className="relative flex-1 flex flex-col items-center justify-center"
@@ -237,7 +240,7 @@ export function AuthModal() {
   // ── Formulaire (connexion / inscription) ─────────────────────────────────────
   return (
     <div className="relative min-h-screen overflow-hidden flex flex-col" style={{ background: "#040d17" }}>
-      <Bg />
+      <AuthBg bgUrl={bgUrl} screen={screen} />
 
       {/* Petit héros en haut */}
       <div className="relative flex-shrink-0 flex items-end justify-center px-12"

@@ -27,3 +27,12 @@ export function formatDateTime(iso: string): string {
 export function cn(...classes: (string | undefined | false | null)[]): string {
   return classes.filter(Boolean).join(" ");
 }
+
+export function extractMsg(err: unknown, fallback = "Erreur inconnue"): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object" && "message" in err) {
+    const m = (err as { message?: unknown }).message;
+    if (typeof m === "string") return m;
+  }
+  return fallback;
+}
