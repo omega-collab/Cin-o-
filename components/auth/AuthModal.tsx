@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Mail, Lock, User, Eye, EyeOff, Loader2, HelpCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { FeaturesSheet } from "@/components/onboarding/FeaturesSheet";
+import { useSettingsStore, resolveLoginBg } from "@/lib/store/useSettingsStore";
 
 // ── Underline input ───────────────────────────────────────────────────────────
 interface UnderlineInputProps {
@@ -54,6 +55,9 @@ function UnderlineInput({ type, placeholder, value, onChange, icon, required, mi
 type Mode = "login" | "register";
 
 export function AuthModal() {
+  const loginBg = useSettingsStore((s) => s.loginBg);
+  const bgUrl = resolveLoginBg(loginBg);
+
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -102,7 +106,7 @@ export function AuthModal() {
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: "url('/auth-bg.jpg')",
+            backgroundImage: `url('${bgUrl}')`,
             backgroundSize: "cover",
             backgroundPosition: "top center",
             backgroundRepeat: "no-repeat",
