@@ -120,8 +120,9 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
       const mediaType = detectMediaType(file);
       const type = forcedType ?? "feuille_service";
 
-      // Remplace si un doc du même type existe déjà
-      const existing = docs.find((d) => d.type === type);
+      // Remplace si un doc du même type existe déjà — lit le state courant (pas la closure)
+      const currentDocs = useShootStore.getState().shoot.uploadedDocs;
+      const existing = currentDocs.find((d) => d.type === type);
       if (existing) removeDoc(existing.id);
 
       const doc: UploadedDoc = {
@@ -267,7 +268,15 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
               </div>
 
               {loaded ? (
-                <button onClick={() => removeDoc(loaded.id)} className="text-muted hover:text-redSoft shrink-0 w-10 h-10 flex items-center justify-center -mr-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Réinitialise l'input pour éviter tout re-déclenchement onChange
+                    if (ref?.current) ref.current.value = "";
+                    removeDoc(loaded.id);
+                  }}
+                  className="text-muted hover:text-redSoft shrink-0 w-10 h-10 flex items-center justify-center -mr-1"
+                >
                   <Trash2 className="w-4 h-4" />
                 </button>
               ) : (
