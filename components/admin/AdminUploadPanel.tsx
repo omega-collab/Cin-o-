@@ -84,6 +84,7 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
   };
   const dropRef = useRef<HTMLInputElement>(null);
 
+  const lastDeleteMs = useRef(0);
   const [extracting, setExtracting] = useState(false);
   const [extractStep, setExtractStep] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -269,9 +270,15 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
 
               {loaded ? (
                 <button
+                  onTouchEnd={(e) => {
+                    e.stopPropagation();
+                    lastDeleteMs.current = Date.now();
+                    if (ref?.current) ref.current.value = "";
+                    removeDoc(loaded.id);
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Réinitialise l'input pour éviter tout re-déclenchement onChange
+                    lastDeleteMs.current = Date.now();
                     if (ref?.current) ref.current.value = "";
                     removeDoc(loaded.id);
                   }}
@@ -281,7 +288,11 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
                 </button>
               ) : (
                 <button
-                  onClick={() => ref?.current?.click()}
+                  onClick={() => {
+                    // Bloque le ghost click iOS (≤400ms après suppression)
+                    if (Date.now() - lastDeleteMs.current < 400) return;
+                    ref?.current?.click();
+                  }}
                   className="text-xs text-cyan glass-card px-2.5 py-1 rounded-lg shrink-0"
                 >
                   Importer
