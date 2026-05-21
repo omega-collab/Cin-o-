@@ -91,6 +91,13 @@ export function StockImportPanel({ slug, onClose }: Props) {
   }
 
   function handleApply() {
+    const emptyNames = items.filter((it) => !it.name.trim());
+    if (emptyNames.length > 0) {
+      setError(
+        `${emptyNames.length} article${emptyNames.length > 1 ? "s" : ""} sans nom — renseignez-les ou supprimez-les.`
+      );
+      return;
+    }
     setStock(slug, items);
     onClose();
   }

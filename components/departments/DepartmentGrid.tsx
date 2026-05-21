@@ -1,14 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { useAccessStore } from "@/lib/store/useAccessStore";
-
-type Role = "Chef de poste" | "1er AC" | "2e AC" | "3e AC";
-
-const ROLES: Role[] = ["Chef de poste", "1er AC", "2e AC", "3e AC"];
 
 const DEPT_ROLES: Record<string, string> = {
   camera: "Chef opérateur",
@@ -23,29 +18,10 @@ const DEPT_ROLES: Record<string, string> = {
 };
 
 export function DepartmentGrid() {
-  const [activeRole, setActiveRole] = useState<Role>("Chef de poste");
   const isUnlocked = useAccessStore((s) => s.isUnlocked);
 
   return (
     <div className="min-h-screen px-4 pt-6 pb-10">
-      {/* Role selector */}
-      <div className="flex gap-2 overflow-x-auto pb-1 mb-5 scrollbar-hide">
-        {ROLES.map((role) => (
-          <button
-            key={role}
-            onClick={() => setActiveRole(role)}
-            className={
-              activeRole === role
-                ? "active-pill shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all"
-                : "glass-card shrink-0 px-4 py-2 rounded-full text-sm font-medium text-textSoft border-stroke transition-all"
-            }
-          >
-            {role}
-          </button>
-        ))}
-      </div>
-
-      {/* Department grid */}
       <div className="grid grid-cols-2 gap-3">
         {DEPARTMENTS.map((dept) => {
           const unlocked = isUnlocked(dept.slug);
@@ -79,7 +55,7 @@ export function DepartmentGrid() {
 
                 {/* Role subtitle */}
                 <p className="text-xs text-muted text-center mt-0.5 leading-tight">
-                  {DEPT_ROLES[dept.slug] ?? activeRole}
+                  {DEPT_ROLES[dept.slug] ?? "Département"}
                 </p>
 
                 {/* Chevron */}

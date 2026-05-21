@@ -83,7 +83,7 @@ export function CanteenCard() {
         </div>
       )}
 
-      {!hasMenu && !canteenLocation && (
+      {!hasMenu && (
         <p className="text-xs text-muted italic">Menu non renseigné.</p>
       )}
     </div>

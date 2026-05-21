@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { DepartmentSlug } from "@/lib/types";
 import { DEPARTMENTS } from "@/lib/data/departments";
@@ -21,10 +21,11 @@ export function DepartmentRoute({ slug }: DepartmentRouteProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  if (!dept) {
-    router.push("/departments");
-    return null;
-  }
+  useEffect(() => {
+    if (!dept) router.push("/departments");
+  }, [dept, router]);
+
+  if (!dept) return null;
 
   if (isUnlocked) {
     return <DepartmentDetail slug={slug} />;

@@ -1,12 +1,12 @@
 "use client";
 
-import { Bell, AlertTriangle, Info } from "lucide-react";
+import { Bell, AlertTriangle, Info, XCircle } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
 
 const SEVERITY_ICON = {
   info: <Info className="w-3.5 h-3.5 text-blueSoft shrink-0 mt-0.5" />,
   warning: <AlertTriangle className="w-3.5 h-3.5 text-orangeSoft shrink-0 mt-0.5" />,
-  critical: <AlertTriangle className="w-3.5 h-3.5 text-redSoft shrink-0 mt-0.5" />,
+  critical: <XCircle className="w-3.5 h-3.5 text-redSoft shrink-0 mt-0.5" />,
 };
 
 export function AlertsCard() {

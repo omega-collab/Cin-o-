@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import type { DepartmentSlug, MovementType } from "@/lib/types";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
@@ -10,7 +11,7 @@ import { useHydrated } from "@/lib/hooks/useHydrated";
 import { Modal } from "@/components/ui/Modal";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { StockImportPanel } from "./StockImportPanel";
-import { Upload, Camera, X, Check } from "lucide-react";
+import { Upload, Camera, X, Check, Search, Download, History } from "lucide-react";
 
 interface DepartmentDetailProps {
   slug: DepartmentSlug;
@@ -66,11 +67,20 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
   const [operator, setOperator] = useState("");
   const [notes, setNotes] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [toast, setToast] = useState(false);
+  const [stockSearch, setStockSearch] = useState("");
 
   if (!hydrated || !dept) return null;
 
-  const deptMovements = allMovements.filter((m) => m.deptSlug === slug).slice(0, 8);
+  const deptMovements = allMovements.filter((m) => m.deptSlug === slug);
+  const recentMovements = deptMovements.slice(0, 8);
+
+  const filteredStock = stockSearch.trim()
+    ? stock.filter((item) =>
+        item.name.toLowerCase().includes(stockSearch.trim().toLowerCase())
+      )
+    : stock;
 
   function openModal(itemId: string) {
     setSelectedItem(itemId);
@@ -80,11 +90,16 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
     setOperator(userRole && userDept === slug ? `${userRole} — ${deptName}` : "");
     setNotes("");
     setPhoto(null);
+    setPhotoError(null);
     setModalOpen(true);
   }
 
   async function handlePhotoFile(file: File) {
-    if (file.size > 2 * 1024 * 1024) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setPhotoError("Photo trop grande (max 2 Mo)");
+      return;
+    }
+    setPhotoError(null);
     const dataUrl = await fileToBase64(file);
     setPhoto(dataUrl);
   }
@@ -121,6 +136,29 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
     setTimeout(() => setToast(false), 2500);
   }
 
+  function exportCSV() {
+    const headers = ["Nom", "Quantité", "Unité", "Statut", "Notes"];
+    const rows = stock.map((item) => [
+      item.name,
+      item.quantity,
+      item.unit,
+      item.status,
+      item.notes ?? "",
+    ]);
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      )
+      .join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `stock-${slug}-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="min-h-screen px-4 pt-6 pb-10">
       {toast && (
@@ -139,13 +177,25 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
             <p className="text-sm mt-0.5 text-muted">Gestion du matériel</p>
           </div>
         </div>
-        <button
-          onClick={() => setImportOpen(true)}
-          className="glass-card flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-cyan"
-        >
-          <Upload className="w-3.5 h-3.5" />
-          Importer
-        </button>
+        <div className="flex items-center gap-2">
+          {stock.length > 0 && (
+            <button
+              onClick={exportCSV}
+              className="glass-card flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-muted"
+              title="Exporter le stock en CSV"
+            >
+              <Download className="w-3.5 h-3.5" />
+              CSV
+            </button>
+          )}
+          <button
+            onClick={() => setImportOpen(true)}
+            className="glass-card flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs text-cyan"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            Importer
+          </button>
+        </div>
       </div>
 
       {importOpen && (
@@ -181,39 +231,70 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
 
       {stock.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 text-muted">Stock</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">Stock</h3>
+          </div>
+
+          {/* D2: Search bar */}
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted pointer-events-none" />
+            <input
+              type="search"
+              value={stockSearch}
+              onChange={(e) => setStockSearch(e.target.value)}
+              placeholder="Rechercher un article…"
+              className="w-full bg-white/5 border border-stroke rounded-2xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-cyan/40"
+            />
+          </div>
+
           <div className="space-y-2">
-            {stock.map((item) => (
-              <div key={item.id} className="glass-card flex items-center justify-between gap-3 p-4 rounded-2xl">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                  <p className="text-xs mt-0.5 text-muted">
-                    {item.quantity} {item.unit}
-                    {item.notes ? ` · ${item.notes}` : ""}
-                  </p>
+            {filteredStock.length === 0 ? (
+              <p className="text-sm text-muted text-center py-4">Aucun article trouvé.</p>
+            ) : (
+              filteredStock.map((item) => (
+                <div key={item.id} className="glass-card flex items-center justify-between gap-3 p-4 rounded-2xl">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{item.name}</p>
+                    <p className="text-xs mt-0.5 text-muted">
+                      {item.quantity} {item.unit}
+                      {item.notes ? ` · ${item.notes}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <StatusPill status={item.status} />
+                    <button
+                      onClick={() => openModal(item.id)}
+                      className="active-pill px-3 py-1.5 text-xs font-semibold rounded-xl"
+                    >
+                      Mouvement
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <StatusPill status={item.status} />
-                  <button
-                    onClick={() => openModal(item.id)}
-                    className="active-pill px-3 py-1.5 text-xs font-semibold rounded-xl"
-                  >
-                    Mouvement
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}
 
-      {deptMovements.length > 0 && (
+      {recentMovements.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 text-muted">
-            Mouvements récents
-          </h3>
+          {/* D3: header with "Voir tout" link */}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Mouvements récents
+            </h3>
+            {deptMovements.length > 8 && (
+              <Link
+                href={`/departments/${slug}/history`}
+                className="flex items-center gap-1 text-xs text-cyan"
+              >
+                <History className="w-3 h-3" />
+                Tout voir ({deptMovements.length})
+              </Link>
+            )}
+          </div>
           <div className="space-y-2">
-            {deptMovements.map((mov) => (
+            {recentMovements.map((mov) => (
               <div key={mov.id} className="glass-card rounded-2xl overflow-hidden">
                 <div className="flex items-center gap-3 px-4 py-2.5">
                   <span className="text-base shrink-0">{MOV_ICON[mov.type] ?? "📝"}</span>
@@ -235,6 +316,15 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
               </div>
             ))}
           </div>
+          {deptMovements.length > 8 && (
+            <Link
+              href={`/departments/${slug}/history`}
+              className="mt-3 flex items-center justify-center gap-2 text-xs text-muted py-3 glass-card rounded-2xl"
+            >
+              <History className="w-3.5 h-3.5" />
+              Historique complet — {deptMovements.length} mouvement{deptMovements.length > 1 ? "s" : ""}
+            </Link>
+          )}
         </div>
       )}
 
@@ -295,11 +385,15 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
           </ModalField>
 
           <ModalField label="Photo (optionnel — max 2 Mo)">
+            {/* D4: show error when photo too large */}
+            {photoError && (
+              <p className="text-xs text-redSoft mb-1.5">{photoError}</p>
+            )}
             {photo ? (
               <div className="relative rounded-xl overflow-hidden">
                 <img src={photo} alt="Aperçu" className="w-full max-h-40 object-cover" />
                 <button
-                  onClick={() => setPhoto(null)}
+                  onClick={() => { setPhoto(null); setPhotoError(null); }}
                   className="absolute top-2 right-2 bg-black/60 rounded-full p-1"
                 >
                   <X className="w-3.5 h-3.5 text-white" />
@@ -320,7 +414,7 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
               accept="image/*"
               capture="environment"
               className="hidden"
-              onChange={(e) => { if (e.target.files?.[0]) handlePhotoFile(e.target.files[0]); e.target.value = ""; }}
+              onChange={(e) => { if (e.target.files?.[0]) void handlePhotoFile(e.target.files[0]); e.target.value = ""; }}
             />
           </ModalField>
 
