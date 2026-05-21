@@ -163,7 +163,7 @@ interface SearchResult {
   sectionIcon: string;
   q: string;
   a: string;
-  score: number; // higher = better match
+  score: number;
 }
 
 function searchQA(query: string): SearchResult[] {
@@ -195,7 +195,6 @@ function searchQA(query: string): SearchResult[] {
   return results.sort((a, b) => b.score - a.score);
 }
 
-// Highlight matching terms in a string, returns JSX segments
 function Highlight({ text, terms }: { text: string; terms: string[] }) {
   if (terms.length === 0) return <>{text}</>;
 

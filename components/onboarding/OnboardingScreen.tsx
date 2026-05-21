@@ -6,10 +6,13 @@ import { ChevronRight, ArrowLeft } from "lucide-react";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { DEPT_ROLES } from "@/lib/data/roles";
 import { useUserStore } from "@/lib/store/useUserStore";
+import { FeaturesSheet } from "./FeaturesSheet";
 import type { DepartmentSlug } from "@/lib/types";
 
+type Step = 0 | 1 | 2;
+
 export function OnboardingScreen() {
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<Step>(0);
   const [selectedDept, setSelectedDept] = useState<DepartmentSlug | null>(null);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const setProfile = useUserStore((s) => s.setProfile);
@@ -25,22 +28,45 @@ export function OnboardingScreen() {
     }
   }
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
-      {/* Logo */}
-      <div className="flex items-center gap-2 mb-8">
-        <span className="text-3xl">🎬</span>
-        <span className="text-xl font-bold text-white">CinéO</span>
-      </div>
+  // ── Step 0 — Features overview ─────────────────────────────────────────────
+  if (step === 0) {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: "#071018" }}>
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2 pt-14 pb-2 shrink-0">
+          <span className="text-xl font-bold text-white tracking-tight">
+            Ciné<span style={{ color: "#00E0D0" }}>O</span>
+          </span>
+        </div>
 
-      {step === 1 && (
+        <div className="flex-1 overflow-hidden">
+          <FeaturesSheet
+            onContinue={() => setStep(1)}
+            continueLabel="Choisir mon département"
+            showClose={false}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Step 1 — Department ────────────────────────────────────────────────────
+  if (step === 1) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
+        <div className="flex items-center gap-2 mb-8">
+          <span className="text-xl font-bold text-white tracking-tight">
+            Ciné<span style={{ color: "#00E0D0" }}>O</span>
+          </span>
+        </div>
+
         <div className="w-full max-w-sm">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-gradient mb-1">
-              Bienvenue 👋
+            <h1 className="text-2xl font-bold text-white mb-1">
+              Ton département
             </h1>
             <p className="text-muted text-sm">
-              Choisis ton département pour personnaliser l'application
+              Personnalise l'application selon ton métier
             </p>
           </div>
 
@@ -78,53 +104,56 @@ export function OnboardingScreen() {
             Suivant <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {step === 2 && (
-        <div className="w-full max-w-sm">
-          <button
-            onClick={() => setStep(1)}
-            className="flex items-center gap-1 text-muted text-sm mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" /> Retour
-          </button>
+  // ── Step 2 — Role ──────────────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
+      <div className="w-full max-w-sm">
+        <button
+          onClick={() => setStep(1)}
+          className="flex items-center gap-1 text-muted text-sm mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" /> Retour
+        </button>
 
-          <div className="text-center mb-6">
-            <span className="text-4xl">{dept?.icon}</span>
-            <h1 className="text-2xl font-bold text-gradient mt-2 mb-1">
-              {dept?.name}
-            </h1>
-            <p className="text-muted text-sm">Quel est ton poste ?</p>
-          </div>
-
-          <div className="flex flex-wrap gap-2 justify-center mb-8">
-            {roles.map((r) => {
-              const active = selectedRole === r;
-              return (
-                <button
-                  key={r}
-                  onClick={() => setSelectedRole(r)}
-                  className={`px-4 py-2 rounded-2xl text-sm font-medium border transition-all ${
-                    active
-                      ? "active-pill border-transparent"
-                      : "glass-card border-stroke text-textSoft"
-                  }`}
-                >
-                  {r}
-                </button>
-              );
-            })}
-          </div>
-
-          <button
-            disabled={!selectedRole}
-            onClick={handleConfirm}
-            className="active-pill w-full py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-30"
-          >
-            Commencer
-          </button>
+        <div className="text-center mb-6">
+          <span className="text-4xl">{dept?.icon}</span>
+          <h1 className="text-2xl font-bold text-white mt-2 mb-1">
+            {dept?.name}
+          </h1>
+          <p className="text-muted text-sm">Quel est ton poste ?</p>
         </div>
-      )}
+
+        <div className="flex flex-wrap gap-2 justify-center mb-8">
+          {roles.map((r) => {
+            const active = selectedRole === r;
+            return (
+              <button
+                key={r}
+                onClick={() => setSelectedRole(r)}
+                className={`px-4 py-2 rounded-2xl text-sm font-medium border transition-all ${
+                  active
+                    ? "active-pill border-transparent"
+                    : "glass-card border-stroke text-textSoft"
+                }`}
+              >
+                {r}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          disabled={!selectedRole}
+          onClick={handleConfirm}
+          className="active-pill w-full py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-30"
+        >
+          Commencer
+        </button>
+      </div>
     </div>
   );
 }
