@@ -269,9 +269,17 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
 
               {loaded ? (
                 <button
-                  onClick={(e) => {
+                  onTouchEnd={(e) => {
+                    // iOS Safari : preventDefault supprime le ghost click qui frapperait
+                    // le bouton "Importer" apparu au même endroit après le re-render.
+                    e.preventDefault();
                     e.stopPropagation();
-                    // Réinitialise l'input pour éviter tout re-déclenchement onChange
+                    if (ref?.current) ref.current.value = "";
+                    removeDoc(loaded.id);
+                  }}
+                  onClick={(e) => {
+                    // Desktop (souris) — touch n'ayant pas déclenché onClick via preventDefault
+                    e.stopPropagation();
                     if (ref?.current) ref.current.value = "";
                     removeDoc(loaded.id);
                   }}
