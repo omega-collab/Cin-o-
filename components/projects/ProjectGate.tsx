@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useProjectStore } from "@/lib/store/useProjectStore";
+import { useUserStore } from "@/lib/store/useUserStore";
 import { useProjectSync } from "@/lib/hooks/useProjectSync";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { ProjectSelector } from "@/components/projects/ProjectSelector";
 import type { Profile } from "@/lib/supabase/types";
+import type { DepartmentSlug } from "@/lib/types";
 
 function SyncWrapper({ projectId, children }: { projectId: string; children: React.ReactNode }) {
   useProjectSync(projectId);
@@ -15,6 +17,7 @@ function SyncWrapper({ projectId, children }: { projectId: string; children: Rea
 
 export function ProjectGate({ children }: { children: React.ReactNode }) {
   const { user, session, activeProjectId, setAuth, setProfile } = useProjectStore();
+  const { setProfile: setUserProfile, setAvatar } = useUserStore();
   const [loading, setLoading] = useState(true);
 
   // Init auth listener
@@ -31,7 +34,8 @@ export function ProjectGate({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [setAuth]);
 
-  // Load profile when user changes
+  // Load profile when user changes — hydrate useUserStore from Supabase so
+  // onboarding only ever shows once (even on a new device).
   useEffect(() => {
     if (!user) { setProfile(null); return; }
     supabase
@@ -39,8 +43,17 @@ export function ProjectGate({ children }: { children: React.ReactNode }) {
       .select("*")
       .eq("id", user.id)
       .single()
-      .then(({ data }) => setProfile(data as Profile | null));
-  }, [user, setProfile]);
+      .then(({ data }) => {
+        const profile = data as Profile | null;
+        setProfile(profile);
+        if (profile?.department && profile?.role) {
+          setUserProfile(profile.department as DepartmentSlug, profile.role);
+        }
+        if (profile?.avatar_id) {
+          setAvatar(profile.avatar_id);
+        }
+      });
+  }, [user, setProfile, setUserProfile, setAvatar]);
 
   if (loading) {
     return (

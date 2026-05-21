@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, User, ChevronLeft } from "lucide-react";
+import { Settings, ChevronLeft } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/store/useUserStore";
-import { DEPARTMENTS } from "@/lib/data/departments";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
-import { DeptIcon } from "@/components/ui/DeptIcon";
+import { AvatarDisplay } from "@/components/ui/AvatarDisplay";
 
 interface HeaderProps {
   title?: string;
@@ -26,8 +25,7 @@ function getBackHref(pathname: string): string | null {
 export function Header({ title, subtitle }: HeaderProps) {
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const department = useUserStore((s) => s.department);
-  const dept = DEPARTMENTS.find((d) => d.slug === department);
+  const avatarId = useUserStore((s) => s.avatarId);
   const pathname = usePathname();
   const router = useRouter();
   const backHref = getBackHref(pathname);
@@ -55,10 +53,10 @@ export function Header({ title, subtitle }: HeaderProps) {
             {/* Avatar — accès rapide au profil */}
             <button
               onClick={() => setShowProfile(true)}
-              className="relative w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-sm overflow-hidden"
+              className="relative shrink-0"
               title="Mon profil"
             >
-              <span className="text-cyan">{dept ? <DeptIcon slug={dept.slug} className="w-4 h-4" /> : <User className="w-4 h-4 text-muted" />}</span>
+              <AvatarDisplay avatarId={avatarId} size={32} />
               <span className="absolute right-0 bottom-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#060b12]" />
             </button>
 

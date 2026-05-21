@@ -3,6 +3,9 @@ export interface Profile {
   display_name: string;
   initials: string;
   created_at: string;
+  department?: string | null;
+  role?: string | null;
+  avatar_id?: string | null;
 }
 
 export interface Project {

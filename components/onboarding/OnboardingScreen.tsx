@@ -5,6 +5,8 @@ import { ChevronRight, ArrowLeft } from "lucide-react";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { DEPT_ROLES } from "@/lib/data/roles";
 import { useUserStore } from "@/lib/store/useUserStore";
+import { useProjectStore } from "@/lib/store/useProjectStore";
+import { supabase } from "@/lib/supabase/client";
 import { DeptIcon } from "@/components/ui/DeptIcon";
 import type { DepartmentSlug } from "@/lib/types";
 
@@ -15,13 +17,19 @@ export function OnboardingScreen() {
   const [selectedDept, setSelectedDept] = useState<DepartmentSlug | null>(null);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const setProfile = useUserStore((s) => s.setProfile);
+  const user = useProjectStore((s) => s.user);
 
   const dept = DEPARTMENTS.find((d) => d.slug === selectedDept);
   const roles = selectedDept ? (DEPT_ROLES[selectedDept] ?? []) : [];
 
-  function handleConfirm() {
-    if (selectedDept && selectedRole) {
-      setProfile(selectedDept, selectedRole);
+  async function handleConfirm() {
+    if (!selectedDept || !selectedRole) return;
+    setProfile(selectedDept, selectedRole);
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ department: selectedDept, role: selectedRole })
+        .eq("id", user.id);
     }
   }
 
