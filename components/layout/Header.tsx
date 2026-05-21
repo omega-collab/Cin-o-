@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Film, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { ProfileModal } from "@/components/profile/ProfileModal";
@@ -22,11 +22,8 @@ export function Header({ title, subtitle }: HeaderProps) {
     <>
       <header className="px-4 md:px-6 pt-5 pb-3">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-cyanSoft flex items-center justify-center">
-              <Film className="w-4 h-4 text-cyan" />
-            </div>
-            <span className="font-semibold text-base text-white">CinéO</span>
+          <div className="flex items-center">
+            <img src="/logo-wordmark.png" alt="CinéO" style={{ height: 24 }} className="object-contain" />
           </div>
 
           <div className="flex items-center gap-3">

@@ -204,38 +204,50 @@ Base unit : **4px**. Toutes les valeurs d'espacement sont des multiples de 4.
 
 ---
 
-## 8. Logo CinéO
+## 8. Logo CinéO — Assets officiels
 
-### Concept
-Le "O" de **CinéO** est un **objectif de caméra** : anneau métallique brossé argent/chrome avec verre de lens cyan brillant au centre. Forme le monogramme `C + objectif`. Utilisé partout où l'identité de la marque est affichée.
+### Identité visuelle
 
-### Variantes
+Le logo CinéO est constitué d'un anneau chrome brossé (argent/acier) formant un "C" ouvert, encadrant un objectif de caméra à verre bleu profond avec reflet cyan. Le wordmark associe "CinéO" en blanc, le "O" étant remplacé par cet objectif.
 
-| Variante      | Usage                             | Fichier cible            |
-|---------------|-----------------------------------|--------------------------|
-| Wordmark      | Sidebar desktop, écran login      | `components/brand/CineoWordmark.tsx` |
-| Icon seul     | App icon iOS/Android (512×512)   | `public/icon-512.png`    |
-| Favicon       | Browser tab                       | `public/favicon.ico`     |
-| Nav compact   | Bottom bar mobile                 | `components/brand/CineoIcon.tsx` |
+### Fichiers officiels (à placer dans `public/`)
 
-### Implémentation temporaire (avant SVG custom)
+| Fichier                  | Dimensions    | Usage                                          |
+|--------------------------|---------------|------------------------------------------------|
+| `public/auth-bg.jpg`     | 844×1900 px   | Fond écran de connexion (scène cinématographique) |
+| `public/logo-wordmark.png` | 1280×360 px  | Sidebar desktop, header mobile                 |
+| `public/icon.png`        | 1024×1024 px  | App icon iOS, favicon source, og:image         |
+
+> **Note** : `logo-wordmark.png` et `icon.png` sont les assets officiels fournis. Idéalement en PNG transparent pour les variantes claires. Le fond recommandé est `#071018`.
+
+### Utilisation dans le code
 
 ```tsx
-// CineoWordmark.tsx — utiliser jusqu'au SVG définitif
-export function CineoWordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const sizes = { sm: "text-lg", md: "text-2xl", lg: "text-4xl" };
-  return (
-    <span className={`font-bold tracking-tight text-white ${sizes[size]}`}>
-      Ciné<span className="text-cyan">O</span>
-    </span>
-  );
-}
+// Sidebar desktop / Header
+<img src="/logo-wordmark.png" alt="CinéO" style={{ height: 28 }} className="object-contain" />
+
+// Favicon dans app/layout.tsx
+export const metadata = {
+  icons: { icon: "/icon.png", apple: "/icon.png" },
+};
 ```
 
-### Règle d'usage
+### Variantes et contextes
+
+| Contexte                      | Asset                      | Taille affichée |
+|-------------------------------|----------------------------|-----------------|
+| Sidebar desktop (header)      | `logo-wordmark.png`        | h-7 (28px)      |
+| Header mobile                 | `logo-wordmark.png`        | h-6 (24px)      |
+| Écran connexion               | intégré dans `auth-bg.jpg` | —               |
+| Favicon / PWA icon            | `icon.png`                 | 32–180px        |
+| Onboarding / splash           | `logo-wordmark.png`        | h-10 (40px)     |
+
+### Règles d'usage
 - Ne jamais afficher `🎬` comme substitut du logo en production
-- L'icône `<Clapperboard />` est réservée au contenu (feuilles de service, séquences)
-- Fond de l'icône app : `#071018` (pas de fond blanc)
+- L'icône `<Clapperboard />` de lucide-react est réservée au **contenu** (séquences, feuilles de service)
+- Fond de l'icône app : `#071018` (jamais blanc)
+- Ne pas étirer le logo — `object-contain` toujours
+- Zone d'exclusion minimale : 8px de padding autour du logo sur fond neutre
 
 ---
 
