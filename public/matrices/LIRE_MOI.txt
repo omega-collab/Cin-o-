@@ -1,0 +1,15 @@
+DOSSIER MATRICES — CinéO
+========================
+
+Déposer ici les fichiers matrices Excel (.xlsx / .xls) utilisés par l'application.
+
+Convention de nommage :
+  matrice_<société>_<production>_vierge.xlsx
+  ex : matrice_federationstudio_tropiquescriminels_S8.xlsx
+
+Chaque fichier déposé ici peut être :
+  - Proposé en téléchargement direct depuis l'app (lien /matrices/...)
+  - Référencé dans un schéma TypeScript dans lib/schemas/
+
+Matrices disponibles :
+  (vide — ajouter vos fichiers dans ce dossier)
