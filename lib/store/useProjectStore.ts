@@ -27,6 +27,7 @@ interface ProjectState {
   setSyncing: (v: boolean) => void;
   setLastSyncedAt: (v: string) => void;
   addProject: (project: Project) => void;
+  removeProject: (id: string) => void;
   signOut: () => Promise<void>;
 }
 
@@ -50,6 +51,7 @@ export const useProjectStore = create<ProjectState>()(
       setSyncing: (v) => set({ isSyncing: v }),
       setLastSyncedAt: (v) => set({ lastSyncedAt: v }),
       addProject: (project) => set((s) => ({ projects: [...s.projects, project] })),
+      removeProject: (id) => set((s) => ({ projects: s.projects.filter((p) => p.id !== id) })),
 
       signOut: async () => {
         await supabase.auth.signOut();

@@ -1,17 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Hash, Loader2, Copy, Check, FolderOpen, Film } from "lucide-react";
+import { Plus, Hash, Loader2, Copy, Check, FolderOpen, Film, Trash2, LogOut, X } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import type { Project } from "@/lib/supabase/types";
 import { extractMsg } from "@/lib/utils";
 
+const PROD_CODE = "0000";
+
 const INPUT =
   "w-full bg-white/5 border border-stroke rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-cyan/40";
 
 export function ProjectSelector() {
-  const { user, projects, setProjects, setActiveProject, addProject } = useProjectStore();
+  const { user, projects, setProjects, setActiveProject, addProject, removeProject } = useProjectStore();
   const [tab, setTab] = useState<"list" | "create" | "join">("list");
   const [projectName, setProjectName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -19,6 +21,12 @@ export function ProjectSelector() {
   const [error, setError] = useState("");
   const [createdProject, setCreatedProject] = useState<Project | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Delete / leave state
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [deleteCode, setDeleteCode] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -116,6 +124,50 @@ export function ProjectSelector() {
     }
   }
 
+  async function handleDelete(e: React.FormEvent) {
+    e.preventDefault();
+    if (!deleteTarget || !user) return;
+    if (deleteCode !== PROD_CODE) {
+      setDeleteError("Code incorrect.");
+      return;
+    }
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const { error: err } = await supabase.from("projects").delete().eq("id", deleteTarget.id);
+      if (err) throw err;
+      removeProject(deleteTarget.id);
+      setDeleteTarget(null);
+      setDeleteCode("");
+      if (projects.length - 1 === 0) setTab("create");
+    } catch (err) {
+      setDeleteError(extractMsg(err, "Suppression impossible — vous n'êtes peut-être pas propriétaire."));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function handleLeave(proj: Project) {
+    if (!user) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const { error: err } = await supabase
+        .from("project_members")
+        .delete()
+        .eq("project_id", proj.id)
+        .eq("user_id", user.id);
+      if (err) throw err;
+      removeProject(proj.id);
+      setDeleteTarget(null);
+      if (projects.length - 1 === 0) setTab("create");
+    } catch (err) {
+      setDeleteError(extractMsg(err, "Impossible de quitter ce projet."));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   function copyCode(code: string) {
     void navigator.clipboard.writeText(code);
     setCopied(true);
@@ -171,19 +223,90 @@ export function ProjectSelector() {
         {projects.length > 0 && tab !== "create" && tab !== "join" && (
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted">Mes projets</p>
-            {projects.map((proj) => (
-              <button
-                key={proj.id}
-                onClick={() => setActiveProject(proj.id)}
-                className="w-full glass-card rounded-2xl p-4 flex items-center gap-3 text-left hover:border-cyan/30 transition-colors"
-              >
-                <FolderOpen className="w-5 h-5 text-cyan shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{proj.name}</p>
-                  <p className="text-xs text-muted font-mono">{proj.invite_code}</p>
+            {projects.map((proj) => {
+              const isOwner = proj.owner_id === user?.id;
+              const isTarget = deleteTarget?.id === proj.id;
+              return (
+                <div key={proj.id} className="space-y-1">
+                  <div className={`glass-card rounded-2xl p-4 flex items-center gap-3 transition-colors ${isTarget ? "border-redSoft/40" : "hover:border-cyan/30"}`}>
+                    <button
+                      onClick={() => setActiveProject(proj.id)}
+                      className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                    >
+                      <FolderOpen className="w-5 h-5 text-cyan shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{proj.name}</p>
+                        <p className="text-xs text-muted font-mono">{proj.invite_code}</p>
+                      </div>
+                    </button>
+                    {isTarget ? (
+                      <button
+                        onClick={() => { setDeleteTarget(null); setDeleteCode(""); setDeleteError(""); }}
+                        className="shrink-0 w-8 h-8 flex items-center justify-center text-muted hover:text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(proj); setDeleteCode(""); setDeleteError(""); }}
+                        className="shrink-0 w-8 h-8 flex items-center justify-center text-muted hover:text-redSoft"
+                        title={isOwner ? "Supprimer le projet" : "Quitter le projet"}
+                      >
+                        {isOwner ? <Trash2 className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Inline confirmation panel */}
+                  {isTarget && (
+                    <div className="glass-card rounded-2xl p-4 border border-redSoft/30 space-y-3">
+                      {isOwner ? (
+                        <>
+                          <p className="text-sm font-semibold text-white">Supprimer &quot;{proj.name}&quot; ?</p>
+                          <p className="text-xs text-muted">Cette action est irréversible. Tous les membres perdront l&apos;accès.</p>
+                          <form onSubmit={(e) => void handleDelete(e)} className="space-y-3">
+                            <div>
+                              <label className="text-xs text-muted block mb-1">Code de production</label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="_ _ _ _"
+                                value={deleteCode}
+                                onChange={(e) => { setDeleteCode(e.target.value); setDeleteError(""); }}
+                                maxLength={8}
+                                autoFocus
+                                className={`${INPUT} font-mono tracking-widest text-center text-lg`}
+                              />
+                              {deleteError && <p className="text-xs text-redSoft mt-1">{deleteError}</p>}
+                            </div>
+                            <button
+                              type="submit"
+                              disabled={deleting || !deleteCode}
+                              className="w-full py-2.5 rounded-xl text-sm font-semibold bg-redSoft/20 text-redSoft border border-redSoft/30 flex items-center justify-center gap-2 disabled:opacity-40"
+                            >
+                              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmer la suppression"}
+                            </button>
+                          </form>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-semibold text-white">Quitter &quot;{proj.name}&quot; ?</p>
+                          <p className="text-xs text-muted">Vous pourrez rejoindre à nouveau avec le code d&apos;invitation.</p>
+                          {deleteError && <p className="text-xs text-redSoft">{deleteError}</p>}
+                          <button
+                            onClick={() => void handleLeave(proj)}
+                            disabled={deleting}
+                            className="w-full py-2.5 rounded-xl text-sm font-semibold bg-redSoft/20 text-redSoft border border-redSoft/30 flex items-center justify-center gap-2 disabled:opacity-40"
+                          >
+                            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Quitter le projet"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         )}
 
