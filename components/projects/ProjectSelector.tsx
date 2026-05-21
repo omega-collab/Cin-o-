@@ -1,0 +1,274 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Plus, Hash, Loader2, Copy, Check, FolderOpen } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
+import { useProjectStore } from "@/lib/store/useProjectStore";
+import type { Project } from "@/lib/supabase/types";
+
+const INPUT =
+  "w-full bg-white/5 border border-stroke rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-cyan/40";
+
+export function ProjectSelector() {
+  const { user, projects, setProjects, setActiveProject, addProject } = useProjectStore();
+  const [tab, setTab] = useState<"list" | "create" | "join">("list");
+  const [projectName, setProjectName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [createdProject, setCreatedProject] = useState<Project | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    void loadProjects();
+  }, [user]);
+
+  async function loadProjects() {
+    const { data } = await supabase
+      .from("project_members")
+      .select("project_id, projects(*)")
+      .eq("user_id", user!.id);
+
+    if (data) {
+      const projs = data
+        .map((r) => r.projects as unknown as Project | null)
+        .filter((p): p is Project => p !== null);
+      setProjects(projs);
+      if (projs.length === 0) setTab("create");
+    }
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+    setError("");
+    setLoading(true);
+
+    try {
+      // Create project
+      const { data: proj, error: e1 } = await supabase
+        .from("projects")
+        .insert({ name: projectName.trim(), owner_id: user.id })
+        .select()
+        .single();
+      if (e1 || !proj) throw e1 ?? new Error("Création échouée");
+
+      // Add creator as owner
+      const { error: e2 } = await supabase
+        .from("project_members")
+        .insert({ project_id: proj.id, user_id: user.id, role: "owner" });
+      if (e2) throw e2;
+
+      // Init empty data
+      await supabase.from("project_data").insert({
+        project_id: proj.id,
+        shoot_store: {},
+        department_store: {},
+        updated_by: user.id,
+      });
+
+      addProject(proj);
+      setCreatedProject(proj);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleJoin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+    setError("");
+    setLoading(true);
+
+    try {
+      const code = inviteCode.trim().toUpperCase();
+      const { data: proj, error: e1 } = await supabase
+        .from("projects")
+        .select()
+        .eq("invite_code", code)
+        .single();
+      if (e1 || !proj) throw new Error("Code invalide — vérifiez et réessayez.");
+
+      // Check not already member
+      const already = projects.find((p) => p.id === proj.id);
+      if (already) {
+        setActiveProject(proj.id);
+        return;
+      }
+
+      const { error: e2 } = await supabase
+        .from("project_members")
+        .insert({ project_id: proj.id, user_id: user.id, role: "member" });
+      if (e2) throw e2;
+
+      addProject(proj);
+      setActiveProject(proj.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function copyCode(code: string) {
+    void navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  // Show new project confirmation with invite code
+  if (createdProject) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-sm space-y-4">
+          <div className="text-center">
+            <span className="text-4xl">🎬</span>
+            <h1 className="text-xl font-bold text-white mt-2">Projet créé !</h1>
+            <p className="text-sm text-muted mt-1">Partagez ce code à votre équipe</p>
+          </div>
+          <div className="glass-card rounded-2xl p-6 space-y-4">
+            <p className="text-sm font-semibold text-white">{createdProject.name}</p>
+            <div className="flex items-center gap-3 bg-white/5 border border-stroke rounded-xl px-4 py-3">
+              <span className="font-mono text-2xl font-bold text-cyan tracking-widest flex-1">
+                {createdProject.invite_code}
+              </span>
+              <button onClick={() => copyCode(createdProject.invite_code)}>
+                {copied
+                  ? <Check className="w-5 h-5 text-green-400" />
+                  : <Copy className="w-5 h-5 text-muted hover:text-white" />}
+              </button>
+            </div>
+            <p className="text-xs text-muted leading-relaxed">
+              Les membres de l'équipe saisissent ce code dans "Rejoindre un projet" pour accéder aux données en temps réel.
+            </p>
+            <button
+              onClick={() => setActiveProject(createdProject.id)}
+              className="active-pill w-full py-3 rounded-2xl font-semibold text-sm"
+            >
+              Ouvrir le projet
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-sm space-y-5">
+        <div className="text-center">
+          <span className="text-4xl">🎬</span>
+          <h1 className="text-xl font-bold text-white mt-2">Choisir un projet</h1>
+        </div>
+
+        {/* Existing projects */}
+        {projects.length > 0 && tab !== "create" && tab !== "join" && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted">Mes projets</p>
+            {projects.map((proj) => (
+              <button
+                key={proj.id}
+                onClick={() => setActiveProject(proj.id)}
+                className="w-full glass-card rounded-2xl p-4 flex items-center gap-3 text-left hover:border-cyan/30 transition-colors"
+              >
+                <FolderOpen className="w-5 h-5 text-cyan shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white truncate">{proj.name}</p>
+                  <p className="text-xs text-muted font-mono">{proj.invite_code}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="glass-card rounded-2xl p-1 flex gap-1">
+          {projects.length > 0 && (
+            <button
+              onClick={() => { setTab("list"); setError(""); }}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${tab === "list" ? "active-pill" : "text-muted"}`}
+            >
+              Mes projets
+            </button>
+          )}
+          <button
+            onClick={() => { setTab("create"); setError(""); }}
+            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${tab === "create" ? "active-pill" : "text-muted"}`}
+          >
+            Créer
+          </button>
+          <button
+            onClick={() => { setTab("join"); setError(""); }}
+            className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${tab === "join" ? "active-pill" : "text-muted"}`}
+          >
+            Rejoindre
+          </button>
+        </div>
+
+        {error && (
+          <p className="text-xs text-red-400 bg-red-900/20 border border-red-800/30 rounded-xl px-3 py-2">
+            {error}
+          </p>
+        )}
+
+        {tab === "create" && (
+          <form onSubmit={(e) => void handleCreate(e)} className="glass-card rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Plus className="w-4 h-4 text-cyan" />
+              <p className="text-sm font-semibold text-white">Nouveau projet</p>
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Nom du projet / tournage</label>
+              <input
+                type="text"
+                placeholder="ex. Tropiques Criminels S7"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                required
+                className={INPUT}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading || !projectName.trim()}
+              className="active-pill w-full py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Créer le projet"}
+            </button>
+          </form>
+        )}
+
+        {tab === "join" && (
+          <form onSubmit={(e) => void handleJoin(e)} className="glass-card rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Hash className="w-4 h-4 text-cyan" />
+              <p className="text-sm font-semibold text-white">Rejoindre par code</p>
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Code d'invitation</label>
+              <input
+                type="text"
+                placeholder="ex. TROP42"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                required
+                maxLength={8}
+                className={`${INPUT} font-mono tracking-widest uppercase text-cyan text-center text-lg`}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading || inviteCode.trim().length < 4}
+              className="active-pill w-full py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Rejoindre"}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}

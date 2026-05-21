@@ -11,6 +11,7 @@ import {
   MoreHorizontal,
   Timer,
 } from "lucide-react";
+import { ProjectSwitcher } from "@/components/projects/ProjectSwitcher";
 
 const NAV_ITEMS = [
   { href: "/", label: "Aujourd'hui", Icon: Home },
@@ -57,8 +58,8 @@ export function Nav() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-stroke/50">
-          <p className="text-xs text-muted">CinéO v0.1 — Proto</p>
+        <div className="p-3 border-t border-stroke/50">
+          <ProjectSwitcher />
         </div>
       </aside>
 
