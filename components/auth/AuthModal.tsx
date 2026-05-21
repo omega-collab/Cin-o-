@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Lock, User, Eye, EyeOff, Loader2, HelpCircle, X } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Loader2, HelpCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { FeaturesSheet } from "@/components/onboarding/FeaturesSheet";
 
@@ -52,6 +52,7 @@ function LensO() {
     </span>
   );
 }
+<<<<<<< HEAD
 
 // ── Clapperboard SVG ──────────────────────────────────────────────────────────
 function Clapperboard() {
@@ -219,13 +220,185 @@ function UnderlineInput({
 // ── Main component ────────────────────────────────────────────────────────────
 type Mode = "login" | "register";
 
+=======
+
+// ── Clapperboard SVG ──────────────────────────────────────────────────────────
+function Clapperboard() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  return (
+    <svg
+      viewBox="0 0 220 160"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full drop-shadow-2xl"
+      aria-hidden="true"
+    >
+      {/* Body */}
+      <rect x="10" y="40" width="200" height="112" rx="5" fill="#1a1a1a" />
+      <rect x="10" y="40" width="200" height="112" rx="5" stroke="#444" strokeWidth="1.5" />
+
+      {/* Inner data panel */}
+      <rect x="18" y="50" width="184" height="94" rx="3" fill="#141414" />
+
+      {/* Grid lines */}
+      <line x1="18" y1="74" x2="202" y2="74" stroke="#333" strokeWidth="0.8" />
+      <line x1="18" y1="98" x2="202" y2="98" stroke="#333" strokeWidth="0.8" />
+      <line x1="18" y1="122" x2="202" y2="122" stroke="#333" strokeWidth="0.8" />
+      <line x1="80" y1="50" x2="80" y2="144" stroke="#333" strokeWidth="0.8" />
+      <line x1="130" y1="98" x2="130" y2="144" stroke="#333" strokeWidth="0.8" />
+      <line x1="165" y1="98" x2="165" y2="144" stroke="#333" strokeWidth="0.8" />
+
+      {/* Labels */}
+      <text x="22" y="66" fill="#888" fontSize="7" fontFamily="monospace">DATE</text>
+      <text x="84" y="66" fill="#888" fontSize="7" fontFamily="monospace">PROD.</text>
+      <text x="22" y="90" fill="#888" fontSize="7" fontFamily="monospace">ROLL</text>
+      <text x="84" y="90" fill="#888" fontSize="7" fontFamily="monospace">SCENE</text>
+      <text x="136" y="112" fill="#888" fontSize="7" fontFamily="monospace">TAKE</text>
+      <text x="22" y="114" fill="#888" fontSize="7" fontFamily="monospace">DIR.</text>
+      <text x="84" y="114" fill="#888" fontSize="7" fontFamily="monospace">CAM.</text>
+      <text x="136" y="90" fill="#888" fontSize="7" fontFamily="monospace">SON</text>
+
+      {/* Values */}
+      <text x="22" y="72" fill="#e8e8e8" fontSize="9" fontFamily="monospace" fontWeight="bold">{dateStr}</text>
+      <text x="84" y="72" fill="#e8e8e8" fontSize="9" fontFamily="monospace" fontWeight="bold">CINÉ O</text>
+      <text x="22" y="96" fill="#e8e8e8" fontSize="9" fontFamily="monospace" fontWeight="bold">A001</text>
+      <text x="84" y="96" fill="#e8e8e8" fontSize="9" fontFamily="monospace" fontWeight="bold">07</text>
+      <text x="136" y="96" fill="#00E0D0" fontSize="9" fontFamily="monospace" fontWeight="bold">02</text>
+      <text x="22" y="118" fill="#e8e8e8" fontSize="8" fontFamily="monospace">— —</text>
+      <text x="84" y="118" fill="#e8e8e8" fontSize="8" fontFamily="monospace">A CAM</text>
+      <text x="136" y="118" fill="#e8e8e8" fontSize="8" fontFamily="monospace">SYNC</text>
+
+      {/* Slate top */}
+      <rect x="10" y="14" width="200" height="30" rx="3" fill="#111" stroke="#555" strokeWidth="1.5" />
+      {/* Clapper moving part */}
+      <rect x="10" y="8" width="200" height="12" rx="3" fill="#1e1e1e" stroke="#555" strokeWidth="1.5" />
+
+      {/* Diagonal stripes top */}
+      {[0,1,2,3,4,5,6,7,8,9,10,11,12].map((i) => (
+        <rect
+          key={i}
+          x={10 + i * 16 - 2}
+          y="8"
+          width="8"
+          height="12"
+          fill={i % 2 === 0 ? "#f0f0f0" : "#111"}
+          transform={`skewX(-18)`}
+          clipPath="url(#clapClip)"
+        />
+      ))}
+      <clipPath id="clapClip">
+        <rect x="10" y="8" width="200" height="12" rx="3" />
+      </clipPath>
+
+      {/* Hinge */}
+      <circle cx="18" cy="14" r="4" fill="#555" />
+      <circle cx="18" cy="14" r="2" fill="#333" />
+
+      {/* Stripes on body slate */}
+      {[0,1,2,3,4,5,6,7,8,9,10,11,12].map((i) => (
+        <rect
+          key={i}
+          x={10 + i * 16 - 2}
+          y="14"
+          width="8"
+          height="28"
+          fill={i % 2 === 0 ? "#f0f0f0" : "#111"}
+          transform={`skewX(-18)`}
+          clipPath="url(#bodyClip)"
+        />
+      ))}
+      <clipPath id="bodyClip">
+        <rect x="10" y="14" width="200" height="28" rx="3" />
+      </clipPath>
+    </svg>
+  );
+}
+
+// ── Underline input ───────────────────────────────────────────────────────────
+interface UnderlineInputProps {
+  type: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  icon: React.ReactNode;
+  required?: boolean;
+  minLength?: number;
+  rightSlot?: React.ReactNode;
+  autoComplete?: string;
+}
+
+function UnderlineInput({
+  type, placeholder, value, onChange, icon, required, minLength, rightSlot, autoComplete,
+}: UnderlineInputProps) {
+  const [focused, setFocused] = useState(false);
+  const active = focused || value.length > 0;
+
+  return (
+    <div className="relative pb-4">
+      {/* Floating label */}
+      <label
+        className="absolute left-8 pointer-events-none transition-all duration-150"
+        style={{
+          top: active ? -1 : 13,
+          fontSize: active ? 10 : 14,
+          color: focused ? "#00E0D0" : "#8E9AAF",
+          lineHeight: 1,
+        }}
+      >
+        {placeholder}
+      </label>
+
+      <div className="flex items-center gap-2.5 pt-4">
+        <span style={{ color: focused ? "#00E0D0" : "#6b7a8d" }} className="transition-colors duration-150 shrink-0">
+          {icon}
+        </span>
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          required={required}
+          minLength={minLength}
+          autoComplete={autoComplete}
+          className="flex-1 bg-transparent text-sm text-white focus:outline-none min-h-[28px]"
+          style={{ caretColor: "#00E0D0" }}
+        />
+        {rightSlot}
+      </div>
+
+      {/* Underline */}
+      <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "rgba(255,255,255,0.12)" }} />
+      <div
+        className="absolute bottom-0 left-0 h-px transition-all duration-200"
+        style={{
+          background: "#00E0D0",
+          width: focused ? "100%" : "0%",
+        }}
+      />
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+type Mode = "login" | "register";
+
+>>>>>>> e9318bf (feat(auth): écran de connexion cinématographique)
 export function AuthModal() {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+<<<<<<< HEAD
   const [showFeatures, setShowFeatures] = useState(false);
+=======
+>>>>>>> e9318bf (feat(auth): écran de connexion cinématographique)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -480,7 +653,10 @@ export function AuthModal() {
 
         {/* Footer */}
         <button
+<<<<<<< HEAD
           onClick={() => setShowFeatures(true)}
+=======
+>>>>>>> e9318bf (feat(auth): écran de connexion cinématographique)
           className="mt-5 flex items-center justify-center gap-1.5 mx-auto transition-opacity hover:opacity-80"
           style={{ color: "#8E9AAF", fontSize: 12 }}
         >
