@@ -84,7 +84,8 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
   };
   const dropRef = useRef<HTMLInputElement>(null);
 
-  const lastDeleteMs = useRef(0);
+  // Par slot : marqué vrai 400ms après un touchend sur poubelle pour bloquer le ghost click iOS
+  const touchDeletedSlots = useRef(new Set<string>());
   const [extracting, setExtracting] = useState(false);
   const [extractStep, setExtractStep] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -270,15 +271,17 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
 
               {loaded ? (
                 <button
-                  onTouchEnd={(e) => {
-                    e.stopPropagation();
-                    lastDeleteMs.current = Date.now();
+                  onTouchEnd={() => {
+                    // Touch : marque ce slot pour 400ms afin de bloquer le ghost click iOS
+                    touchDeletedSlots.current.add(slot.type);
+                    setTimeout(() => touchDeletedSlots.current.delete(slot.type), 400);
                     if (ref?.current) ref.current.value = "";
                     removeDoc(loaded.id);
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    lastDeleteMs.current = Date.now();
+                    // iOS génère un click ~300ms après touchend — déjà traité ci-dessus
+                    if (touchDeletedSlots.current.has(slot.type)) return;
                     if (ref?.current) ref.current.value = "";
                     removeDoc(loaded.id);
                   }}
@@ -289,8 +292,8 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
               ) : (
                 <button
                   onClick={() => {
-                    // Bloque le ghost click iOS (≤400ms après suppression)
-                    if (Date.now() - lastDeleteMs.current < 400) return;
+                    // Ghost click iOS : le slot est encore marqué → ignorer
+                    if (touchDeletedSlots.current.has(slot.type)) return;
                     ref?.current?.click();
                   }}
                   className="text-xs text-cyan glass-card px-2.5 py-1 rounded-lg shrink-0"
