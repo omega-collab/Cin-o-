@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Hash, Loader2, Copy, Check, FolderOpen } from "lucide-react";
+import { Plus, Hash, Loader2, Copy, Check, FolderOpen, Film } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import type { Project } from "@/lib/supabase/types";
@@ -125,7 +125,7 @@ export function ProjectSelector() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-sm space-y-4">
           <div className="text-center">
-            <span className="text-4xl">🎬</span>
+            <Film className="w-10 h-10 text-cyan mx-auto" />
             <h1 className="text-xl font-bold text-white mt-2">Projet créé !</h1>
             <p className="text-sm text-muted mt-1">Partagez ce code à votre équipe</p>
           </div>
@@ -160,7 +160,7 @@ export function ProjectSelector() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-5">
         <div className="text-center">
-          <span className="text-4xl">🎬</span>
+          <Film className="w-10 h-10 text-cyan mx-auto" />
           <h1 className="text-xl font-bold text-white mt-2">Choisir un projet</h1>
         </div>
 

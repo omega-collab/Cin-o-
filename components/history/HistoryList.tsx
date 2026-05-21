@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, SlidersHorizontal, CheckCircle2, FileText } from "lucide-react";
+import { Search, SlidersHorizontal, CheckCircle2, FileText, TriangleAlert, Clock3, Pin } from "lucide-react";
 import { useHistoryStore } from "@/lib/store/useHistoryStore";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { formatTime } from "@/lib/utils";
 import { DEPARTMENTS } from "@/lib/data/departments";
+import { DeptIcon } from "@/components/ui/DeptIcon";
 import type { HistoryEntry } from "@/lib/types";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -107,7 +108,7 @@ export function HistoryList() {
       <div className="glass-card rounded-app p-4 grid grid-cols-3 gap-3 text-center">
         {[
           { value: joursTournes, label: "Jours terminés", icon: <CheckCircle2 size={16} className="text-cyan mx-auto mb-1" /> },
-          { value: incidents,    label: "Incidents",       icon: <span className="text-base leading-none block mb-1">⚠️</span> },
+          { value: incidents,    label: "Incidents",       icon: <TriangleAlert size={16} className="text-orangeSoft mx-auto mb-1" /> },
           { value: rapports,     label: "Rapports",        icon: <FileText size={16} className="text-blueSoft mx-auto mb-1" /> },
         ].map((stat) => (
           <div key={stat.label}>
@@ -150,7 +151,7 @@ export function HistoryList() {
       {/* Empty state */}
       {filteredEntries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <span className="text-5xl leading-none" role="img" aria-label="horloge">🕐</span>
+          <Clock3 className="w-10 h-10 text-muted" />
           <p className="text-sm text-muted">
             {search ? "Aucun résultat trouvé" : "Aucun historique"}
           </p>
@@ -178,11 +179,10 @@ export function HistoryList() {
                     >
                       {/* Dept icon */}
                       <span
-                        className="text-xl shrink-0 leading-none mt-0.5 select-none"
-                        role="img"
+                        className="text-muted shrink-0 mt-0.5"
                         aria-label={dept?.name ?? entry.departmentName}
                       >
-                        {dept?.icon ?? "📌"}
+                        {dept ? <DeptIcon slug={dept.slug} className="w-5 h-5" /> : <Pin className="w-5 h-5" />}
                       </span>
 
                       {/* Content */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, ChevronRight, MapPin } from "lucide-react";
+import { CheckCircle2, ChevronRight, MapPin, UtensilsCrossed } from "lucide-react";
 import { useCanteenStore } from "@/lib/store/useCanteenStore";
 
 const CANTINE_PIN = process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000";
@@ -85,7 +85,7 @@ export function CanteenStaffInterface() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-3xl">🍽️</span>
+        <UtensilsCrossed className="w-6 h-6 text-cyan" />
         <span className="text-lg font-bold text-white">CinéO · Cantine</span>
       </div>
       <p className="text-muted text-sm mb-8 capitalize">{todayLabel}</p>
@@ -93,7 +93,7 @@ export function CanteenStaffInterface() {
       {/* PIN */}
       {screen === "pin" && (
         <div className="glass-card-strong rounded-app p-8 w-full max-w-xs">
-          <h2 className="text-xl font-bold text-gradient text-center mb-1">
+          <h2 className="text-xl font-bold text-white text-center mb-1">
             Accès Cantine
           </h2>
           <p className="text-muted text-sm text-center mb-6">
@@ -125,7 +125,7 @@ export function CanteenStaffInterface() {
       {/* Form */}
       {screen === "form" && (
         <div className="glass-card-strong rounded-app p-6 w-full max-w-sm space-y-4">
-          <h2 className="text-xl font-bold text-gradient text-center">
+          <h2 className="text-xl font-bold text-white text-center">
             Infos du jour
           </h2>
 
@@ -219,7 +219,7 @@ export function CanteenStaffInterface() {
       {screen === "done" && (
         <div className="glass-card-strong rounded-app p-8 w-full max-w-xs text-center">
           <CheckCircle2 className="w-12 h-12 text-cyan mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gradient mb-3">Enregistré !</h2>
+          <h2 className="text-xl font-bold text-white mb-3">Enregistré !</h2>
           {form.canteenLocation && (
             <div className="glass-card rounded-2xl p-3 mb-4 text-left">
               <p className="text-xs text-muted mb-1">Lieu de la cantine</p>

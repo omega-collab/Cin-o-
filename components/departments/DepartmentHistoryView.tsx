@@ -6,11 +6,11 @@ import type { DepartmentSlug } from "@/lib/types";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
 import { useHydrated } from "@/lib/hooks/useHydrated";
-import { ArrowLeft, Search, Filter } from "lucide-react";
+import { ArrowLeft, Search, Filter, Package, ArrowUpRight, ArrowDownLeft, Handshake, AlertOctagon, TriangleAlert, FileText } from "lucide-react";
 
-const MOV_ICON: Record<string, string> = {
-  depart: "↗️", retour: "↙️", reception: "📦", emprunt: "🤝",
-  casse: "💥", defectueux: "⚠️", note: "📝", in: "↙️", out: "↗️",
+const MOV_ICON: Record<string, React.ElementType> = {
+  depart: ArrowUpRight, retour: ArrowDownLeft, reception: Package, emprunt: Handshake,
+  casse: AlertOctagon, defectueux: TriangleAlert, note: FileText, in: ArrowDownLeft, out: ArrowUpRight,
 };
 
 const MOV_LABEL: Record<string, string> = {
@@ -118,7 +118,7 @@ export function DepartmentHistoryView({ slug }: Props) {
                 filterType === type ? "active-pill" : "glass-card text-textSoft"
               }`}
             >
-              {MOV_ICON[type] ?? "📝"} {MOV_LABEL[type] ?? type}
+              {(() => { const I = MOV_ICON[type] ?? FileText; return <><I className="inline w-3.5 h-3.5 mr-1" />{MOV_LABEL[type] ?? type}</>; })()}
             </button>
           ))}
         </div>
@@ -142,7 +142,7 @@ export function DepartmentHistoryView({ slug }: Props) {
             return (
               <div key={mov.id} className="glass-card rounded-2xl overflow-hidden">
                 <div className="flex items-start gap-3 px-4 py-3">
-                  <span className="text-xl shrink-0 mt-0.5">{MOV_ICON[mov.type] ?? "📝"}</span>
+                  {(() => { const I = MOV_ICON[mov.type] ?? FileText; return <I className="w-4 h-4 shrink-0 mt-0.5 text-muted" />; })()}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="text-sm font-semibold text-white truncate">{mov.itemName}</p>

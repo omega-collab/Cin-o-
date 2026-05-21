@@ -5,6 +5,7 @@ import { X, ChevronRight, ArrowLeft, Check } from "lucide-react";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { DEPT_ROLES } from "@/lib/data/roles";
 import { useUserStore } from "@/lib/store/useUserStore";
+import { DeptIcon } from "@/components/ui/DeptIcon";
 import type { DepartmentSlug } from "@/lib/types";
 
 const DEPT_CODE = process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000";
@@ -63,7 +64,7 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
         {step === "code" && (
           <>
             <div className="text-center">
-              <h2 className="text-lg font-bold text-gradient">Modifier le profil</h2>
+              <h2 className="text-lg font-bold text-white">Modifier le profil</h2>
               <p className="text-muted text-sm mt-1">
                 Entre le code de ton département pour confirmer
               </p>
@@ -96,7 +97,7 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
         {step === "dept" && (
           <>
             <div className="text-center">
-              <h2 className="text-lg font-bold text-gradient">Département</h2>
+              <h2 className="text-lg font-bold text-white">Département</h2>
               <p className="text-muted text-sm mt-1">Choisis ton nouveau département</p>
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -113,7 +114,7 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
                         : {}
                     }
                   >
-                    <span className="text-xl leading-none">{d.icon}</span>
+                    <span style={{ color: active ? "#00E0D0" : "#8E9AAF" }}><DeptIcon slug={d.slug} className="w-5 h-5" /></span>
                     <span
                       className="text-[10px] font-semibold leading-tight text-center"
                       style={{ color: active ? "#00E0D0" : "#C9D2E3" }}
@@ -144,8 +145,8 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
               <ArrowLeft className="w-4 h-4" /> Retour
             </button>
             <div className="text-center">
-              <span className="text-3xl">{dept?.icon}</span>
-              <h2 className="text-lg font-bold text-gradient mt-1">{dept?.name}</h2>
+              <span className="text-cyan flex justify-center">{dept && <DeptIcon slug={dept.slug} className="w-8 h-8" />}</span>
+              <h2 className="text-lg font-bold text-white mt-1">{dept?.name}</h2>
               <p className="text-muted text-sm">Quel est ton poste ?</p>
             </div>
             <div className="flex flex-wrap gap-2 justify-center">
@@ -182,7 +183,7 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
             <div className="w-12 h-12 bg-cyanSoft rounded-full flex items-center justify-center mx-auto mb-3">
               <Check className="w-6 h-6 text-cyan" />
             </div>
-            <h2 className="text-lg font-bold text-gradient">Profil mis à jour</h2>
+            <h2 className="text-lg font-bold text-white">Profil mis à jour</h2>
             <p className="text-muted text-sm mt-1">
               {dept?.name} · {selectedRole}
             </p>

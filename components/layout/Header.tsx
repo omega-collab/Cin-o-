@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Settings } from "lucide-react";
+import { Settings, User } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
+import { DeptIcon } from "@/components/ui/DeptIcon";
 
 interface HeaderProps {
   title?: string;
@@ -33,7 +34,7 @@ export function Header({ title, subtitle }: HeaderProps) {
               className="relative w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-sm overflow-hidden"
               title="Mon profil"
             >
-              {dept?.icon ?? "👤"}
+              <span className="text-cyan">{dept ? <DeptIcon slug={dept.slug} className="w-4 h-4" /> : <User className="w-4 h-4 text-muted" />}</span>
               <span className="absolute right-0 bottom-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#060b12]" />
             </button>
 
@@ -50,7 +51,7 @@ export function Header({ title, subtitle }: HeaderProps) {
 
         {title && (
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gradient">
+            <h1 className="text-2xl font-bold tracking-tight text-white">
               {title}
             </h1>
             {subtitle && (

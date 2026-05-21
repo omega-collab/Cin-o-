@@ -29,7 +29,7 @@ function DayRow({ day, onDelete, showSalary, tauxHoraire }: {
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-semibold text-white capitalize">{frDate(day.date)}</p>
             <span className="text-[10px] text-muted">
-              {day.convention === "cinema" ? "🎬" : "📺"}
+              {day.convention === "cinema" ? "Cinéma" : "Audio"}
             </span>
           </div>
           <p className="text-xs text-muted mt-0.5">

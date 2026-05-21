@@ -108,7 +108,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       <div className="relative w-full max-w-sm mx-4 mb-4 md:mb-0 glass-card-strong rounded-app overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-stroke">
-          <h2 className="text-base font-bold text-gradient">Paramètres</h2>
+          <h2 className="text-base font-bold text-white">Paramètres</h2>
           <button onClick={onClose} className="text-muted hover:text-white">
             <X className="w-5 h-5" />
           </button>

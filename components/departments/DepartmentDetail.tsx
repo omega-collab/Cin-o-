@@ -11,25 +11,26 @@ import { useHydrated } from "@/lib/hooks/useHydrated";
 import { Modal } from "@/components/ui/Modal";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { StockImportPanel } from "./StockImportPanel";
-import { Upload, Camera, X, Check, Search, Download, History } from "lucide-react";
+import { Upload, Camera, X, Check, Search, Download, History, Package, ArrowUpRight, ArrowDownLeft, Handshake, AlertOctagon, TriangleAlert, FileText } from "lucide-react";
+import { DeptIcon as DeptIconLocal } from "@/components/ui/DeptIcon";
 
 interface DepartmentDetailProps {
   slug: DepartmentSlug;
 }
 
-const MOVEMENT_TYPES: { value: MovementType; label: string; icon: string; color: string }[] = [
-  { value: "depart",     label: "Départ",      icon: "↗",  color: "text-cyan" },
-  { value: "retour",     label: "Retour",       icon: "↙",  color: "text-green-400" },
-  { value: "reception",  label: "Réception",    icon: "📦", color: "text-blue-400" },
-  { value: "emprunt",    label: "Emprunt",      icon: "🤝", color: "text-purple-400" },
-  { value: "casse",      label: "Casse",        icon: "💥", color: "text-redSoft" },
-  { value: "defectueux", label: "Défectueux",   icon: "⚠️", color: "text-orangeSoft" },
-  { value: "note",       label: "Note",         icon: "📝", color: "text-muted" },
+const MOVEMENT_TYPES: { value: MovementType; label: string; Icon: React.ElementType; color: string }[] = [
+  { value: "depart",     label: "Départ",      Icon: ArrowUpRight,  color: "text-cyan" },
+  { value: "retour",     label: "Retour",       Icon: ArrowDownLeft, color: "text-green-400" },
+  { value: "reception",  label: "Réception",    Icon: Package,       color: "text-blue-400" },
+  { value: "emprunt",    label: "Emprunt",      Icon: Handshake,     color: "text-purple-400" },
+  { value: "casse",      label: "Casse",        Icon: AlertOctagon,  color: "text-redSoft" },
+  { value: "defectueux", label: "Défectueux",   Icon: TriangleAlert, color: "text-orangeSoft" },
+  { value: "note",       label: "Note",         Icon: FileText,      color: "text-muted" },
 ];
 
-const MOV_ICON: Record<string, string> = {
-  depart: "↗️", retour: "↙️", reception: "📦", emprunt: "🤝",
-  casse: "💥", defectueux: "⚠️", note: "📝", in: "↙️", out: "↗️",
+const MOV_ICON: Record<string, React.ElementType> = {
+  depart: ArrowUpRight, retour: ArrowDownLeft, reception: Package, emprunt: Handshake,
+  casse: AlertOctagon, defectueux: TriangleAlert, note: FileText, in: ArrowDownLeft, out: ArrowUpRight,
 };
 
 const INPUT_CLS = "w-full rounded-2xl px-4 text-sm focus:outline-none bg-white/5 border border-stroke text-white min-h-[44px] placeholder:text-white/25";
@@ -171,7 +172,7 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-4">
-          <span className="text-5xl leading-none select-none">{dept.icon}</span>
+          <span className="text-cyan"><DeptIconLocal slug={dept.slug} /></span>
           <div>
             <h2 className="text-xl font-bold text-white leading-tight">{dept.name}</h2>
             <p className="text-sm mt-0.5 text-muted">Gestion du matériel</p>
@@ -205,7 +206,7 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
       )}
 
       <div className="glass-card flex items-center gap-2 px-4 py-3 rounded-2xl mb-5">
-        <span className="text-lg">📦</span>
+        <Package className="w-5 h-5 text-muted" />
         <span className="text-sm font-medium text-white">
           {stock.length} article{stock.length !== 1 ? "s" : ""} en stock
         </span>
@@ -297,7 +298,7 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
             {recentMovements.map((mov) => (
               <div key={mov.id} className="glass-card rounded-2xl overflow-hidden">
                 <div className="flex items-center gap-3 px-4 py-2.5">
-                  <span className="text-base shrink-0">{MOV_ICON[mov.type] ?? "📝"}</span>
+                  {(() => { const I = MOV_ICON[mov.type] ?? FileText; return <I className="w-4 h-4 shrink-0 text-muted" />; })()}
                   <div className="flex-1 min-w-0">
                     <span className="text-sm text-textSoft">{mov.itemName}</span>
                     {mov.notes && (
@@ -346,7 +347,7 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
                     : "border-stroke bg-white/5 text-textSoft"
                 }`}
               >
-                <span className="text-base leading-none">{t.icon}</span>
+                <t.Icon className="w-4 h-4" />
                 <span className="leading-tight text-center">{t.label}</span>
               </button>
             ))}

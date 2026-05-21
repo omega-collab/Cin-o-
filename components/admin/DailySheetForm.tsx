@@ -40,7 +40,7 @@ export function DailySheetForm() {
   return (
     <div className="glass-card rounded-app p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gradient">Feuille du jour</h3>
+        <h3 className="font-semibold text-white">Feuille du jour</h3>
         <button
           onClick={shoot.isPublished ? unpublish : publish}
           className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${

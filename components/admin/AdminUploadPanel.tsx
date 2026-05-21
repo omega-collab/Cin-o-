@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, Trash2, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, Trash2, AlertCircle, Loader2, ClipboardList, Film, Map, TriangleAlert } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
 import type { UploadedDoc } from "@/lib/types/shoot";
 
@@ -19,10 +19,16 @@ const TYPE_DESC: Record<UploadedDoc["type"], string> = {
   autre: "",
 };
 
-const DOC_SLOTS: { type: UploadedDoc["type"]; icon: string; required: boolean }[] = [
-  { type: "feuille_service", icon: "📋", required: true },
-  { type: "jour_a_jour", icon: "🎬", required: true },
-  { type: "implantation", icon: "🗺️", required: false },
+const DOC_SLOT_ICONS: Record<string, React.ElementType> = {
+  feuille_service: ClipboardList,
+  jour_a_jour: Film,
+  implantation: Map,
+};
+
+const DOC_SLOTS: { type: UploadedDoc["type"]; required: boolean }[] = [
+  { type: "feuille_service", required: true },
+  { type: "jour_a_jour", required: true },
+  { type: "implantation", required: false },
 ];
 
 const ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp";
@@ -188,7 +194,7 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
                 loaded ? "bg-cyanSoft/20 border-cyan/30" : "glass-card border-stroke"
               }`}
             >
-              <span className="text-xl shrink-0">{slot.icon}</span>
+              {(() => { const SlotIcon = DOC_SLOT_ICONS[slot.type] ?? ClipboardList; return <SlotIcon className={`w-5 h-5 shrink-0 ${loaded ? "text-cyan" : "text-muted"}`} />; })()}
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-semibold ${loaded ? "text-cyan" : "text-white"}`}>
                   {TYPE_LABELS[slot.type]}
@@ -287,7 +293,7 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
       {/* E4: skipped files notice */}
       {skipped.length > 0 && (
         <div className="flex items-start gap-2 p-3 bg-orangeSoft/10 border border-orangeSoft/20 rounded-2xl">
-          <span className="text-orangeSoft text-sm shrink-0">⚠️</span>
+          <TriangleAlert className="w-4 h-4 text-orangeSoft shrink-0 mt-0.5" />
           <div>
             <p className="text-xs text-orangeSoft font-semibold">
               {skipped.length} fichier(s) ignoré(s) par l'OCR
