@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Film, LayoutDashboard, Upload, ClipboardList, Radio } from "lucide-react";
 import { useHydrated } from "@/lib/hooks/useHydrated";
+import { useShootStore } from "@/lib/store/useShootStore";
 import { AdminDashboard } from "./AdminDashboard";
 import { AdminUploadPanel } from "./AdminUploadPanel";
 import { AdminExtractionReview } from "./AdminExtractionReview";
@@ -67,6 +68,15 @@ function AuthForm({ onSuccess }: { onSuccess: () => void }) {
 
 function AdminDashboardContainer({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>("dashboard");
+  const extractionStatus = useShootStore((s) => s.shoot.extractionStatus);
+  const hasUploadedDocs = useShootStore((s) => s.shoot.uploadedDocs.length > 0);
+
+  // E2: guard tabs — review/publish require extraction to have started
+  const tabDisabled = (id: Tab): boolean => {
+    if (id === "review") return !hasUploadedDocs && extractionStatus === "idle";
+    if (id === "publish") return extractionStatus !== "review" && extractionStatus !== "done";
+    return false;
+  };
 
   return (
     <div className="space-y-5 max-w-2xl">
@@ -78,18 +88,23 @@ function AdminDashboardContainer({ onLogout }: { onLogout: () => void }) {
       </div>
 
       <div className="glass-card rounded-app p-1 flex gap-1">
-        {TABS.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-medium transition-all ${
-              tab === id ? "active-pill" : "text-muted"
-            }`}
-          >
-            <Icon className="w-4 h-4" />
-            {label}
-          </button>
-        ))}
+        {TABS.map(({ id, label, Icon }) => {
+          const disabled = tabDisabled(id);
+          return (
+            <button
+              key={id}
+              onClick={() => !disabled && setTab(id)}
+              disabled={disabled}
+              title={disabled ? "Importez d'abord un document" : undefined}
+              className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                tab === id ? "active-pill" : disabled ? "text-muted/30 cursor-not-allowed" : "text-muted"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {tab === "dashboard" && <AdminDashboard onTab={(t) => setTab(t as Tab)} />}

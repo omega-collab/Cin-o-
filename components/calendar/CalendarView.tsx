@@ -9,6 +9,11 @@ import { useShootStore } from "@/lib/store/useShootStore";
 
 const DAY_LABELS = ["LUN", "MAR", "MER", "JEU", "VEN", "SAM", "DIM"] as const;
 
+function calcPeriod(callTime: string): "day" | "night" {
+  const h = Number(callTime.split(":")[0]);
+  return !isNaN(h) && (h >= 19 || h < 6) ? "night" : "day";
+}
+
 function toISODate(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -108,10 +113,10 @@ function DayColumn({
 function ProductionDayCard({ day }: { day: ProductionDay }) {
   const s = STATUS_CONFIG[day.status];
   const p = PERIOD_CONFIG[day.period];
+  const endDisplay = day.endTime && day.endTime !== "00:00" ? day.endTime : "?";
   return (
-    <div
-      className="glass-card rounded-app overflow-hidden"
-      style={{ borderLeft: `3px solid ${s.border}` }}
+    <div className="glass-card rounded-app overflow-hidden border border-stroke/50"
+      style={{ borderTopColor: s.border, borderTopWidth: 2 }}
     >
       <div className="p-4 space-y-3">
         {/* Row 1: label + date + status */}
@@ -132,18 +137,20 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
         </div>
 
         {/* Row 3: scenes */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {day.scenes.map((scene) => (
-            <span key={scene} className="text-xs px-2 py-0.5 rounded bg-white/5 text-muted">
-              {scene}
-            </span>
-          ))}
-        </div>
+        {day.scenes.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {day.scenes.map((scene) => (
+              <span key={scene} className="text-xs px-2 py-0.5 rounded bg-white/5 text-muted">
+                {scene}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Row 4: times + period badge */}
         <div className="flex items-center justify-between pt-1">
           <span className="text-xs font-mono font-semibold text-textSoft">
-            {day.startTime} — {day.endTime}
+            {day.startTime} — {endDisplay}
           </span>
           <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wide ${p.bg} ${p.color}`}>
             {p.label}
@@ -168,29 +175,31 @@ export function CalendarView() {
     const days: ProductionDay[] = [];
 
     // Current shoot day
+    const callT = shoot.callTime || "08:00";
     days.push({
       id: `j${shoot.shootingDay}`,
       label: `J${shoot.shootingDay}`,
       date: shoot.date,
       location: shoot.location || "—",
       scenes: shoot.sequences.map((s) => s.label).slice(0, 5),
-      startTime: shoot.callTime || "00:00",
-      endTime: shoot.wrapTime || "00:00",
-      period: "day",
+      startTime: callT,
+      endTime: shoot.wrapTime || "",
+      period: calcPeriod(callT),
       status: "confirmed",
     });
 
     // Next days from extraction
     for (const nd of shoot.nextDays) {
+      const callT = nd.callTime || "08:00";
       days.push({
         id: `j${nd.shootingDay}`,
         label: `J${nd.shootingDay}`,
         date: nd.date,
         location: nd.location || "—",
-        scenes: [],
-        startTime: nd.callTime || "00:00",
-        endTime: "00:00",
-        period: "day",
+        scenes: nd.summary ? [nd.summary] : [],
+        startTime: callT,
+        endTime: "",
+        period: calcPeriod(callT),
         status: "confirmed",
       });
     }
@@ -205,6 +214,12 @@ export function CalendarView() {
     () => productionDays.filter((d) => d.date >= today).sort((a, b) => a.date.localeCompare(b.date)),
     [productionDays, today]
   );
+
+  // A2: filter by selectedDate when a specific day is clicked
+  const visibleDays = useMemo(() => {
+    if (selectedDate === today) return upcomingDays;
+    return upcomingDays.filter((d) => d.date === selectedDate);
+  }, [upcomingDays, selectedDate, today]);
 
   return (
     <div className="space-y-5">
@@ -244,20 +259,22 @@ export function CalendarView() {
       {/* Upcoming days */}
       <div className="space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-muted">
-          Jours à venir
+          {selectedDate === today ? "Jours à venir" : `Tournage · ${frDayMonth(selectedDate)}`}
         </h2>
 
-        {upcomingDays.length === 0 ? (
+        {visibleDays.length === 0 ? (
           <div className="glass-card rounded-app p-6 text-center space-y-2">
             <Film className="w-8 h-8 text-muted mx-auto" />
             <p className="text-sm text-muted">
-              {shoot.isPublished
-                ? "Aucun jour de tournage à venir."
-                : "La feuille du jour n'a pas encore été publiée."}
+              {!shoot.isPublished
+                ? "La feuille du jour n'a pas encore été publiée."
+                : selectedDate !== today
+                ? "Aucun tournage prévu ce jour."
+                : "Aucun jour de tournage à venir."}
             </p>
           </div>
         ) : (
-          upcomingDays.map((day) => <ProductionDayCard key={day.id} day={day} />)
+          visibleDays.map((day) => <ProductionDayCard key={day.id} day={day} />)
         )}
       </div>
     </div>

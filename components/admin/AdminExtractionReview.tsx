@@ -4,8 +4,25 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, Info, Plus, Trash2 } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
 import type { ShootSequence, CastMember, DeptNote, PlacePoint, ShootAlert } from "@/lib/types/shoot";
+import type { ExtractionConfidence } from "@/lib/types/shoot";
 
 const INPUT = "bg-white/5 border border-stroke rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan/40 w-full placeholder:text-muted";
+
+// E1: confidence badge displayed next to extracted fields
+function ConfidenceBadge({ confidence }: { confidence?: ExtractionConfidence }) {
+  if (!confidence) return null;
+  const cfg = {
+    high:   { label: "✓",  cls: "bg-green-900/30 text-green-400" },
+    medium: { label: "~",  cls: "bg-orange-900/30 text-orangeSoft" },
+    low:    { label: "?",  cls: "bg-red-900/30 text-redSoft" },
+  };
+  const { label, cls } = cfg[confidence];
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ml-1 ${cls}`}>
+      {label}
+    </span>
+  );
+}
 
 function Section({ title, count, children, defaultOpen = false }: {
   title: string;
@@ -33,10 +50,17 @@ function Section({ title, count, children, defaultOpen = false }: {
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, confidence, children }: {
+  label: string;
+  confidence?: ExtractionConfidence;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <label className="text-xs text-muted block mb-1">{label}</label>
+      <label className="text-xs text-muted block mb-1">
+        {label}
+        <ConfidenceBadge confidence={confidence} />
+      </label>
       {children}
     </div>
   );
@@ -101,7 +125,7 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
     setSequences([...seqs, { id: crypto.randomUUID(), time: "", label: "", location: "" }]);
   }
 
-  function patchSeq(id: string, key: keyof ShootSequence, val: string) {
+  function patchSeq(id: string, key: keyof ShootSequence, val: string | string[]) {
     setSequences(seqs.map((s) => (s.id === id ? { ...s, [key]: val } : s)));
   }
 
@@ -157,9 +181,11 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
     setAlerts(alerts.filter((a) => a.id !== id));
   }
 
+  const pe = pendingExtraction;
+
   return (
     <div className="space-y-3">
-      {pendingExtraction && (
+      {pe && (
         <div className="flex items-center gap-2 p-3 bg-cyanSoft rounded-2xl">
           <CheckCircle2 className="w-4 h-4 text-cyan shrink-0" />
           <p className="text-xs text-cyan font-medium">
@@ -171,81 +197,81 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
       {/* General info */}
       <Section title="Informations générales" defaultOpen>
         <div className="grid grid-cols-2 gap-3">
-          <Row label="Titre du projet">
+          <Row label="Titre du projet" confidence={pe?.projectTitle?.confidence}>
             <input
-              value={pendingExtraction?.projectTitle?.value ?? shoot.projectTitle}
+              value={pe?.projectTitle?.value ?? shoot.projectTitle}
               onChange={(e) => updateField({ projectTitle: e.target.value })}
               className={INPUT}
             />
           </Row>
-          <Row label="Saison / Bloc">
+          <Row label="Saison / Bloc" confidence={pe?.series?.confidence}>
             <input
-              value={pendingExtraction?.series?.value ?? shoot.series ?? ""}
+              value={pe?.series?.value ?? shoot.series ?? ""}
               onChange={(e) => updateField({ series: e.target.value })}
               className={INPUT}
             />
           </Row>
-          <Row label="Jour J">
+          <Row label="Jour J" confidence={pe?.shootingDay?.confidence}>
             <input
               type="number"
-              value={pendingExtraction?.shootingDay?.value ?? shoot.shootingDay}
+              value={pe?.shootingDay?.value ?? shoot.shootingDay}
               onChange={(e) => updateField({ shootingDay: Number(e.target.value) })}
               className={INPUT}
             />
           </Row>
-          <Row label="Total jours">
+          <Row label="Total jours" confidence={pe?.totalDays?.confidence}>
             <input
               type="number"
-              value={pendingExtraction?.totalDays?.value ?? shoot.totalDays ?? ""}
+              value={pe?.totalDays?.value ?? shoot.totalDays ?? ""}
               onChange={(e) => updateField({ totalDays: Number(e.target.value) })}
               className={INPUT}
             />
           </Row>
-          <Row label="Date">
+          <Row label="Date" confidence={pe?.date?.confidence}>
             <input
               type="date"
-              value={pendingExtraction?.date?.value ?? shoot.date}
+              value={pe?.date?.value ?? shoot.date}
               onChange={(e) => updateField({ date: e.target.value })}
               className={INPUT}
             />
           </Row>
-          <Row label="Météo">
+          <Row label="Météo" confidence={pe?.weather?.confidence}>
             <input
-              value={pendingExtraction?.weather?.value ?? shoot.weather ?? ""}
+              value={pe?.weather?.value ?? shoot.weather ?? ""}
               onChange={(e) => updateField({ weather: e.target.value })}
               className={INPUT}
             />
           </Row>
         </div>
-        <Row label="Lieu du tournage">
+        <Row label="Lieu du tournage" confidence={pe?.location?.confidence}>
           <input
-            value={pendingExtraction?.location?.value ?? shoot.location}
+            value={pe?.location?.value ?? shoot.location}
             onChange={(e) => updateField({ location: e.target.value })}
             className={INPUT}
           />
         </Row>
         <div className="grid grid-cols-3 gap-2">
-          <Row label="Call Time">
-            <input type="time" value={pendingExtraction?.callTime?.value ?? shoot.callTime} onChange={(e) => updateField({ callTime: e.target.value })} className={INPUT} />
+          <Row label="Call Time" confidence={pe?.callTime?.confidence}>
+            <input type="time" value={pe?.callTime?.value ?? shoot.callTime} onChange={(e) => updateField({ callTime: e.target.value })} className={INPUT} />
           </Row>
-          <Row label="Repas">
-            <input type="time" value={pendingExtraction?.mealTime?.value ?? shoot.mealTime} onChange={(e) => updateField({ mealTime: e.target.value })} className={INPUT} />
+          <Row label="Repas" confidence={pe?.mealTime?.confidence}>
+            <input type="time" value={pe?.mealTime?.value ?? shoot.mealTime} onChange={(e) => updateField({ mealTime: e.target.value })} className={INPUT} />
           </Row>
-          <Row label="Fin">
-            <input type="time" value={pendingExtraction?.wrapTime?.value ?? shoot.wrapTime ?? ""} onChange={(e) => updateField({ wrapTime: e.target.value })} className={INPUT} />
+          <Row label="Fin" confidence={pe?.wrapTime?.confidence}>
+            <input type="time" value={pe?.wrapTime?.value ?? shoot.wrapTime ?? ""} onChange={(e) => updateField({ wrapTime: e.target.value })} className={INPUT} />
           </Row>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <Row label="Loges / HMC">
-            <input value={pendingExtraction?.logeLocation?.value ?? shoot.logeLocation ?? ""} onChange={(e) => updateField({ logeLocation: e.target.value })} className={INPUT} />
+          <Row label="Loges / HMC" confidence={pe?.logeLocation?.confidence}>
+            <input value={pe?.logeLocation?.value ?? shoot.logeLocation ?? ""} onChange={(e) => updateField({ logeLocation: e.target.value })} className={INPUT} />
           </Row>
-          <Row label="Cantine">
-            <input value={pendingExtraction?.canteenLocation?.value ?? shoot.canteenLocation ?? ""} onChange={(e) => updateField({ canteenLocation: e.target.value })} className={INPUT} />
+          <Row label="Cantine" confidence={pe?.canteenLocation?.confidence}>
+            <input value={pe?.canteenLocation?.value ?? shoot.canteenLocation ?? ""} onChange={(e) => updateField({ canteenLocation: e.target.value })} className={INPUT} />
           </Row>
         </div>
       </Section>
 
-      {/* Sequences */}
+      {/* Sequences — E3: cast[] per sequence editable */}
       <Section title="Déroulé" count={seqs.length}>
         {seqs.map((seq) => (
           <div key={seq.id} className="space-y-2 p-3 bg-white/3 rounded-xl relative">
@@ -263,6 +289,26 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
               </div>
             </div>
             <input value={seq.location} onChange={(e) => patchSeq(seq.id, "location", e.target.value)} placeholder="EXT. PLAGE – MATIN" className={INPUT} />
+            {/* E3: cast per sequence */}
+            <div>
+              <label className="text-xs text-muted block mb-1">Comédiens (séparés par des virgules)</label>
+              <input
+                value={(seq.cast ?? []).join(", ")}
+                onChange={(e) =>
+                  patchSeq(
+                    seq.id,
+                    "cast",
+                    e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
+                  )
+                }
+                placeholder="Jean Dupont, Marie Martin…"
+                className={INPUT}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">Notes</label>
+              <input value={seq.notes ?? ""} onChange={(e) => patchSeq(seq.id, "notes", e.target.value)} placeholder="Notes de tournage…" className={INPUT} />
+            </div>
           </div>
         ))}
         <button onClick={addSeq} className="flex items-center gap-1.5 text-xs text-cyan">
@@ -361,7 +407,7 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
         onClick={handleApply}
         className={`active-pill w-full py-3 rounded-2xl font-semibold text-sm transition-opacity ${applied ? "opacity-60" : ""}`}
       >
-        {applied ? "Appliqué ✓" : pendingExtraction ? "Appliquer l'extraction" : "Valider et continuer"}
+        {applied ? "Appliqué ✓" : pe ? "Appliquer l'extraction" : "Valider et continuer"}
       </button>
     </div>
   );

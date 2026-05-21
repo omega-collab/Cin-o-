@@ -5,8 +5,15 @@ import { CanteenCard } from "@/components/today/CanteenCard";
 import { AlertsCard } from "@/components/today/AlertsCard";
 
 export default function HomePage() {
+  const subtitle = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
   return (
-    <Shell title="Aujourd'hui" subtitle="Lundi 20 mai 2026">
+    <Shell title="Aujourd'hui" subtitle={subtitle}>
       <div className="space-y-4">
         <Hero />
         <ScheduleList />

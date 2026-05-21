@@ -35,7 +35,22 @@ function applyExtraction(current: FullShoot, result: ExtractionResult): FullShoo
   if (result.deptNotes) patch.deptNotes = result.deptNotes.value;
   if (result.places) patch.places = result.places.value;
   if (result.alerts) patch.alerts = result.alerts.value;
-  if (result.nextDays) patch.nextDays = result.nextDays.value;
+
+  // Merge nextDays: incoming data updates matching dates, unknown dates are kept.
+  // This preserves calendar entries from earlier imports (J+4, J+5…) when a newer
+  // sheet only mentions J+1 to J+3. The current shoot date is always excluded.
+  if (result.nextDays) {
+    const incoming = result.nextDays.value;
+    const currentDate = patch.date ?? current.date;
+    const incomingDates = new Set<string>(incoming.map((d) => d.date));
+    const merged = [
+      ...current.nextDays.filter(
+        (d) => !incomingDates.has(d.date) && d.date !== currentDate
+      ),
+      ...incoming.filter((d) => d.date !== currentDate),
+    ].sort((a, b) => a.date.localeCompare(b.date));
+    patch.nextDays = merged;
+  }
 
   return { ...current, ...patch };
 }

@@ -80,6 +80,8 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
 
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [skipped, setSkipped] = useState<string[]>([]);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const docs = shoot.uploadedDocs;
 
@@ -153,8 +155,11 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
         body: JSON.stringify({ docs: payload }),
       });
 
-      const json = await res.json() as { result?: unknown; error?: string };
+      const json = await res.json() as { result?: unknown; error?: string; skipped?: string[] };
       if (!res.ok || json.error) throw new Error(json.error ?? "Erreur extraction");
+
+      // E4: display skipped files
+      if (json.skipped && json.skipped.length > 0) setSkipped(json.skipped);
 
       setPendingExtraction(json.result as Parameters<typeof setPendingExtraction>[0]);
       setExtractionStatus("review");
@@ -253,11 +258,46 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
         </div>
       )}
 
+      {/* E5: two-step confirmation for clear */}
       {docs.length > 0 && (
-        <div className="flex justify-end">
-          <button onClick={() => clearDocs()} className="text-xs text-muted">
-            Tout effacer
-          </button>
+        <div className="flex justify-end items-center gap-3">
+          {confirmClear ? (
+            <>
+              <button
+                onClick={() => setConfirmClear(false)}
+                className="text-xs text-muted"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => { clearDocs(); setConfirmClear(false); setSkipped([]); }}
+                className="text-xs text-redSoft font-semibold"
+              >
+                Confirmer la suppression
+              </button>
+            </>
+          ) : (
+            <button onClick={() => setConfirmClear(true)} className="text-xs text-muted">
+              Tout effacer
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* E4: skipped files notice */}
+      {skipped.length > 0 && (
+        <div className="flex items-start gap-2 p-3 bg-orangeSoft/10 border border-orangeSoft/20 rounded-2xl">
+          <span className="text-orangeSoft text-sm shrink-0">⚠️</span>
+          <div>
+            <p className="text-xs text-orangeSoft font-semibold">
+              {skipped.length} fichier(s) ignoré(s) par l'OCR
+            </p>
+            <ul className="mt-1 space-y-0.5">
+              {skipped.map((f) => (
+                <li key={f} className="text-xs text-muted">{f}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 
