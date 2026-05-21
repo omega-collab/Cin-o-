@@ -1,0 +1,30 @@
+export interface Profile {
+  id: string;
+  display_name: string;
+  initials: string;
+  created_at: string;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  invite_code: string;
+  owner_id: string;
+  created_at: string;
+}
+
+export interface ProjectMember {
+  project_id: string;
+  user_id: string;
+  role: "owner" | "admin" | "member";
+  joined_at: string;
+  profiles?: Profile;
+}
+
+export interface ProjectData {
+  project_id: string;
+  shoot_store: Record<string, unknown>;
+  department_store: Record<string, unknown>;
+  updated_at: string;
+  updated_by: string | null;
+}
