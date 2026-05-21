@@ -72,7 +72,7 @@ export function SalarySettings() {
                 Suggestion — {role}
               </p>
               <p className="text-xs text-muted mt-0.5">
-                ≈ {preset.tauxHoraireMin}–{preset.tauxHoraireMax} €/h · MG {preset.mgJournalier} €/j
+                ≈ {preset.tauxHoraireMin}–{preset.tauxHoraireMax} €/h · Cachet minimum {preset.mgJournalier} €/j
               </p>
               {preset.note && (
                 <p className="text-[10px] text-muted mt-1 italic">{preset.note}</p>
@@ -127,7 +127,9 @@ export function SalarySettings() {
           </div>
 
           <div>
-            <label className="text-xs text-muted block mb-1">MG journalier brut (€)</label>
+            <label className="text-xs text-muted block mb-1">
+              Cachet minimum journalier brut (€)
+            </label>
             <input
               type="text"
               inputMode="decimal"
@@ -135,11 +137,11 @@ export function SalarySettings() {
               onChange={(e) => setLocal((p) => ({ ...p, tauxJournalier: e.target.value }))}
               className={INPUT}
             />
-            {preset && (
-              <p className="text-xs text-muted mt-1">
-                MG indicatif {role} : {preset.mgJournalier} €/j
-              </p>
-            )}
+            <p className="text-xs text-muted mt-1">
+              {preset
+                ? `Plancher indicatif ${role} : ${preset.mgJournalier} €/j`
+                : "Salaire journalier minimal garanti par ta convention collective."}
+            </p>
           </div>
 
           <button
