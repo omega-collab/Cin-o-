@@ -31,3 +31,19 @@ export interface ProjectData {
   updated_at: string;
   updated_by: string | null;
 }
+
+export interface FraisEntry {
+  id: string;
+  user_id: string;
+  project_id: string | null;
+  date: string;           // ISO date YYYY-MM-DD
+  fournisseur: string;
+  nature: string;
+  montant_ttc: number;
+  plaque_immat: string | null;
+  releve_numero: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type FraisEntryInsert = Omit<FraisEntry, "id" | "user_id" | "created_at" | "updated_at">;

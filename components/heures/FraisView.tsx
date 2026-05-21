@@ -11,6 +11,7 @@ import { FraisImportModal } from "./expense/FraisImportModal";
 import type { ExtractedFrais, ScanPair } from "./expense/FraisImportModal";
 import { useExpenseStore } from "@/lib/store/useExpenseStore";
 import { useMatriceStore } from "@/lib/store/useMatriceStore";
+import { useFraisEntries } from "@/lib/hooks/useFraisEntries";
 import type { ExpenseCategory, VatRate } from "@/lib/types/expense";
 
 type SubTab = "liste" | "bot" | "export" | "matrice";
@@ -46,6 +47,7 @@ export function FraisView() {
   const entries    = useExpenseStore((s) => s.entries);
   const addEntry   = useExpenseStore((s) => s.addEntry);
   const addLigneFromExtracted = useMatriceStore((s) => s.addLigneFromExtracted);
+  const { addEntry: saveToSupabase } = useFraisEntries();
 
   const errorCount = entries.reduce((s, e) => s + e.flags.filter((f) => f.severity === "error").length, 0);
 
@@ -57,20 +59,21 @@ export function FraisView() {
   ];
 
   function handleImportConfirm(extracted: ExtractedFrais, scan: ScanPair) {
+    const ttc = extracted.montantTTC ?? 0;
+    const tva = extracted.montantTVA ?? 0;
+    const ht  = Math.max(0, ttc - tva);
+    const vatRate = detectVatRate(ttc, tva);
+    const entryDate = extracted.date ?? new Date().toISOString().split("T")[0]!;
+
     // 1. Feed the matrice store (auto-fills the Matrice tab)
     addLigneFromExtracted(extracted, {
       ticketPreview: scan.ticketPreview,
       facturePreview: scan.facturePreview,
     });
 
-    // 2. Also store in expense store for compliance verification
-    const ttc = extracted.montantTTC ?? 0;
-    const tva = extracted.montantTVA ?? 0;
-    const ht  = Math.max(0, ttc - tva);
-    const vatRate = detectVatRate(ttc, tva);
-
+    // 2. Store in expense store for compliance verification
     addEntry({
-      date: extracted.date ?? new Date().toISOString().split("T")[0]!,
+      date: entryDate,
       category: pcgToCategory(extracted.codePCG, extracted.nature),
       description: [extracted.fournisseur, extracted.nature].filter(Boolean).join(" — "),
       amountHT: ht,
@@ -79,6 +82,17 @@ export function FraisView() {
       paymentMethod: "cb",
       receiptUri: scan.ticketPreview,
       notes: extracted.lieu ? `Lieu : ${extracted.lieu}` : undefined,
+    });
+
+    // 3. Persist in Supabase (user-owned, RLS protected)
+    void saveToSupabase({
+      project_id: null,
+      date: entryDate,
+      fournisseur: extracted.fournisseur ?? "",
+      nature: extracted.nature ?? "",
+      montant_ttc: ttc,
+      plaque_immat: extracted.plaqueImmat ?? null,
+      releve_numero: null,
     });
   }
 

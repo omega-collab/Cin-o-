@@ -14,26 +14,26 @@ function normalizeMime(raw: string): AllowedMime {
   return "image/jpeg";
 }
 
-const EXPENSE_PROMPT = `Tu es un assistant comptable expert en production audiovisuelle française.
-Tu reçois le texte OCR d'un ticket de caisse CB et/ou d'une facture.
+const EXPENSE_PROMPT = `Tu es un assistant comptable pour une production audiovisuelle française.
+Tu reçois le texte OCR d'un ticket/facture de tournage.
 
-Extrais les informations et réponds UNIQUEMENT avec un objet JSON valide (aucun texte autour) :
+Réponds UNIQUEMENT avec un objet JSON valide (aucun texte autour) :
 
 {
   "date": "YYYY-MM-DD",
-  "fournisseur": "string (nom du commerçant en majuscules)",
+  "fournisseur": "NOM DU COMMERCE EN MAJUSCULES",
+  "nature": "Carburant | Repas équipe | Hôtel | Péage | Matériel | Fournitures | Transport | Autre",
   "montantTTC": number,
-  "montantTVA": number,
-  "nature": "string (parmi : Carburant / Repas équipe / Hôtel / Péage / Fournitures / Matériel / Transport / Autre)",
-  "lieu": "string (ville)",
-  "codePCG": "string (606300=carburant, 625700=repas, 625100=hôtel, 613000=péage, 606100=fournitures, 602100=matériel, 625600=transport)"
+  "plaqueImmat": "XX 000 XX ou null"
 }
 
-Règles :
-- date en YYYY-MM-DD (ex : "21/05/2026" → "2026-05-21")
-- montantTTC et montantTVA sont des nombres décimaux (ex : "45,00 €" → 45.0)
-- Si TVA non visible : montantTVA = 0
-- Omets un champ si introuvable`;
+Règles strictes :
+- date en YYYY-MM-DD (ex : "20/01/2024" → "2024-01-20")
+- fournisseur : nom exact du commerce/station (ex: "STATION CAP TAUPINIERE", "HOTEL MERIDIEN")
+- nature : choisir parmi les valeurs listées uniquement
+- montantTTC : montant TOTAL payé en euros, nombre décimal (ex: "20 €" → 20.0)
+- plaqueImmat : immatriculation du véhicule si présente dans le document (format ex: "HA 010 EP", "AB-123-CD"), sinon null
+- Omets un champ si vraiment introuvable (sauf plaqueImmat qui vaut null si absent)`;
 
 export async function POST(req: NextRequest) {
   try {

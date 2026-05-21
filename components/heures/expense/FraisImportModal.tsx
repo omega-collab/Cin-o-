@@ -1,16 +1,21 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { X, Camera, Loader2, AlertCircle, ReceiptText, FileText, ChevronLeft, Check } from "lucide-react";
+import {
+  X, Camera, Loader2, AlertCircle, AlertTriangle, ReceiptText,
+  ChevronLeft, Check, Car,
+} from "lucide-react";
 
 // ── types ─────────────────────────────────────────────────────────────────────
 
 export interface ExtractedFrais {
   date?: string;
   fournisseur?: string;
-  montantTTC?: number;
-  montantTVA?: number;
   nature?: string;
+  montantTTC?: number;
+  plaqueImmat?: string | null;
+  // legacy fields kept for backwards compat
+  montantTVA?: number;
   lieu?: string;
   codePCG?: string;
 }
@@ -63,25 +68,28 @@ async function compressPhoto(file: File): Promise<PhotoData> {
   });
 }
 
+const NATURES = ["Carburant", "Repas équipe", "Hôtel", "Péage", "Matériel", "Fournitures", "Transport", "Autre"] as const;
 const INP = "bg-white/5 border border-stroke rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan/40 w-full";
 
 // ── component ─────────────────────────────────────────────────────────────────
 
 export function FraisImportModal({ onClose, onConfirm }: Props) {
   const [step, setStep] = useState<"capture" | "processing" | "review">("capture");
-  const [ticket, setTicket]   = useState<PhotoData | null>(null);
-  const [facture, setFacture] = useState<PhotoData | null>(null);
+  const [ticket, setTicket] = useState<PhotoData | null>(null);
   const [extracted, setExtracted] = useState<ExtractedFrais>({});
-  const [error, setError]         = useState<string | null>(null);
-  const [extractStep, setExtractStep] = useState<string | null>(null);
-  const ticketRef  = useRef<HTMLInputElement>(null);
-  const factureRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [plaqueManuelle, setPlaqueManuelle] = useState("");
+  const [plaqueIgnored, setPlaqueIgnored] = useState(false);
+  const ticketRef = useRef<HTMLInputElement>(null);
 
-  async function handleCapture(file: File, type: "ticket" | "facture") {
+  const plaqueAbsente = !extracted.plaqueImmat && !plaqueManuelle && !plaqueIgnored;
+  const plaqueEffective = extracted.plaqueImmat ?? plaqueManuelle ?? null;
+
+  async function handleCapture(file: File) {
     try {
       const data = await compressPhoto(file);
-      if (type === "ticket") setTicket(data);
-      else setFacture(data);
+      setTicket(data);
+      setError(null);
     } catch {
       setError("Impossible de lire l'image.");
     }
@@ -92,10 +100,7 @@ export function FraisImportModal({ onClose, onConfirm }: Props) {
     setError(null);
     setStep("processing");
     try {
-      setExtractStep("Lecture du ticket en cours…");
-      const body: Record<string, string> = { ticketBase64: ticket.base64, ticketMime: ticket.mime };
-      if (facture) { body.factureBase64 = facture.base64; body.factureMime = facture.mime; }
-
+      const body = { ticketBase64: ticket.base64, ticketMime: ticket.mime };
       const res  = await fetch("/api/extract-frais", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,32 +109,34 @@ export function FraisImportModal({ onClose, onConfirm }: Props) {
       const json = await res.json() as { result?: ExtractedFrais; error?: string };
       if (!res.ok || json.error) throw new Error(json.error ?? `Erreur ${res.status}`);
 
-      setExtracted(json.result ?? {});
+      const result = json.result ?? {};
+      setExtracted(result);
+      setPlaqueManuelle(result.plaqueImmat ?? "");
       setStep("review");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur d'analyse");
       setStep("capture");
-    } finally {
-      setExtractStep(null);
     }
-  }
-
-  function confirm() {
-    if (!ticket) return;
-    onConfirm(extracted, {
-      ticketBase64: ticket.base64,
-      ticketMime:   ticket.mime,
-      ticketPreview: ticket.preview,
-      factureBase64:  facture?.base64,
-      factureMime:    facture?.mime,
-      facturePreview: facture?.preview,
-    });
-    onClose();
   }
 
   function field<K extends keyof ExtractedFrais>(k: K, v: ExtractedFrais[K]) {
     setExtracted((e) => ({ ...e, [k]: v }));
   }
+
+  function confirm() {
+    if (!ticket) return;
+    onConfirm(
+      { ...extracted, plaqueImmat: plaqueEffective },
+      {
+        ticketBase64: ticket.base64,
+        ticketMime:   ticket.mime,
+        ticketPreview: ticket.preview,
+      }
+    );
+    onClose();
+  }
+
+  const canConfirm = !!extracted.fournisseur && (extracted.montantTTC ?? 0) > 0 && !plaqueAbsente;
 
   return (
     <div
@@ -150,7 +157,9 @@ export function FraisImportModal({ onClose, onConfirm }: Props) {
               </button>
             )}
             <p className="text-sm font-bold text-white">
-              {step === "capture" ? "Importer une dépense" : step === "processing" ? "Analyse…" : "Vérifier les données"}
+              {step === "capture" ? "Scanner un justificatif"
+                : step === "processing" ? "Analyse…"
+                : "Vérifier les informations"}
             </p>
           </div>
           <button onClick={onClose} className="text-muted p-1 -m-1"><X className="w-5 h-5" /></button>
@@ -160,85 +169,42 @@ export function FraisImportModal({ onClose, onConfirm }: Props) {
         {step === "capture" && (
           <>
             <p className="text-xs text-muted leading-relaxed">
-              Photographiez votre ticket CB (obligatoire) et la facture si disponible.
-              L&apos;IA extrait automatiquement date, montant et fournisseur.
+              Photographiez votre ticket ou facture. L&apos;IA extrait automatiquement
+              le fournisseur, la nature, le montant TTC et la plaque d&apos;immatriculation.
             </p>
 
-            {/* Ticket CB */}
-            <div>
-              <p className="text-[10px] text-muted font-semibold uppercase tracking-widest mb-2">
-                Ticket CB <span className="text-redSoft">*</span>
-              </p>
-              {ticket ? (
-                <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
-                  <img src={ticket.preview} alt="ticket" className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => setTicket(null)}
-                    className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 text-white active:scale-90 transition-transform"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="absolute bottom-2 left-2 bg-black/60 text-[10px] text-cyan font-bold px-2 py-0.5 rounded-full flex items-center gap-1 uppercase tracking-widest">
-                    <ReceiptText className="w-3 h-3" /> Ticket
-                  </span>
-                </div>
-              ) : (
+            {ticket ? (
+              <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
+                <img src={ticket.preview} alt="ticket" className="w-full h-full object-cover" />
                 <button
-                  onClick={() => ticketRef.current?.click()}
-                  className="w-full rounded-2xl border-2 border-dashed border-cyan/40 flex flex-col items-center justify-center gap-2 py-8 active:scale-95 transition-transform"
-                  style={{ background: "rgba(0,224,208,0.05)" }}
+                  onClick={() => setTicket(null)}
+                  className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 text-white active:scale-90 transition-transform"
                 >
-                  <Camera className="w-7 h-7 text-cyan" />
-                  <p className="text-sm font-semibold text-cyan">Photographier le ticket</p>
-                  <p className="text-xs text-muted">Ou importer depuis la galerie</p>
+                  <X className="w-3.5 h-3.5" />
                 </button>
-              )}
-              <input
-                ref={ticketRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) { handleCapture(f, "ticket"); e.target.value = ""; } }}
-              />
-            </div>
-
-            {/* Facture */}
-            <div>
-              <p className="text-[10px] text-muted font-semibold uppercase tracking-widest mb-2">
-                Facture <span className="text-muted font-normal normal-case">(optionnel — améliore la TVA)</span>
-              </p>
-              {facture ? (
-                <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
-                  <img src={facture.preview} alt="facture" className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => setFacture(null)}
-                    className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 text-white active:scale-90 transition-transform"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="absolute bottom-2 left-2 bg-black/60 text-[10px] text-orangeSoft font-bold px-2 py-0.5 rounded-full flex items-center gap-1 uppercase tracking-widest">
-                    <FileText className="w-3 h-3" /> Facture
-                  </span>
-                </div>
-              ) : (
-                <button
-                  onClick={() => factureRef.current?.click()}
-                  className="w-full rounded-2xl border border-dashed border-stroke bg-white/3 flex items-center justify-center gap-2 py-3.5 active:scale-95 transition-transform"
-                >
-                  <Camera className="w-4 h-4 text-muted" />
-                  <p className="text-sm text-muted">Photographier la facture</p>
-                </button>
-              )}
-              <input
-                ref={factureRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) { handleCapture(f, "facture"); e.target.value = ""; } }}
-              />
-            </div>
+                <span className="absolute bottom-2 left-2 bg-black/60 text-[10px] text-cyan font-bold px-2 py-0.5 rounded-full flex items-center gap-1 uppercase tracking-widest">
+                  <ReceiptText className="w-3 h-3" /> Ticket
+                </span>
+              </div>
+            ) : (
+              <button
+                onClick={() => ticketRef.current?.click()}
+                className="w-full rounded-2xl border-2 border-dashed border-cyan/40 flex flex-col items-center justify-center gap-2 py-10 active:scale-95 transition-transform"
+                style={{ background: "rgba(0,224,208,0.05)" }}
+              >
+                <Camera className="w-8 h-8 text-cyan" />
+                <p className="text-sm font-semibold text-cyan">Photographier le justificatif</p>
+                <p className="text-xs text-muted">Ou importer depuis la galerie</p>
+              </button>
+            )}
+            <input
+              ref={ticketRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) { handleCapture(f); e.target.value = ""; } }}
+            />
 
             {error && (
               <div className="flex items-center gap-2 text-xs text-redSoft">
@@ -260,9 +226,9 @@ export function FraisImportModal({ onClose, onConfirm }: Props) {
         {step === "processing" && (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <Loader2 className="w-8 h-8 text-cyan animate-spin" />
-            <p className="text-sm text-textSoft">{extractStep ?? "Extraction en cours…"}</p>
+            <p className="text-sm text-textSoft">Lecture du ticket en cours…</p>
             <p className="text-xs text-muted text-center px-4">
-              L&apos;IA lit vos photos et extrait les informations comptables
+              L&apos;IA extrait le fournisseur, la nature et le montant
             </p>
           </div>
         )}
@@ -270,88 +236,115 @@ export function FraisImportModal({ onClose, onConfirm }: Props) {
         {/* ── STEP : review ───────────────────────────────────────────────── */}
         {step === "review" && (
           <div className="space-y-3">
-            <p className="text-xs text-muted">Corrigez si nécessaire avant d&apos;ajouter à la matrice.</p>
+            <p className="text-xs text-muted">Corrigez si nécessaire.</p>
 
-            {/* Previews */}
-            <div className="flex gap-2">
-              {ticket && (
-                <div className="relative flex-1 rounded-2xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
-                  <img src={ticket.preview} alt="" className="w-full h-full object-cover" />
-                  <span className="absolute bottom-1.5 left-1.5 bg-black/60 text-[9px] text-cyan font-bold px-1.5 py-0.5 rounded uppercase tracking-widest">Ticket</span>
-                </div>
+            {ticket && (
+              <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
+                <img src={ticket.preview} alt="" className="w-full h-full object-cover" />
+              </div>
+            )}
+
+            {/* Plaque d'immatriculation — bloc critique */}
+            <div className={`rounded-2xl p-3 space-y-2 border ${!extracted.plaqueImmat && !plaqueManuelle ? "border-amber-400/40 bg-amber-400/5" : "border-stroke bg-white/3"}`}>
+              <div className="flex items-center gap-1.5">
+                <Car className={`w-4 h-4 shrink-0 ${!extracted.plaqueImmat && !plaqueManuelle ? "text-amber-400" : "text-cyan"}`} />
+                <p className={`text-xs font-semibold ${!extracted.plaqueImmat && !plaqueManuelle ? "text-amber-300" : "text-white"}`}>
+                  Plaque d&apos;immatriculation
+                </p>
+              </div>
+
+              {extracted.plaqueImmat ? (
+                <p className="text-sm font-mono font-bold text-cyan">{extracted.plaqueImmat}</p>
+              ) : (
+                <>
+                  {!plaqueIgnored && (
+                    <>
+                      <p className="text-[10px] text-amber-300 leading-relaxed">
+                        Non détectée sur le document. La plaque est requise par la production.
+                        Vérifiez le document ou saisissez-la.
+                      </p>
+                      <input
+                        type="text"
+                        value={plaqueManuelle}
+                        onChange={(e) => setPlaqueManuelle(e.target.value.toUpperCase())}
+                        className={INP}
+                        placeholder="HA 010 EP"
+                        autoComplete="off"
+                      />
+                      <button
+                        onClick={() => setPlaqueIgnored(true)}
+                        className="text-[10px] text-muted underline underline-offset-2"
+                      >
+                        Le document n&apos;est pas un frais véhicule — ignorer
+                      </button>
+                    </>
+                  )}
+                  {plaqueIgnored && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] text-muted">Sans plaque — frais non-véhicule</p>
+                      <button onClick={() => setPlaqueIgnored(false)} className="text-[10px] text-cyan">
+                        Annuler
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
-              {facture && (
-                <div className="relative flex-1 rounded-2xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
-                  <img src={facture.preview} alt="" className="w-full h-full object-cover" />
-                  <span className="absolute bottom-1.5 left-1.5 bg-black/60 text-[9px] text-orangeSoft font-bold px-1.5 py-0.5 rounded uppercase tracking-widest">Facture</span>
-                </div>
-              )}
             </div>
 
-            {/* Editable fields */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[10px] text-muted block mb-0.5">Date</label>
-                <input type="date" value={extracted.date ?? ""} onChange={(e) => field("date", e.target.value)} className={INP} />
-              </div>
-              <div>
-                <label className="text-[10px] text-muted block mb-0.5">TTC (€)</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={extracted.montantTTC !== undefined ? String(extracted.montantTTC) : ""}
-                  onChange={(e) => field("montantTTC", parseFloat(e.target.value.replace(",", ".")) || undefined)}
-                  className={INP}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
+            {/* Date */}
             <div>
-              <label className="text-[10px] text-muted block mb-0.5">Fournisseur</label>
-              <input type="text" value={extracted.fournisseur ?? ""} onChange={(e) => field("fournisseur", e.target.value)} className={INP} placeholder="TOTAL, IBIS…" />
+              <label className="text-[10px] text-muted block mb-0.5">Date</label>
+              <input type="date" value={extracted.date ?? ""} onChange={(e) => field("date", e.target.value)} className={INP} />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[10px] text-muted block mb-0.5">TVA (€)</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={extracted.montantTVA !== undefined ? String(extracted.montantTVA) : ""}
-                  onChange={(e) => field("montantTVA", parseFloat(e.target.value.replace(",", ".")) || undefined)}
-                  className={INP}
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-muted block mb-0.5">Lieu</label>
-                <input type="text" value={extracted.lieu ?? ""} onChange={(e) => field("lieu", e.target.value)} className={INP} placeholder="Paris" />
-              </div>
-            </div>
-
+            {/* Fournisseur */}
             <div>
-              <label className="text-[10px] text-muted block mb-0.5">Nature de la dépense</label>
-              <input type="text" value={extracted.nature ?? ""} onChange={(e) => field("nature", e.target.value)} className={INP} placeholder="Carburant, Repas…" />
-            </div>
-
-            <div>
-              <label className="text-[10px] text-muted block mb-0.5">Code PCG</label>
+              <label className="text-[10px] text-muted block mb-0.5">Fournisseur *</label>
               <input
                 type="text"
-                list="pcg-list"
-                value={extracted.codePCG ?? ""}
-                onChange={(e) => field("codePCG", e.target.value)}
-                className={`${INP} font-mono`}
-                placeholder="606300"
+                value={extracted.fournisseur ?? ""}
+                onChange={(e) => field("fournisseur", e.target.value)}
+                className={INP}
+                placeholder="STATION TOTAL, IBIS HOTELS…"
               />
             </div>
 
+            {/* Nature */}
+            <div>
+              <label className="text-[10px] text-muted block mb-0.5">Nature de la dépense *</label>
+              <select value={extracted.nature ?? ""} onChange={(e) => field("nature", e.target.value)} className={INP}>
+                <option value="">Choisir…</option>
+                {NATURES.map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+
+            {/* Montant TTC */}
+            <div>
+              <label className="text-[10px] text-muted block mb-0.5">Montant TTC (€) *</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={extracted.montantTTC !== undefined ? String(extracted.montantTTC) : ""}
+                onChange={(e) => field("montantTTC", parseFloat(e.target.value.replace(",", ".")) || undefined)}
+                className={`${INP} text-lg font-bold text-cyan`}
+                placeholder="0.00"
+              />
+            </div>
+
+            {/* Avertissement si données incomplètes */}
+            {plaqueAbsente && (
+              <div className="flex items-start gap-2 text-xs text-amber-300">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Saisissez la plaque d&apos;immatriculation ou confirmez que ce n&apos;est pas un frais véhicule.</span>
+              </div>
+            )}
+
             <button
               onClick={confirm}
-              className="active-pill w-full py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2"
+              disabled={!canConfirm}
+              className="active-pill w-full py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
             >
-              <Check className="w-4 h-4" /> Ajouter à la matrice
+              <Check className="w-4 h-4" /> Ajouter à la note de frais
             </button>
           </div>
         )}

@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Download, Printer, Info, RotateCcw, X } from "lucide-react";
-import type { MatriceLigne } from "@/lib/types/matrice";
-import { MATRICE_DEPTS, PCG_SUGGESTIONS } from "@/lib/types/matrice";
-import { buildINTLOUMACSV } from "@/lib/utils/intloumaCSV";
+import { Plus, Trash2, Download, Printer, Info, X, AlertTriangle, CheckCircle, Pencil } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
-import { useMatriceStore, MAX_LIGNES } from "@/lib/store/useMatriceStore";
+import { useMatriceStore } from "@/lib/store/useMatriceStore";
+import { useFraisEntries } from "@/lib/hooks/useFraisEntries";
+import type { FraisEntry, FraisEntryInsert } from "@/lib/supabase/types";
 import type { DepartmentSlug } from "@/lib/types";
-
-// ── constants ─────────────────────────────────────────────────────────────────
+import { MATRICE_DEPTS } from "@/lib/types/matrice";
 
 const DEPT_MAP: Partial<Record<DepartmentSlug, string>> = {
   camera:     "CAMERA",
@@ -24,67 +22,107 @@ const DEPT_MAP: Partial<Record<DepartmentSlug, string>> = {
   direction:  "REALISATION",
 };
 
+const NATURES = ["Carburant", "Repas équipe", "Hôtel", "Péage", "Matériel", "Fournitures", "Transport", "Autre"];
 const INPUT = "bg-white/5 border border-stroke rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-cyan/40 w-full";
+const EMPTY_NEW: Omit<FraisEntryInsert, "project_id" | "releve_numero"> = {
+  date: new Date().toISOString().split("T")[0]!,
+  fournisseur: "",
+  nature: "",
+  montant_ttc: 0,
+  plaque_immat: null,
+};
 
-function parse(s: string): number {
-  return parseFloat(s.replace(",", ".")) || 0;
-}
+interface CoherenceIssue { line: number; msg: string; }
 
-// ── main component ─────────────────────────────────────────────────────────────
+// ── component ──────────────────────────────────────────────────────────────────
 
 export function MatriceForm() {
   const { department, role } = useUserStore();
-  const { data, scansMeta, setField, setLigne, addLigne, removeLigne, resetLignes } = useMatriceStore();
-  const [confirmReset, setConfirmReset] = useState(false);
+  const { data, setField } = useMatriceStore();
+  const { entries, loading, addEntry, deleteEntry, updateEntry } = useFraisEntries();
 
-  // Init departement/emploi from user profile if fields are empty
-  const effectiveDept = data.departement || (department ? (DEPT_MAP[department] ?? "PRODUCTION") : "PRODUCTION");
+  const [showAdd, setShowAdd] = useState(false);
+  const [newLine, setNewLine] = useState(EMPTY_NEW);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editPatch, setEditPatch] = useState<Partial<FraisEntryInsert>>({});
+  const [coherenceModal, setCoherenceModal] = useState<CoherenceIssue[] | null>(null);
+
+  const effectiveDept = data.departement || (department ? (DEPT_MAP[department as DepartmentSlug] ?? "PRODUCTION") : "PRODUCTION");
   const effectiveEmploi = data.emploi || role || "";
+  const totalTTC = entries.reduce((s, e) => s + (e.montant_ttc ?? 0), 0);
+  const canExport = (data.nom || "").trim().length > 0 && entries.some((e) => (e.montant_ttc ?? 0) > 0);
 
-  const totalTTC = data.lignes.reduce((s, l) => s + parse(l.ttc), 0);
-  const totalTVA = data.lignes.reduce((s, l) => s + parse(l.tva), 0);
-  const totalHT  = totalTTC - totalTVA;
+  // ── coherence ────────────────────────────────────────────────────────────────
 
-  const canExport =
-    (data.nom || "").trim().length > 0 &&
-    (data.numero || "").trim().length > 0 &&
-    data.lignes.some((l) => parse(l.ttc) > 0);
-
-  const filledLines = data.lignes.filter((l) => parse(l.ttc) > 0 || l.fournisseur);
-
-  // ── CSV export ──────────────────────────────────────────────────────────────
-
-  function downloadCSV() {
-    const csv = buildINTLOUMACSV({ ...data, departement: effectiveDept, emploi: effectiveEmploi });
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `RDD_${(data.nom || "NOM").replace(/\s+/g, "-").toUpperCase()}_${data.numero || "001"}_INTLOUMA.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  function checkCoherence(): CoherenceIssue[] {
+    const issues: CoherenceIssue[] = [];
+    entries.forEach((e, i) => {
+      if (!e.fournisseur?.trim()) issues.push({ line: i + 1, msg: "Fournisseur manquant" });
+      if (!e.nature?.trim())      issues.push({ line: i + 1, msg: "Nature manquante" });
+      if (!e.date)                issues.push({ line: i + 1, msg: "Date manquante" });
+      if ((e.montant_ttc ?? 0) <= 0) issues.push({ line: i + 1, msg: "Montant nul ou négatif" });
+    });
+    if (entries.length === 0) issues.push({ line: 0, msg: "Aucune dépense dans la matrice" });
+    return issues;
   }
 
-  // ── print / PDF ─────────────────────────────────────────────────────────────
+  function handlePrintClick() {
+    if (!data.nom?.trim() || !data.numero?.trim()) {
+      setCoherenceModal([{ line: 0, msg: "NOM & Prénom et N° du relevé requis" }]);
+      return;
+    }
+    const issues = checkCoherence();
+    if (issues.length > 0) { setCoherenceModal(issues); return; }
+    printReleve();
+  }
+
+  // ── add / edit ───────────────────────────────────────────────────────────────
+
+  async function handleAddLine() {
+    if (!newLine.fournisseur || !newLine.nature || !newLine.montant_ttc) return;
+    await addEntry({
+      ...newLine,
+      project_id: null,
+      releve_numero: data.numero || null,
+    });
+    setNewLine(EMPTY_NEW);
+    setShowAdd(false);
+  }
+
+  async function handleSaveEdit(id: string) {
+    await updateEntry(id, editPatch);
+    setEditId(null);
+    setEditPatch({});
+  }
+
+  function startEdit(e: FraisEntry) {
+    setEditId(e.id);
+    setEditPatch({
+      date: e.date,
+      fournisseur: e.fournisseur,
+      nature: e.nature,
+      montant_ttc: e.montant_ttc,
+      plaque_immat: e.plaque_immat,
+    });
+  }
+
+  // ── PDF ──────────────────────────────────────────────────────────────────────
 
   function printReleve() {
     const win = window.open("", "_blank");
     if (!win) return;
-    const rows = data.lignes
-      .map((l, i) => {
-        const ht = parse(l.ttc) - parse(l.tva);
-        if (!parse(l.ttc) && !l.fournisseur && !l.nature) return "";
-        return `<tr>
-          <td>${i + 1}</td><td>${l.date}</td><td>${l.fournisseur}</td>
-          <td>${l.region}</td><td>${l.nature}</td>
-          <td style="text-align:center">${l.recuperable ? "OUI" : "NON"}</td>
-          <td style="text-align:right">${parse(l.ttc).toFixed(2)}</td>
-          <td style="text-align:right">${parse(l.tva).toFixed(2)}</td>
-          <td style="text-align:right">${ht.toFixed(2)}</td>
-        </tr>`;
-      })
-      .filter(Boolean)
+    const rows = entries
+      .filter((e) => (e.montant_ttc ?? 0) > 0 || e.fournisseur)
+      .map((e, i) => `<tr>
+        <td>${i + 1}</td>
+        <td>${e.date ?? ""}</td>
+        <td>${e.fournisseur ?? ""}</td>
+        <td>${e.nature ?? ""}</td>
+        <td style="text-align:right">${(e.montant_ttc ?? 0).toFixed(2)}</td>
+        <td>${e.plaque_immat ?? "—"}</td>
+      </tr>`)
       .join("");
+
     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>Note de frais — ${data.nom}</title>
     <style>
@@ -110,13 +148,12 @@ export function MatriceForm() {
       <div>Département : <strong>${effectiveDept}</strong> &nbsp; Emploi : <strong>${effectiveEmploi}</strong></div>
     </div>
     <table>
-      <thead><tr><th>N°</th><th>Date</th><th>Fournisseur</th><th>Région/lieu</th><th>Nature dépense</th><th>R</th><th>TTC</th><th>TVA</th><th>HT</th></tr></thead>
+      <thead><tr><th>N°</th><th>Date</th><th>Fournisseur</th><th>Nature dépense</th><th>TTC (€)</th><th>Plaque</th></tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr>
-        <td colspan="6" style="text-align:right"><strong>TOTAUX EN EUROS</strong></td>
-        <td style="text-align:right">${totalTTC.toFixed(2)} €</td>
-        <td style="text-align:right">${totalTVA.toFixed(2)} €</td>
-        <td style="text-align:right">${totalHT.toFixed(2)} €</td>
+        <td colspan="4" style="text-align:right"><strong>TOTAL TTC EN EUROS</strong></td>
+        <td style="text-align:right"><strong>${totalTTC.toFixed(2)} €</strong></td>
+        <td></td>
       </tr></tfoot>
     </table>
     <p style="font-size:9px;font-style:italic">Je certifie que les dépenses ci-dessus représentent des fonds déboursés uniquement pour les affaires de la société et que les justificatifs sont joints.</p>
@@ -129,13 +166,34 @@ export function MatriceForm() {
     </body></html>`);
     win.document.close();
     win.print();
+    setCoherenceModal(null);
+  }
+
+  // ── CSV ──────────────────────────────────────────────────────────────────────
+
+  function downloadCSV() {
+    const header = "Date;Fournisseur;Nature;Montant TTC;Plaque immat";
+    const rows = entries.map((e) => [
+      e.date ?? "",
+      `"${(e.fournisseur ?? "").replace(/"/g, '""')}"`,
+      `"${(e.nature ?? "").replace(/"/g, '""')}"`,
+      (e.montant_ttc ?? 0).toFixed(2),
+      e.plaque_immat ?? "",
+    ].join(";")).join("\n");
+    const blob = new Blob(["﻿" + header + "\n" + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `NDF_${(data.nom || "NOM").replace(/\s+/g, "-").toUpperCase()}_${data.numero || "001"}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   // ── render ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-4">
-      {/* Info production */}
+      {/* Production info */}
       <div className="glass-card rounded-2xl p-4 space-y-3">
         <div>
           <p className="text-[10px] text-muted font-semibold uppercase tracking-widest mb-1">Production</p>
@@ -162,58 +220,33 @@ export function MatriceForm() {
         </a>
       </div>
 
-      {/* Statut des lignes scannées */}
-      {filledLines.length > 0 && (
+      {/* Summary */}
+      {entries.length > 0 && (
         <div className="glass-card rounded-2xl p-3 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-white">
-              {filledLines.length} dépense{filledLines.length > 1 ? "s" : ""} dans la matrice
+              {entries.length} dépense{entries.length > 1 ? "s" : ""} enregistrée{entries.length > 1 ? "s" : ""}
             </p>
             <p className="text-[10px] text-muted">
               Total TTC : <span className="text-cyan font-mono">{totalTTC.toFixed(2)} €</span>
             </p>
           </div>
-          {confirmReset ? (
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted">Effacer ?</span>
-              <button
-                onClick={() => { resetLignes(); setConfirmReset(false); }}
-                className="text-[10px] font-bold text-red-400 px-2 py-1 rounded-lg bg-red-400/10"
-              >
-                Oui
-              </button>
-              <button
-                onClick={() => setConfirmReset(false)}
-                className="text-muted p-1"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirmReset(true)}
-              className="text-muted p-2 hover:text-textSoft transition-colors"
-              title="Nouveau relevé"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-          )}
+          <span className="text-[10px] text-cyan bg-cyan/10 px-2 py-0.5 rounded-full font-medium">Supabase</span>
         </div>
       )}
 
-      {/* Hint scan */}
-      {filledLines.length === 0 && (
+      {entries.length === 0 && !loading && (
         <div className="glass-card rounded-2xl p-3 text-center space-y-1">
-          <p className="text-xs text-textSoft">Aucune dépense dans la matrice.</p>
+          <p className="text-xs text-textSoft">Aucune dépense enregistrée.</p>
           <p className="text-[10px] text-muted">
-            Scannez un ticket depuis l&apos;onglet <span className="text-cyan">Dépenses</span> pour remplir automatiquement.
+            Scannez un ticket depuis l&apos;onglet <span className="text-cyan">Dépenses</span> ou ajoutez manuellement ci-dessous.
           </p>
         </div>
       )}
 
       {/* Identité */}
       <div className="glass-card rounded-2xl p-4 space-y-3">
-        <p className="text-xs text-muted font-semibold uppercase tracking-widest">Identité</p>
+        <p className="text-xs text-muted font-semibold uppercase tracking-widest">Identité du relevé</p>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="text-[10px] text-muted block mb-0.5">N° du relevé *</label>
@@ -248,34 +281,79 @@ export function MatriceForm() {
 
       {/* Lignes */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted font-semibold uppercase tracking-widest">
-            Dépenses ({data.lignes.length}/{MAX_LIGNES})
-          </p>
-          {data.lignes.length >= MAX_LIGNES && (
-            <span className="text-[10px] text-amber-400">Max {MAX_LIGNES} — nouveau relevé</span>
-          )}
-        </div>
+        <p className="text-xs text-muted font-semibold uppercase tracking-widest">
+          Dépenses ({entries.length})
+        </p>
 
-        <datalist id="pcg-list">
-          {PCG_SUGGESTIONS.map((p) => <option key={p.code} value={p.code}>{p.label}</option>)}
-        </datalist>
+        {loading && (
+          <div className="text-center py-4 text-xs text-muted">Chargement…</div>
+        )}
 
-        {data.lignes.map((l, i) => (
-          <LignCard
-            key={l.id}
+        {entries.map((e, i) => (
+          <EntryCard
+            key={e.id}
             num={i + 1}
-            ligne={l}
-            onChange={(u) => setLigne(l.id, u)}
-            onDelete={() => removeLigne(l.id)}
-            canDelete={data.lignes.length > 1}
-            hasScan={scansMeta.some((s) => s.ligneId === l.id)}
+            entry={e}
+            isEditing={editId === e.id}
+            editPatch={editPatch}
+            onEditStart={() => startEdit(e)}
+            onEditChange={(p) => setEditPatch((prev) => ({ ...prev, ...p }))}
+            onEditSave={() => handleSaveEdit(e.id)}
+            onEditCancel={() => { setEditId(null); setEditPatch({}); }}
+            onDelete={() => deleteEntry(e.id)}
           />
         ))}
 
-        {data.lignes.length < MAX_LIGNES && (
+        {/* Add manually */}
+        {showAdd ? (
+          <div className="glass-card rounded-2xl p-3 space-y-2">
+            <p className="text-xs font-semibold text-white">Nouvelle dépense</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] text-muted block mb-0.5">Date *</label>
+                <input type="date" value={newLine.date} onChange={(e) => setNewLine((p) => ({ ...p, date: e.target.value }))} className={INPUT} />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted block mb-0.5">Fournisseur *</label>
+                <input type="text" value={newLine.fournisseur} onChange={(e) => setNewLine((p) => ({ ...p, fournisseur: e.target.value }))} className={INPUT} placeholder="Total, Ibis…" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] text-muted block mb-0.5">Nature *</label>
+                <select value={newLine.nature} onChange={(e) => setNewLine((p) => ({ ...p, nature: e.target.value }))} className={INPUT}>
+                  <option value="">— Choisir —</option>
+                  {NATURES.map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-muted block mb-0.5">TTC (€) *</label>
+                <input type="number" inputMode="decimal" step="0.01" min="0"
+                  value={newLine.montant_ttc || ""}
+                  onChange={(e) => setNewLine((p) => ({ ...p, montant_ttc: parseFloat(e.target.value) || 0 }))}
+                  className={INPUT} placeholder="0.00" />
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted block mb-0.5">Plaque immat.</label>
+              <input type="text" value={newLine.plaque_immat ?? ""} onChange={(e) => setNewLine((p) => ({ ...p, plaque_immat: e.target.value || null }))} className={INPUT} placeholder="AB-123-CD ou vide" />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleAddLine}
+                disabled={!newLine.fournisseur || !newLine.nature || !newLine.montant_ttc}
+                className="flex-1 active-pill py-2 rounded-xl text-xs font-semibold disabled:opacity-30"
+              >
+                Ajouter
+              </button>
+              <button onClick={() => setShowAdd(false)} className="p-2 text-muted">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
           <button
-            onClick={addLigne}
+            onClick={() => setShowAdd(true)}
             className="w-full py-2.5 rounded-2xl text-xs font-medium text-muted glass-card flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
           >
             <Plus className="w-3.5 h-3.5" /> Ajouter une ligne manuellement
@@ -283,34 +361,27 @@ export function MatriceForm() {
         )}
       </div>
 
-      {/* Totaux */}
-      <div className="glass-card rounded-2xl p-4 space-y-2">
-        <p className="text-xs text-muted font-semibold uppercase tracking-widest mb-2">Totaux</p>
-        <div className="flex justify-between text-xs">
-          <span className="text-muted">Total TTC</span>
-          <span className="text-white font-mono">{totalTTC.toFixed(2)} €</span>
+      {/* Total */}
+      {entries.length > 0 && (
+        <div className="glass-card rounded-2xl p-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-semibold text-white">Total TTC</span>
+            <span className="text-cyan font-bold font-mono text-base">{totalTTC.toFixed(2)} €</span>
+          </div>
         </div>
-        <div className="flex justify-between text-xs">
-          <span className="text-muted">Total TVA</span>
-          <span className="text-white font-mono">{totalTVA.toFixed(2)} €</span>
-        </div>
-        <div className="flex justify-between text-sm border-t border-stroke/50 pt-2">
-          <span className="text-white font-semibold">Total HT</span>
-          <span className="text-cyan font-bold font-mono">{totalHT.toFixed(2)} €</span>
-        </div>
-      </div>
+      )}
 
-      {/* Actions export */}
+      {/* Actions */}
       <div className="space-y-2">
         <button
           onClick={downloadCSV}
           disabled={!canExport}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold glass-card text-textSoft disabled:opacity-30 active:scale-95 transition-transform"
         >
-          <Download className="w-4 h-4" /> Exporter CSV (INT LOUMA)
+          <Download className="w-4 h-4" /> Exporter CSV
         </button>
         <button
-          onClick={printReleve}
+          onClick={handlePrintClick}
           disabled={!canExport}
           className="active-pill w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold disabled:opacity-30 active:scale-95 transition-transform"
         >
@@ -322,104 +393,137 @@ export function MatriceForm() {
       <div className="glass-card rounded-2xl p-3 flex items-start gap-2">
         <Info className="w-4 h-4 text-blueSoft shrink-0 mt-0.5" />
         <p className="text-xs text-textSoft leading-relaxed">
-          Scannez vos tickets depuis l&apos;onglet <span className="text-cyan">Dépenses → Importer</span> pour remplissage automatique. Max {MAX_LIGNES} lignes par relevé.
+          Les dépenses sont enregistrées dans Supabase. Seul vous pouvez les modifier ou supprimer.
         </p>
       </div>
+
+      {/* Coherence modal */}
+      {coherenceModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/60">
+          <div className="glass-card rounded-2xl p-5 w-full max-w-sm space-y-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+              <p className="text-sm font-semibold text-white">
+                {coherenceModal.length === 0 ? "Tout est correct !" : "Problèmes détectés"}
+              </p>
+            </div>
+            {coherenceModal.length > 0 && (
+              <ul className="space-y-1.5">
+                {coherenceModal.map((issue, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-textSoft">
+                    <span className="w-4 h-4 rounded-full bg-amber-400/20 text-amber-400 text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {issue.line > 0 ? issue.line : "!"}
+                    </span>
+                    {issue.msg}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-2 pt-1">
+              {coherenceModal.length > 0 && (
+                <button
+                  onClick={printReleve}
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold glass-card text-textSoft"
+                >
+                  Imprimer quand même
+                </button>
+              )}
+              {coherenceModal.length === 0 && (
+                <button onClick={printReleve} className="flex-1 active-pill py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5" /> Imprimer
+                </button>
+              )}
+              <button onClick={() => setCoherenceModal(null)} className="flex-1 active-pill py-2 rounded-xl text-xs font-semibold">
+                {coherenceModal.length > 0 ? "Corriger" : "Fermer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── LignCard ───────────────────────────────────────────────────────────────────
+// ── EntryCard ──────────────────────────────────────────────────────────────────
 
-interface LignCardProps {
+interface EntryCardProps {
   num: number;
-  ligne: MatriceLigne;
-  onChange: (u: Partial<MatriceLigne>) => void;
+  entry: FraisEntry;
+  isEditing: boolean;
+  editPatch: Partial<FraisEntryInsert>;
+  onEditStart: () => void;
+  onEditChange: (p: Partial<FraisEntryInsert>) => void;
+  onEditSave: () => void;
+  onEditCancel: () => void;
   onDelete: () => void;
-  canDelete: boolean;
-  hasScan: boolean;
 }
 
-function LignCard({ num, ligne, onChange, onDelete, canDelete, hasScan }: LignCardProps) {
-  const ht = parse(ligne.ttc) - parse(ligne.tva);
-  const s = "bg-white/5 border border-stroke rounded-lg px-2 py-1 text-xs text-white focus:outline-none w-full";
+const NATURES_LIST = ["Carburant", "Repas équipe", "Hôtel", "Péage", "Matériel", "Fournitures", "Transport", "Autre"];
+const S = "bg-white/5 border border-stroke rounded-lg px-2 py-1 text-xs text-white focus:outline-none w-full";
 
-  return (
-    <div className="glass-card rounded-2xl p-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-bold text-cyan w-5 h-5 rounded-full bg-cyan/20 flex items-center justify-center shrink-0">
-            {num}
-          </span>
-          {hasScan && (
-            <span className="text-[9px] text-cyan bg-cyan/10 px-1.5 py-0.5 rounded-md font-medium">
-              scanné
-            </span>
-          )}
-        </div>
-        {canDelete && (
-          <button onClick={onDelete} className="text-muted hover:text-redSoft p-1 -m-1 transition-colors">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="text-[10px] text-muted block mb-0.5">Date</label>
-          <input type="date" value={ligne.date} onChange={(e) => onChange({ date: e.target.value })} className={s} />
-        </div>
-        <div>
-          <label className="text-[10px] text-muted block mb-0.5">Fournisseur</label>
-          <input type="text" value={ligne.fournisseur} onChange={(e) => onChange({ fournisseur: e.target.value })} className={s} placeholder="Total, Ibis…" />
-        </div>
-      </div>
-
-      <div>
-        <label className="text-[10px] text-muted block mb-0.5">Nature de la dépense</label>
-        <input type="text" value={ligne.nature} onChange={(e) => onChange({ nature: e.target.value })} className={s} placeholder="Carburant, Repas équipe, Péage…" />
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        <div>
-          <label className="text-[10px] text-muted block mb-0.5">TTC (€)</label>
-          <input type="text" inputMode="decimal" value={ligne.ttc} onChange={(e) => onChange({ ttc: e.target.value })} className={s} placeholder="0.00" />
-        </div>
-        <div>
-          <label className="text-[10px] text-muted block mb-0.5">TVA (€)</label>
-          <input type="text" inputMode="decimal" value={ligne.tva} onChange={(e) => onChange({ tva: e.target.value })} className={s} placeholder="0.00" />
-        </div>
-        <div>
-          <label className="text-[10px] text-muted block mb-0.5">HT (€)</label>
-          <div className="bg-white/3 border border-stroke/50 rounded-lg px-2 py-1 text-xs text-cyan font-mono">
-            {ht.toFixed(2)}
+function EntryCard({ num, entry, isEditing, editPatch, onEditStart, onEditChange, onEditSave, onEditCancel, onDelete }: EntryCardProps) {
+  if (isEditing) {
+    return (
+      <div className="glass-card rounded-2xl p-3 space-y-2 ring-1 ring-cyan/30">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] text-muted block mb-0.5">Date</label>
+            <input type="date" value={editPatch.date ?? entry.date} onChange={(e) => onEditChange({ date: e.target.value })} className={S} />
+          </div>
+          <div>
+            <label className="text-[10px] text-muted block mb-0.5">Fournisseur</label>
+            <input type="text" value={editPatch.fournisseur ?? entry.fournisseur} onChange={(e) => onEditChange({ fournisseur: e.target.value })} className={S} />
           </div>
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] text-muted block mb-0.5">Nature</label>
+            <select value={editPatch.nature ?? entry.nature} onChange={(e) => onEditChange({ nature: e.target.value })} className={S}>
+              {NATURES_LIST.map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] text-muted block mb-0.5">TTC (€)</label>
+            <input type="number" inputMode="decimal" step="0.01" min="0"
+              value={editPatch.montant_ttc ?? entry.montant_ttc}
+              onChange={(e) => onEditChange({ montant_ttc: parseFloat(e.target.value) || 0 })}
+              className={S} />
+          </div>
+        </div>
+        <div>
+          <label className="text-[10px] text-muted block mb-0.5">Plaque immat.</label>
+          <input type="text" value={editPatch.plaque_immat ?? entry.plaque_immat ?? ""} onChange={(e) => onEditChange({ plaque_immat: e.target.value || null })} className={S} placeholder="AB-123-CD ou vide" />
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onEditSave} className="flex-1 active-pill py-1.5 rounded-xl text-xs font-semibold">Enregistrer</button>
+          <button onClick={onEditCancel} className="p-2 text-muted"><X className="w-3.5 h-3.5" /></button>
+        </div>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-3 gap-2">
-        <div>
-          <label className="text-[10px] text-muted block mb-0.5">Code PCG</label>
-          <input
-            type="text"
-            list="pcg-list"
-            value={ligne.codeComptable}
-            onChange={(e) => onChange({ codeComptable: e.target.value })}
-            className={`${s} font-mono`}
-            placeholder="606300"
-          />
+  return (
+    <div className="glass-card rounded-2xl p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-xs font-bold text-cyan w-5 h-5 rounded-full bg-cyan/20 flex items-center justify-center">
+            {num}
+          </span>
         </div>
-        <div>
-          <label className="text-[10px] text-muted block mb-0.5">Lieu</label>
-          <input type="text" value={ligne.region} onChange={(e) => onChange({ region: e.target.value })} className={s} placeholder="Le Diamant" />
+        <div className="flex-1 min-w-0 space-y-0.5">
+          <p className="text-xs font-semibold text-white truncate">{entry.fournisseur}</p>
+          <p className="text-[10px] text-muted">{entry.date} · {entry.nature}</p>
+          {entry.plaque_immat && (
+            <p className="text-[10px] text-cyan font-mono">{entry.plaque_immat}</p>
+          )}
         </div>
-        <div className="flex flex-col">
-          <label className="text-[10px] text-muted block mb-0.5">TVA récup.</label>
-          <button
-            onClick={() => onChange({ recuperable: !ligne.recuperable })}
-            className={`flex-1 rounded-lg text-xs font-semibold transition-colors border ${ligne.recuperable ? "bg-cyan/20 border-cyan/40 text-cyan" : "bg-white/5 border-stroke text-muted"}`}
-          >
-            {ligne.recuperable ? "OUI" : "NON"}
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="text-sm font-bold text-white font-mono">{(entry.montant_ttc ?? 0).toFixed(2)} €</span>
+          <button onClick={onEditStart} className="text-muted hover:text-textSoft p-1 transition-colors">
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={onDelete} className="text-muted hover:text-redSoft p-1 transition-colors">
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
