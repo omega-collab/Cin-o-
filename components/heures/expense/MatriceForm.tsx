@@ -154,6 +154,13 @@ export function MatriceForm() {
           Envoi CSV à :{" "}
           <span className="text-cyan">lydia.bareille@orange.fr</span>
         </p>
+        <a
+          href={`/matrices/${encodeURIComponent("MATRICE NOTE de FRAIS LB.xls")}`}
+          download
+          className="inline-flex items-center gap-1 text-xs text-cyan/80 underline mt-2"
+        >
+          Télécharger la matrice Excel originale
+        </a>
       </div>
 
       {/* Identité */}
