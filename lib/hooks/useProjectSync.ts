@@ -33,7 +33,7 @@ export function useProjectSync(projectId: string | null) {
     if (data.shoot_store && typeof data.shoot_store === "object") {
       const { shoot } = data.shoot_store as { shoot?: unknown };
       if (shoot) {
-        useShootStore.setState({ shoot: shoot as typeof shootStore.shoot });
+        useShootStore.setState({ shoot: shoot as ReturnType<typeof useShootStore.getState>["shoot"] });
       }
     }
 
@@ -45,12 +45,13 @@ export function useProjectSync(projectId: string | null) {
       };
       if (stock || movements) {
         useDepartmentStore.setState({
-          ...(stock ? { stock: stock as typeof deptStore.stock } : {}),
-          ...(movements ? { movements: movements as typeof deptStore.movements } : {}),
+          ...(stock ? { stock: stock as ReturnType<typeof useDepartmentStore.getState>["stock"] } : {}),
+          ...(movements ? { movements: movements as ReturnType<typeof useDepartmentStore.getState>["movements"] } : {}),
         });
       }
     }
-  }, [shootStore.shoot, deptStore.stock, deptStore.movements]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Save project data ────────────────────────────────────────────────────────
   const saveData = useCallback(async (pid: string) => {
