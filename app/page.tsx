@@ -1,5 +1,6 @@
 import { Shell } from "@/components/layout/Shell";
 import { Hero } from "@/components/today/Hero";
+import { LocationsCard } from "@/components/today/LocationsCard";
 import { ScheduleList } from "@/components/today/ScheduleList";
 import { CanteenCard } from "@/components/today/CanteenCard";
 import { AlertsCard } from "@/components/today/AlertsCard";
@@ -16,6 +17,7 @@ export default function HomePage() {
     <Shell title="Aujourd'hui" subtitle={subtitle}>
       <div className="space-y-4">
         <Hero />
+        <LocationsCard />
         <ScheduleList />
         <div className="grid grid-cols-2 gap-3">
           <AlertsCard />
