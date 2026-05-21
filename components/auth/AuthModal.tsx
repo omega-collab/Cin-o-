@@ -442,83 +442,85 @@ export function AuthModal() {
     >
       {/* ── Cinematic background ── */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        {/* Base atmosphere */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 90% 60% at 20% -10%, rgba(160,210,255,0.07) 0%, transparent 55%)," +
-              "radial-gradient(ellipse 60% 40% at 50% 45%, rgba(255,120,40,0.04) 0%, transparent 60%)," +
-              "radial-gradient(ellipse 80% 50% at 50% 110%, rgba(0,30,80,0.5) 0%, transparent 60%)," +
-              "radial-gradient(ellipse 50% 30% at 50% 65%, rgba(0,224,208,0.05) 0%, transparent 60%)," +
-              "linear-gradient(180deg, #040c14 0%, #071018 50%, #0a1822 100%)",
-          }}
-        />
-        {/* Spotlight beam */}
-        <div
-          className="absolute"
-          style={{
-            top: -40,
-            left: -60,
-            width: "65%",
-            height: "75%",
-            background:
-              "conic-gradient(from 68deg at 22% 0%, transparent 0deg, rgba(180,225,255,0.04) 16deg, rgba(200,235,255,0.09) 24deg, rgba(210,240,255,0.06) 30deg, rgba(190,230,255,0.03) 38deg, transparent 52deg)",
-            transformOrigin: "top left",
-          }}
-        />
+        {/* Night sky base */}
+        <div className="absolute inset-0" style={{
+          background: "linear-gradient(175deg, #010912 0%, #030d18 30%, #061220 55%, #071822 75%, #081520 100%)",
+        }} />
+        {/* Horizon warm glow — city lights far away */}
+        <div className="absolute" style={{
+          bottom: "38%", left: 0, right: 0, height: "28%",
+          background: "radial-gradient(ellipse 80% 100% at 60% 100%, rgba(255,130,40,0.09) 0%, rgba(255,80,20,0.04) 40%, transparent 70%)",
+        }} />
+        {/* Spotlight cone — wide and bright */}
+        <div className="absolute inset-0" style={{
+          background: "conic-gradient(from 74deg at 14% 2%, transparent 0deg, rgba(200,230,255,0.07) 12deg, rgba(220,240,255,0.18) 20deg, rgba(235,248,255,0.22) 26deg, rgba(220,240,255,0.16) 32deg, rgba(200,228,255,0.06) 40deg, transparent 52deg)",
+        }} />
+        {/* Spotlight haze — softens the beam */}
+        <div className="absolute" style={{
+          top: 0, left: "-5%", width: "55%", height: "65%",
+          background: "radial-gradient(ellipse at 20% 0%, rgba(190,225,255,0.10) 0%, rgba(160,210,255,0.04) 40%, transparent 65%)",
+          filter: "blur(8px)",
+        }} />
+        {/* Ground plane darkening */}
+        <div className="absolute bottom-0 left-0 right-0" style={{
+          height: "50%",
+          background: "linear-gradient(to bottom, transparent 0%, rgba(3,10,18,0.6) 60%, rgba(3,10,18,0.9) 100%)",
+        }} />
         {/* Film grain */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.035]" style={{ mixBlendMode: "overlay" }}>
+        <svg className="absolute inset-0 w-full h-full" style={{ opacity: 0.045, mixBlendMode: "overlay" }}>
           <filter id="grain">
-            <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="4" stitchTiles="stitch" />
+            <feTurbulence type="fractalNoise" baseFrequency="0.68" numOctaves="4" stitchTiles="stitch" />
             <feColorMatrix type="saturate" values="0" />
           </filter>
           <rect width="100%" height="100%" filter="url(#grain)" />
         </svg>
-        {/* Bottom fade to solid — ensures card legibility */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-2/3"
-          style={{
-            background: "linear-gradient(to bottom, transparent 0%, rgba(7,16,24,0.85) 40%, #071018 75%)",
-          }}
-        />
       </div>
 
-      {/* ── Hero: clap + projector ── */}
-      <div className="relative flex-shrink-0" style={{ height: "42vh", maxHeight: 320, minHeight: 220 }}>
-        <div className="absolute inset-x-0 bottom-0 top-4 flex items-end justify-center pb-6 px-8">
-          <div style={{ width: "80%", maxWidth: 260, opacity: 0.92 }}>
+      {/* ── Projector (upper-left) ── */}
+      <div className="absolute pointer-events-none" aria-hidden="true" style={{ top: 18, left: 14 }}>
+        {/* lens glow halo */}
+        <div className="absolute rounded-full" style={{
+          width: 60, height: 60, top: 4, left: 28,
+          background: "radial-gradient(circle, rgba(220,240,255,0.55) 0%, rgba(180,220,255,0.18) 40%, transparent 70%)",
+          filter: "blur(6px)",
+        }} />
+        <svg viewBox="0 0 96 56" width={96} height={56} fill="none">
+          {/* body */}
+          <rect x="0" y="8" width="62" height="38" rx="5" fill="#1a2230" stroke="rgba(255,255,255,0.10)" strokeWidth="1"/>
+          {/* top ridge */}
+          <rect x="8" y="4" width="44" height="8" rx="3" fill="#222d3d" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
+          {/* ventilation slots */}
+          {[14,22,30,38].map(x => <rect key={x} x={x} y="10" width="2" height="14" rx="1" fill="rgba(0,0,0,0.5)"/>)}
+          {/* lens barrel */}
+          <rect x="56" y="14" width="20" height="26" rx="4" fill="#141e2a" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+          {/* lens front ring */}
+          <circle cx="76" cy="27" r="11" fill="#0d1520" stroke="rgba(200,230,255,0.25)" strokeWidth="1.5"/>
+          {/* lens glass */}
+          <circle cx="76" cy="27" r="8"
+            fill="url(#lensGrad)"
+            style={{ filter: "drop-shadow(0 0 6px rgba(200,235,255,0.7))" }}
+          />
+          {/* specular */}
+          <ellipse cx="73" cy="23" rx="3" ry="2" fill="rgba(255,255,255,0.55)" style={{ filter: "blur(1px)" }}/>
+          {/* stand */}
+          <rect x="22" y="46" width="18" height="8" rx="2" fill="#141e2a" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
+          <rect x="16" y="52" width="30" height="4" rx="2" fill="#0d1520"/>
+          <defs>
+            <radialGradient id="lensGrad" cx="38%" cy="35%" r="60%">
+              <stop offset="0%" stopColor="rgba(230,245,255,0.95)"/>
+              <stop offset="35%" stopColor="rgba(160,210,255,0.75)"/>
+              <stop offset="100%" stopColor="rgba(20,60,120,0.9)"/>
+            </radialGradient>
+          </defs>
+        </svg>
+      </div>
+
+      {/* ── Hero: clapperboard ── */}
+      <div className="relative flex-shrink-0" style={{ height: "40vh", maxHeight: 300, minHeight: 210 }}>
+        <div className="absolute inset-x-0 bottom-0 top-0 flex items-end justify-center pb-4 px-10">
+          <div style={{ width: "78%", maxWidth: 250, opacity: 0.95, filter: "drop-shadow(0 12px 32px rgba(0,0,0,0.7))" }}>
             <Clapperboard />
           </div>
-        </div>
-        {/* Projector body (upper-left) */}
-        <div
-          className="absolute"
-          style={{
-            top: "8%",
-            left: "3%",
-            width: 52,
-            height: 38,
-            borderRadius: 6,
-            background: "linear-gradient(135deg, #2a3040, #161e28)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.5), 0 0 12px rgba(180,225,255,0.08)",
-          }}
-        >
-          {/* Lens circle */}
-          <div
-            className="absolute rounded-full"
-            style={{
-              width: 18,
-              height: 18,
-              right: 6,
-              top: "50%",
-              transform: "translateY(-50%)",
-              background:
-                "radial-gradient(circle at 40% 35%, rgba(220,240,255,0.9), rgba(160,200,240,0.6) 40%, rgba(30,60,100,0.8))",
-              boxShadow: "0 0 8px rgba(200,230,255,0.4)",
-            }}
-          />
         </div>
       </div>
 
