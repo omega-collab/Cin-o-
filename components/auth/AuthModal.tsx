@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Lock, User, Eye, EyeOff, Loader2, HelpCircle } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Loader2, HelpCircle, X } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import { FeaturesSheet } from "@/components/onboarding/FeaturesSheet";
 
 // ── Logo lens "O" ─────────────────────────────────────────────────────────────
 function LensO() {
@@ -224,6 +225,7 @@ export function AuthModal() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showFeatures, setShowFeatures] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -478,6 +480,7 @@ export function AuthModal() {
 
         {/* Footer */}
         <button
+          onClick={() => setShowFeatures(true)}
           className="mt-5 flex items-center justify-center gap-1.5 mx-auto transition-opacity hover:opacity-80"
           style={{ color: "#8E9AAF", fontSize: 12 }}
         >
@@ -488,6 +491,37 @@ export function AuthModal() {
         {/* Safe area */}
         <div style={{ height: "env(safe-area-inset-bottom, 12px)" }} />
       </div>
+
+      {/* Features overlay */}
+      {showFeatures && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end">
+          {/* Backdrop */}
+          <button
+            className="absolute inset-0"
+            style={{ background: "rgba(0,0,0,0.6)" }}
+            onClick={() => setShowFeatures(false)}
+            aria-label="Fermer"
+          />
+          {/* Sheet */}
+          <div
+            className="relative rounded-t-[28px] overflow-hidden"
+            style={{
+              maxHeight: "85vh",
+              background: "#071018",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderBottom: "none",
+            }}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-1" style={{ background: "rgba(255,255,255,0.15)" }} />
+            <div style={{ height: "75vh" }}>
+              <FeaturesSheet
+                onClose={() => setShowFeatures(false)}
+                showClose
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
