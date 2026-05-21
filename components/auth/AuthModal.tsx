@@ -114,7 +114,7 @@ function UnderlineInput({ type, placeholder, value, onChange, icon, required, mi
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-type Screen = "splash" | "login" | "register";
+type Screen = "splash" | "login" | "register" | "resetPassword";
 
 // ── Fond partagé (extrait hors du composant pour éviter les remounts) ─────────
 function AuthBg({ bgUrl, screen }: { bgUrl: string; screen: Screen }) {
@@ -155,7 +155,7 @@ export function AuthModal() {
 
   const canSubmit = email.length > 0 && password.length >= 6 && (screen === "login" || displayName.length > 0);
 
-  function goForm(s: "login" | "register") {
+  function goForm(s: "login" | "register" | "resetPassword") {
     setError(""); setSuccess(""); setScreen(s);
   }
 
@@ -171,6 +171,12 @@ export function AuthModal() {
         });
         if (err) throw err;
         setSuccess("Compte créé ! Vérifiez votre email pour confirmer.");
+      } else if (screen === "resetPassword") {
+        const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined,
+        });
+        if (err) throw err;
+        setSuccess("Email envoyé ! Consultez votre boîte mail pour réinitialiser votre mot de passe.");
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw err;
@@ -181,6 +187,22 @@ export function AuthModal() {
       else if (msg.includes("already registered")) setError("Cet email est déjà utilisé.");
       else if (msg.includes("Password should be")) setError("Mot de passe trop court (6 caractères min).");
       else setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError(""); setSuccess(""); setLoading(true);
+    try {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined,
+      });
+      if (err) throw err;
+      setSuccess("Email envoyé ! Consultez votre boîte mail pour réinitialiser votre mot de passe.");
+    } catch (err: unknown) {
+      setError(extractMsg(err));
     } finally {
       setLoading(false);
     }
@@ -232,6 +254,63 @@ export function AuthModal() {
             </button>
           </p>
           <div style={{ height: "env(safe-area-inset-bottom, 8px)" }} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Réinitialisation du mot de passe ─────────────────────────────────────────
+  if (screen === "resetPassword") {
+    return (
+      <div className="relative min-h-screen overflow-hidden flex flex-col" style={{ background: "#040d17" }}>
+        <AuthBg bgUrl={bgUrl} screen="login" />
+        <div className="relative flex-shrink-0 flex items-end justify-center px-12"
+          style={{ height: "26vh", maxHeight: 200, minHeight: 140, paddingBottom: 4 }}>
+          <div style={{ width: "40%", maxWidth: 148 }}><ClapperSVG /></div>
+        </div>
+        <div className="relative flex-1 flex flex-col justify-end px-5 pb-4" style={{ paddingTop: 8 }}>
+          <div className="rounded-[28px] p-6" style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(32px)",
+            WebkitBackdropFilter: "blur(32px)",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.55)",
+          }}>
+            <h2 className="text-white font-bold mb-2" style={{ fontSize: 22 }}>Mot de passe oublié</h2>
+            <p className="text-xs mb-5" style={{ color: "#8E9AAF" }}>Entrez votre email pour recevoir un lien de réinitialisation.</p>
+            {error && (
+              <div className="mb-4 rounded-xl px-3 py-2.5 text-xs"
+                style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#fca5a5" }}>
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-4 rounded-xl px-3 py-2.5 text-xs"
+                style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", color: "#86efac" }}>
+                {success}
+              </div>
+            )}
+            {!success && (
+              <form onSubmit={(e) => void handleResetPassword(e)} className="space-y-1">
+                <UnderlineInput type="email" placeholder="Email" value={email} onChange={setEmail}
+                  icon={<Mail className="w-4 h-4" strokeWidth={1.5} />} required autoComplete="email" />
+                <div className="pt-4">
+                  <button type="submit" disabled={loading || email.length === 0}
+                    className="w-full font-bold text-sm transition-all duration-150 active:scale-[0.97] disabled:opacity-40 flex items-center justify-center"
+                    style={{ height: 54, borderRadius: 18, background: "#00E0D0", color: "#021414", fontSize: 15 }}>
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Envoyer le lien"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+          <button onClick={() => goForm("login")}
+            className="mt-4 flex items-center justify-center gap-1.5 mx-auto transition-opacity hover:opacity-70"
+            style={{ color: "#6b7a8d", fontSize: 12 }}>
+            <ArrowLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
+            Retour à la connexion
+          </button>
+          <div style={{ height: "env(safe-area-inset-bottom, 12px)" }} />
         </div>
       </div>
     );
@@ -301,7 +380,15 @@ export function AuthModal() {
                 </button>
               }
             />
-            <div className="pt-4">
+            {screen === "login" && (
+              <div className="text-right -mt-1 mb-1">
+                <button type="button" onClick={() => goForm("resetPassword")}
+                  className="text-xs transition-opacity hover:opacity-80" style={{ color: "#8E9AAF" }}>
+                  Mot de passe oublié ?
+                </button>
+              </div>
+            )}
+            <div className="pt-3">
               <button type="submit" disabled={loading || !canSubmit}
                 className="w-full font-bold text-sm transition-all duration-150 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center"
                 style={{

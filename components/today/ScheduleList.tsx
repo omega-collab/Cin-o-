@@ -48,7 +48,16 @@ export function ScheduleList() {
   const department = useUserStore((s) => s.department);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  if (!shoot.isPublished || shoot.sequences.length === 0) return null;
+  if (!shoot.isPublished) return null;
+
+  if (shoot.sequences.length === 0) {
+    return (
+      <div className="glass-card rounded-app p-4 text-center space-y-1">
+        <p className="text-sm text-textSoft">Aucune séquence programmée</p>
+        <p className="text-xs text-muted">L&apos;admin n&apos;a pas encore ajouté de séquences pour cette journée.</p>
+      </div>
+    );
+  }
 
   const isAdmin = department === "production";
   const rows = shoot.sequences;

@@ -60,7 +60,7 @@ export function LocationsCard() {
                 href={mapsUrl(entry.address)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-white/8 text-textSoft active:scale-95 transition-transform"
+                className="flex items-center gap-1 px-3 rounded-xl text-[11px] font-semibold bg-white/8 text-textSoft active:scale-95 transition-transform min-h-[44px]"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <Map className="w-3 h-3" />
@@ -70,7 +70,7 @@ export function LocationsCard() {
                 href={wazeUrl(entry.address)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-cyan bg-cyanSoft active:scale-95 transition-transform"
+                className="flex items-center gap-1 px-3 rounded-xl text-[11px] font-semibold text-cyan bg-cyanSoft active:scale-95 transition-transform min-h-[44px]"
                 style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <Navigation2 className="w-3 h-3" />

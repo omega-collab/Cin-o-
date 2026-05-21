@@ -18,18 +18,29 @@ export function OnboardingScreen() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const setProfile = useUserStore((s) => s.setProfile);
   const user = useProjectStore((s) => s.user);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const dept = DEPARTMENTS.find((d) => d.slug === selectedDept);
   const roles = selectedDept ? (DEPT_ROLES[selectedDept] ?? []) : [];
 
   async function handleConfirm() {
     if (!selectedDept || !selectedRole) return;
-    setProfile(selectedDept, selectedRole);
-    if (user) {
-      await supabase
-        .from("profiles")
-        .update({ department: selectedDept, role: selectedRole })
-        .eq("id", user.id);
+    setSaving(true);
+    setSaveError(null);
+    try {
+      if (user) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ department: selectedDept, role: selectedRole })
+          .eq("id", user.id);
+        if (error) throw new Error(error.message);
+      }
+      setProfile(selectedDept, selectedRole);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Erreur de sauvegarde. Vérifie ta connexion.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -115,12 +126,16 @@ export function OnboardingScreen() {
           })}
         </div>
 
+        {saveError && (
+          <p className="text-xs text-center mb-3" style={{ color: "#fca5a5" }}>{saveError}</p>
+        )}
+
         <button
-          disabled={!selectedRole}
-          onClick={handleConfirm}
-          className="active-pill w-full py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-30"
+          disabled={!selectedRole || saving}
+          onClick={() => void handleConfirm()}
+          className="active-pill w-full py-3.5 rounded-2xl font-semibold text-sm disabled:opacity-30 flex items-center justify-center gap-2"
         >
-          Commencer
+          {saving ? "Enregistrement…" : "Commencer"}
         </button>
       </div>
     </div>

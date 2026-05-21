@@ -75,6 +75,7 @@ export interface ScheduleSequence {
 
 export interface CanteenMenu {
   date: string;
+  mealTime?: string;
   starter: string;
   main: string;
   dessert: string;

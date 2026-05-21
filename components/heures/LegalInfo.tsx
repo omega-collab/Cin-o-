@@ -369,18 +369,21 @@ export function LegalInfo() {
               Sources officielles
             </h3>
             <div className="space-y-1.5">
-              {LINKS.map(({ label }) => (
-                <div
+              {LINKS.map(({ label, url }) => (
+                <a
                   key={label}
-                  className="glass-card rounded-xl px-4 py-2.5 flex items-center justify-between"
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glass-card rounded-xl px-4 py-2.5 flex items-center justify-between min-h-[44px] transition-opacity hover:opacity-80"
                 >
                   <span className="text-sm text-textSoft">{label}</span>
-                  <ExternalLink className="w-3.5 h-3.5 text-muted shrink-0" />
-                </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-cyan shrink-0" />
+                </a>
               ))}
             </div>
             <p className="text-xs text-muted text-center pt-1">
-              Recherchez ces organismes sur votre navigateur.
+              Sources officielles — s&apos;ouvrent dans votre navigateur.
             </p>
           </div>
         </>

@@ -96,7 +96,7 @@ export const useExpenseStore = create<ExpenseState>()(
       },
     }),
     {
-      name: "cin-o-expenses",
+      name: "cin-o-expense-v1",
       version: 1,
       // Ne pas stocker les receiptUri dans la clé principale pour éviter de dépasser
       // le quota localStorage — ils sont conservés dans l'entrée mais on limite à 50 entrées

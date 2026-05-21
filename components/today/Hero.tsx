@@ -39,10 +39,11 @@ export function Hero() {
   const dept = DEPARTMENTS.find((d) => d.slug === department);
   const isLive = shoot.isPublished && !!shoot.projectTitle;
 
-  // A1: find active sequence by comparing current wall-clock time
+  // A1: find active sequence — null if no sequence has started yet
   const activeSeq = (() => {
     if (shoot.sequences.length === 0) return null;
     const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+    if (timeToMinutes(shoot.sequences[0]!.time) > nowMin) return null;
     let last = shoot.sequences[0]!;
     for (const seq of shoot.sequences) {
       if (timeToMinutes(seq.time) <= nowMin) last = seq;
@@ -56,11 +57,9 @@ export function Hero() {
     if (!isLive) return;
     const lines = [
       `${shoot.projectTitle}${shoot.series ? ` — ${shoot.series}` : ""} · Jour ${shoot.shootingDay}`,
-      `📍 ${shoot.location}`,
-      `🕐 Call : ${shoot.callTime}  |  Repas : ${shoot.mealTime}`,
-      shoot.sequences.length > 0
-        ? `🎬 ${shoot.sequences.length} séquence(s)`
-        : "",
+      `Lieu : ${shoot.location}`,
+      `Call : ${shoot.callTime}  |  Repas : ${shoot.mealTime}`,
+      shoot.sequences.length > 0 ? `${shoot.sequences.length} séquence(s)` : "",
     ].filter(Boolean);
     try {
       await navigator.share({ title: shoot.projectTitle, text: lines.join("\n") });

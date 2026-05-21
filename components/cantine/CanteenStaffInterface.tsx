@@ -69,6 +69,7 @@ export function CanteenStaffInterface() {
       date: todayISO(),
       shootingLocation: form.shootingLocation,
       canteenLocation: form.canteenLocation,
+      mealTime: form.mealTime,
       starter: form.starter,
       main: form.main,
       dessert: form.dessert,

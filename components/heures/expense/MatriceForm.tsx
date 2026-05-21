@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Download, Printer, Info, X, AlertTriangle, CheckCircle, Pencil } from "lucide-react";
+import { Plus, Download, Printer, Info, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useMatriceStore } from "@/lib/store/useMatriceStore";
 import { useFraisEntries } from "@/lib/hooks/useFraisEntries";
 import type { FraisEntry, FraisEntryInsert } from "@/lib/supabase/types";
 import type { DepartmentSlug } from "@/lib/types";
 import { MATRICE_DEPTS } from "@/lib/types/matrice";
+import { MatriceEntryCard } from "./MatriceEntryCard";
+import { printReleve } from "@/lib/utils/matricePdf";
 
 const DEPT_MAP: Partial<Record<DepartmentSlug, string>> = {
   camera:     "CAMERA",
@@ -33,10 +35,6 @@ const EMPTY_NEW: Omit<FraisEntryInsert, "project_id" | "releve_numero"> = {
 };
 
 interface CoherenceIssue { line: number; msg: string; }
-
-function escHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 
 // ── component ──────────────────────────────────────────────────────────────────
 
@@ -77,7 +75,7 @@ export function MatriceForm() {
     }
     const issues = checkCoherence();
     if (issues.length > 0) { setCoherenceModal(issues); return; }
-    printReleve();
+    handlePrint();
   }
 
   // ── add / edit ───────────────────────────────────────────────────────────────
@@ -112,64 +110,8 @@ export function MatriceForm() {
 
   // ── PDF ──────────────────────────────────────────────────────────────────────
 
-  function printReleve() {
-    const win = window.open("", "_blank");
-    if (!win) return;
-    const rows = entries
-      .filter((e) => (e.montant_ttc ?? 0) > 0 || e.fournisseur)
-      .map((e, i) => `<tr>
-        <td>${i + 1}</td>
-        <td>${escHtml(e.date ?? "")}</td>
-        <td>${escHtml(e.fournisseur ?? "")}</td>
-        <td>${escHtml(e.nature ?? "")}</td>
-        <td style="text-align:right">${(e.montant_ttc ?? 0).toFixed(2)}</td>
-        <td>${escHtml(e.plaque_immat ?? "—")}</td>
-      </tr>`)
-      .join("");
-
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-    <title>Note de frais — ${escHtml(data.nom ?? "")}</title>
-    <style>
-      body{font-family:Arial,sans-serif;font-size:10px;padding:16px;color:#111}
-      h2{font-size:13px;margin:4px 0}
-      .meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0;font-size:10px}
-      table{width:100%;border-collapse:collapse;margin-bottom:10px}
-      th,td{padding:4px 6px;border:1px solid #bbb;vertical-align:top}
-      th{background:#eee;font-weight:bold}
-      tfoot td{font-weight:bold;background:#f5f5f5}
-      .company{font-size:10px;font-weight:bold;margin-bottom:2px}
-      .sign{margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:10px}
-      .sign div{border-top:1px solid #999;padding-top:4px}
-      .note{color:#c00;font-size:9px;margin-top:12px;font-style:italic}
-      @media print{@page{margin:12mm}}
-    </style></head><body>
-    <div class="company">FEDERATION STUDIO France — 10 rue Royale 75008 Paris — SIRET 922 429 097 00012</div>
-    <h2>NOTE DE FRAIS — Films « Tropiques Criminels » Saison 8</h2>
-    <div class="meta">
-      <div>N° : <strong>${escHtml(data.numero ?? "")}</strong> &nbsp; Date : <strong>${escHtml(data.dateReleve ?? "")}</strong></div>
-      <div>Région : <strong>${escHtml(data.regionGlobale ?? "")}</strong></div>
-      <div>NOM &amp; PRÉNOM : <strong>${escHtml(data.nom ?? "")}</strong></div>
-      <div>Département : <strong>${escHtml(effectiveDept)}</strong> &nbsp; Emploi : <strong>${escHtml(effectiveEmploi)}</strong></div>
-    </div>
-    <table>
-      <thead><tr><th>N°</th><th>Date</th><th>Fournisseur</th><th>Nature dépense</th><th>TTC (€)</th><th>Plaque</th></tr></thead>
-      <tbody>${rows}</tbody>
-      <tfoot><tr>
-        <td colspan="4" style="text-align:right"><strong>TOTAL TTC EN EUROS</strong></td>
-        <td style="text-align:right"><strong>${totalTTC.toFixed(2)} €</strong></td>
-        <td></td>
-      </tr></tfoot>
-    </table>
-    <p style="font-size:9px;font-style:italic">Je certifie que les dépenses ci-dessus représentent des fonds déboursés uniquement pour les affaires de la société et que les justificatifs sont joints.</p>
-    <div class="sign">
-      <div>Bénéficiaire<br><br>${escHtml(data.nom ?? "")}</div>
-      <div>Visa chef département<br><br>&nbsp;</div>
-      <div>Direction de production<br><br>&nbsp;</div>
-    </div>
-    <p class="note">Envoyer par email à Administration : lydia.bareille@orange.fr avec les justificatifs numérotés. Remboursement par virement après validation.</p>
-    </body></html>`);
-    win.document.close();
-    win.print();
+  function handlePrint() {
+    printReleve(entries, data, totalTTC, effectiveDept, effectiveEmploi);
     setCoherenceModal(null);
   }
 
@@ -302,7 +244,7 @@ export function MatriceForm() {
         )}
 
         {entries.map((e, i) => (
-          <EntryCard
+          <MatriceEntryCard
             key={e.id}
             num={i + 1}
             entry={e}
@@ -434,14 +376,14 @@ export function MatriceForm() {
             <div className="flex gap-2 pt-1">
               {coherenceModal.length > 0 && (
                 <button
-                  onClick={printReleve}
+                  onClick={handlePrint}
                   className="flex-1 py-2 rounded-xl text-xs font-semibold glass-card text-textSoft"
                 >
                   Imprimer quand même
                 </button>
               )}
               {coherenceModal.length === 0 && (
-                <button onClick={printReleve} className="flex-1 active-pill py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
+                <button onClick={handlePrint} className="flex-1 active-pill py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
                   <CheckCircle className="w-3.5 h-3.5" /> Imprimer
                 </button>
               )}
@@ -452,93 +394,6 @@ export function MatriceForm() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-// ── EntryCard ──────────────────────────────────────────────────────────────────
-
-interface EntryCardProps {
-  num: number;
-  entry: FraisEntry;
-  isEditing: boolean;
-  editPatch: Partial<FraisEntryInsert>;
-  onEditStart: () => void;
-  onEditChange: (p: Partial<FraisEntryInsert>) => void;
-  onEditSave: () => void;
-  onEditCancel: () => void;
-  onDelete: () => void;
-}
-
-const NATURES_LIST = ["Carburant", "Repas équipe", "Hôtel", "Péage", "Matériel", "Fournitures", "Transport", "Autre"];
-const S = "bg-white/5 border border-stroke rounded-lg px-2 py-1 text-xs text-white focus:outline-none w-full";
-
-function EntryCard({ num, entry, isEditing, editPatch, onEditStart, onEditChange, onEditSave, onEditCancel, onDelete }: EntryCardProps) {
-  if (isEditing) {
-    return (
-      <div className="glass-card rounded-2xl p-3 space-y-2 ring-1 ring-cyan/30">
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[10px] text-muted block mb-0.5">Date</label>
-            <input type="date" value={editPatch.date ?? entry.date} onChange={(e) => onEditChange({ date: e.target.value })} className={S} />
-          </div>
-          <div>
-            <label className="text-[10px] text-muted block mb-0.5">Fournisseur</label>
-            <input type="text" value={editPatch.fournisseur ?? entry.fournisseur} onChange={(e) => onEditChange({ fournisseur: e.target.value })} className={S} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[10px] text-muted block mb-0.5">Nature</label>
-            <select value={editPatch.nature ?? entry.nature} onChange={(e) => onEditChange({ nature: e.target.value })} className={S}>
-              {NATURES_LIST.map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] text-muted block mb-0.5">TTC (€)</label>
-            <input type="number" inputMode="decimal" step="0.01" min="0"
-              value={editPatch.montant_ttc ?? entry.montant_ttc}
-              onChange={(e) => onEditChange({ montant_ttc: parseFloat(e.target.value) || 0 })}
-              className={S} />
-          </div>
-        </div>
-        <div>
-          <label className="text-[10px] text-muted block mb-0.5">Plaque immat.</label>
-          <input type="text" value={editPatch.plaque_immat ?? entry.plaque_immat ?? ""} onChange={(e) => onEditChange({ plaque_immat: e.target.value || null })} className={S} placeholder="AB-123-CD ou vide" />
-        </div>
-        <div className="flex gap-2">
-          <button onClick={onEditSave} className="flex-1 active-pill py-1.5 rounded-xl text-xs font-semibold">Enregistrer</button>
-          <button onClick={onEditCancel} className="p-2 text-muted"><X className="w-3.5 h-3.5" /></button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="glass-card rounded-2xl p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-xs font-bold text-cyan w-5 h-5 rounded-full bg-cyan/20 flex items-center justify-center">
-            {num}
-          </span>
-        </div>
-        <div className="flex-1 min-w-0 space-y-0.5">
-          <p className="text-xs font-semibold text-white truncate">{entry.fournisseur}</p>
-          <p className="text-[10px] text-muted">{entry.date} · {entry.nature}</p>
-          {entry.plaque_immat && (
-            <p className="text-[10px] text-cyan font-mono">{entry.plaque_immat}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <span className="text-sm font-bold text-white font-mono">{(entry.montant_ttc ?? 0).toFixed(2)} €</span>
-          <button onClick={onEditStart} className="text-muted hover:text-textSoft p-1 transition-colors">
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={onDelete} className="text-muted hover:text-redSoft p-1 transition-colors">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
