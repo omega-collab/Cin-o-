@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   Home,
@@ -24,6 +24,7 @@ const NAV_ITEMS = [
 
 export function Nav() {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <>
@@ -69,11 +70,15 @@ export function Nav() {
           {NAV_ITEMS.map(({ href, label, Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
-              <Link
+              <button
                 key={href}
-                href={href}
-                className="flex flex-col items-center justify-center gap-1"
-                style={{ color: active ? "#00E0D0" : "#8E9AAF" }}
+                onTouchEnd={() => router.push(href)}
+                onClick={() => router.push(href)}
+                className="flex flex-col items-center justify-center gap-1 w-full h-full"
+                style={{
+                  color: active ? "#00E0D0" : "#8E9AAF",
+                  touchAction: "manipulation",
+                }}
               >
                 <Icon className="w-5 h-5" />
                 <span
@@ -82,7 +87,7 @@ export function Nav() {
                 >
                   {label}
                 </span>
-              </Link>
+              </button>
             );
           })}
         </div>
