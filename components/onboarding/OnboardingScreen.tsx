@@ -1,22 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { DEPT_ROLES } from "@/lib/data/roles";
 import { useUserStore } from "@/lib/store/useUserStore";
-import { FeaturesSheet } from "./FeaturesSheet";
+import { DeptIcon } from "@/components/ui/DeptIcon";
 import type { DepartmentSlug } from "@/lib/types";
 
-type Step = 0 | 1 | 2;
+type Step = 1 | 2;
 
 export function OnboardingScreen() {
-  const [step, setStep] = useState<Step>(0);
+  const [step, setStep] = useState<Step>(1);
   const [selectedDept, setSelectedDept] = useState<DepartmentSlug | null>(null);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const setProfile = useUserStore((s) => s.setProfile);
-  const router = useRouter();
 
   const dept = DEPARTMENTS.find((d) => d.slug === selectedDept);
   const roles = selectedDept ? (DEPT_ROLES[selectedDept] ?? []) : [];
@@ -24,33 +22,10 @@ export function OnboardingScreen() {
   function handleConfirm() {
     if (selectedDept && selectedRole) {
       setProfile(selectedDept, selectedRole);
-      router.push("/");
     }
   }
 
-  // ── Step 0 — Features overview ─────────────────────────────────────────────
-  if (step === 0) {
-    return (
-      <div className="min-h-screen flex flex-col" style={{ background: "#071018" }}>
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-2 pt-14 pb-2 shrink-0">
-          <span className="text-xl font-bold text-white tracking-tight">
-            Ciné<span style={{ color: "#00E0D0" }}>O</span>
-          </span>
-        </div>
-
-        <div className="flex-1 overflow-hidden">
-          <FeaturesSheet
-            onContinue={() => setStep(1)}
-            continueLabel="Choisir mon département"
-            showClose={false}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // ── Step 1 — Department ────────────────────────────────────────────────────
+  // ── Étape 1 — Département ──────────────────────────────────────────────────
   if (step === 1) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
@@ -62,12 +37,8 @@ export function OnboardingScreen() {
 
         <div className="w-full max-w-sm">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-white mb-1">
-              Ton département
-            </h1>
-            <p className="text-muted text-sm">
-              Personnalise l'application selon ton métier
-            </p>
+            <h1 className="text-2xl font-bold text-white mb-1">Ton département</h1>
+            <p className="text-muted text-sm">Personnalise l&apos;application selon ton métier</p>
           </div>
 
           <div className="grid grid-cols-3 gap-3 mb-6">
@@ -78,17 +49,11 @@ export function OnboardingScreen() {
                   key={d.slug}
                   onClick={() => setSelectedDept(d.slug)}
                   className="glass-card rounded-2xl p-3 flex flex-col items-center gap-1.5 transition-all"
-                  style={
-                    active
-                      ? { borderColor: "#00E0D0", borderWidth: "1.5px", background: "rgba(0,224,208,0.08)" }
-                      : {}
-                  }
+                  style={active ? { borderColor: "#00E0D0", borderWidth: "1.5px", background: "rgba(0,224,208,0.08)" } : {}}
                 >
-                  <span className="text-2xl leading-none">{d.icon}</span>
-                  <span
-                    className="text-[10px] font-semibold leading-tight text-center"
-                    style={{ color: active ? "#00E0D0" : "#C9D2E3" }}
-                  >
+                  <DeptIcon slug={d.slug} className="w-6 h-6" style={{ color: active ? "#00E0D0" : "#8E9AAF" }} />
+                  <span className="text-[10px] font-semibold leading-tight text-center"
+                    style={{ color: active ? "#00E0D0" : "#C9D2E3" }}>
                     {d.name}
                   </span>
                 </button>
@@ -108,7 +73,7 @@ export function OnboardingScreen() {
     );
   }
 
-  // ── Step 2 — Role ──────────────────────────────────────────────────────────
+  // ── Étape 2 — Poste ────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
       <div className="w-full max-w-sm">
@@ -120,10 +85,8 @@ export function OnboardingScreen() {
         </button>
 
         <div className="text-center mb-6">
-          <span className="text-4xl">{dept?.icon}</span>
-          <h1 className="text-2xl font-bold text-white mt-2 mb-1">
-            {dept?.name}
-          </h1>
+          {dept && <DeptIcon slug={dept.slug} className="w-10 h-10 mx-auto mb-2" style={{ color: "#00E0D0" }} />}
+          <h1 className="text-2xl font-bold text-white mt-2 mb-1">{dept?.name}</h1>
           <p className="text-muted text-sm">Quel est ton poste ?</p>
         </div>
 
@@ -135,9 +98,7 @@ export function OnboardingScreen() {
                 key={r}
                 onClick={() => setSelectedRole(r)}
                 className={`px-4 py-2 rounded-2xl text-sm font-medium border transition-all ${
-                  active
-                    ? "active-pill border-transparent"
-                    : "glass-card border-stroke text-textSoft"
+                  active ? "active-pill border-transparent" : "glass-card border-stroke text-textSoft"
                 }`}
               >
                 {r}

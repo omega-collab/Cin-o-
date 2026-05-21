@@ -70,8 +70,9 @@ export function ProjectSelector() {
 
       addProject(proj);
       setCreatedProject(proj);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? "Erreur inconnue";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -106,8 +107,9 @@ export function ProjectSelector() {
 
       addProject(proj);
       setActiveProject(proj.id);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message ?? "Erreur inconnue";
+      setError(msg);
     } finally {
       setLoading(false);
     }
