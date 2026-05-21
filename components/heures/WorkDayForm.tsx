@@ -73,7 +73,7 @@ export function WorkDayForm() {
                 : "border-stroke bg-white/5 text-textSoft"
             }`}
           >
-            {c === "cinema" ? "🎬 Cinéma (SFACT)" : "📺 Audiovisuel (CCPAP)"}
+            {c === "cinema" ? "Cinéma (SFACT)" : "Audiovisuel (CCPAP)"}
           </button>
         ))}
       </div>

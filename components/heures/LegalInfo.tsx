@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, Search, X, ClipboardList, FileText, Timer, GraduationCap, Briefcase } from "lucide-react";
 
 interface QA { q: string; a: string }
-interface Section { title: string; icon: string; content: QA[] }
+interface Section { title: string; Icon: React.ElementType; content: QA[] }
 
 const SECTIONS: Section[] = [
   {
     title: "Conditions d'accès aux allocations",
-    icon: "📋",
+    Icon: ClipboardList,
     content: [
       {
         q: "Combien d'heures faut-il pour ouvrir des droits ?",
@@ -35,7 +35,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Conventions collectives",
-    icon: "📜",
+    Icon: FileText,
     content: [
       {
         q: "Quelle convention pour le cinéma ?",
@@ -61,7 +61,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Majorations & calcul des heures",
-    icon: "⏱️",
+    Icon: Timer,
     content: [
       {
         q: "Qu'est-ce que la journée continue ?",
@@ -87,7 +87,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Formation & droits annexes",
-    icon: "🎓",
+    Icon: GraduationCap,
     content: [
       {
         q: "Comment accéder à la formation via l'AFDAS ?",
@@ -109,7 +109,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Gestion pratique",
-    icon: "💼",
+    Icon: Briefcase,
     content: [
       {
         q: "Qu'est-ce que le GUSO ?",
@@ -160,7 +160,7 @@ function normalize(s: string) {
 
 interface SearchResult {
   sectionTitle: string;
-  sectionIcon: string;
+  SectionIcon: React.ElementType;
   q: string;
   a: string;
   score: number;
@@ -187,7 +187,7 @@ function searchQA(query: string): SearchResult[] {
       }
 
       if (anyMatch) {
-        results.push({ sectionTitle: section.title, sectionIcon: section.icon, q, a, score });
+        results.push({ sectionTitle: section.title, SectionIcon: section.Icon, q, a, score });
       }
     }
   }
@@ -230,7 +230,7 @@ function InfoSection({ section }: { section: Section }) {
         onClick={() => setOpen((o) => !o)}
       >
         <div className="flex items-center gap-2">
-          <span className="text-base">{section.icon}</span>
+          <section.Icon className="w-4 h-4 text-muted" />
           <span className="text-sm font-semibold text-white">{section.title}</span>
         </div>
         {open
@@ -255,7 +255,7 @@ function ResultCard({ result, terms }: { result: SearchResult; terms: string[] }
   return (
     <div className="glass-card rounded-2xl p-4 space-y-2">
       <div className="flex items-center gap-1.5">
-        <span className="text-sm">{result.sectionIcon}</span>
+        <result.SectionIcon className="w-3.5 h-3.5 text-muted" />
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted">
           {result.sectionTitle}
         </span>

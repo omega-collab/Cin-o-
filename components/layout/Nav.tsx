@@ -29,12 +29,9 @@ export function Nav() {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-60 min-h-screen glass-card rounded-none border-r border-stroke/50">
-        <div className="p-5 flex items-center gap-2.5 border-b border-stroke/50">
-          <span className="text-2xl leading-none">🎬</span>
-          <div>
-            <span className="font-bold text-white text-lg leading-none">CinéO</span>
-            <p className="text-xs mt-0.5 text-muted">Feuille de service</p>
-          </div>
+        <div className="p-5 flex flex-col gap-1 border-b border-stroke/50">
+          <img src="/logo-wordmark.png" alt="CinéO" style={{ height: 28 }} className="object-contain object-left" />
+          <p className="text-xs text-muted">Feuille de service</p>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">

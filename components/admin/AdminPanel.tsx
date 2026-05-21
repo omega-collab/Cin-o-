@@ -40,7 +40,7 @@ function AuthForm({ onSuccess }: { onSuccess: () => void }) {
           <div className="w-14 h-14 bg-cyanSoft rounded-2xl flex items-center justify-center mx-auto mb-3">
             <Film size={26} className="text-cyan" />
           </div>
-          <h2 className="text-xl font-bold text-gradient">Administration</h2>
+          <h2 className="text-xl font-bold text-white">Administration</h2>
           <p className="text-muted text-sm mt-1">Accès restreint</p>
         </div>
         <div className="space-y-4">
@@ -81,7 +81,7 @@ function AdminDashboardContainer({ onLogout }: { onLogout: () => void }) {
   return (
     <div className="space-y-5 max-w-2xl">
       <div className="flex items-center justify-between">
-        <h2 className="font-bold text-gradient text-xl">Administration</h2>
+        <h2 className="font-bold text-white text-xl">Administration</h2>
         <button onClick={onLogout} className="glass-card text-muted text-xs px-3 py-1.5 rounded-full">
           Déconnexion
         </button>

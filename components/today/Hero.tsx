@@ -4,6 +4,7 @@ import { MapPin, Clock3, Utensils, Film, Share2 } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
+import { DeptIcon } from "@/components/ui/DeptIcon";
 
 function timeToMinutes(t: string): number {
   const [h, m] = t.split(":").map(Number);
@@ -73,7 +74,7 @@ export function Hero() {
       {/* Badge département */}
       {dept && (
         <div className="flex items-center gap-2">
-          <span className="text-lg leading-none">{dept.icon}</span>
+          <span className="text-cyan"><DeptIcon slug={dept.slug} className="w-4 h-4" /></span>
           <span className="text-xs font-semibold text-cyan uppercase tracking-widest">
             {dept.name}
           </span>
@@ -85,7 +86,7 @@ export function Hero() {
         <>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h1 className="text-3xl font-bold text-gradient leading-tight">
+              <h1 className="text-3xl font-bold text-white leading-tight">
                 {shoot.projectTitle}
               </h1>
               <p className="text-sm text-cyan font-semibold mt-0.5">
@@ -101,6 +102,7 @@ export function Hero() {
                 onClick={() => void handleShare()}
                 className="glass-card shrink-0 w-9 h-9 flex items-center justify-center rounded-xl mt-1"
                 title="Partager la feuille du jour"
+                aria-label="Partager la feuille du jour"
               >
                 <Share2 className="w-4 h-4 text-muted" />
               </button>
@@ -140,7 +142,7 @@ export function Hero() {
         <div className="glass-card-strong rounded-app p-6 text-center space-y-3">
           <Film className="w-10 h-10 text-muted mx-auto" />
           <div>
-            <h1 className="text-xl font-bold text-gradient">Aucune feuille publiée</h1>
+            <h1 className="text-xl font-bold text-white">Aucune feuille publiée</h1>
             <p className="text-sm text-muted mt-1">
               L'admin n'a pas encore chargé la feuille du jour.
             </p>

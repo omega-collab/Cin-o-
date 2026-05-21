@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, Moon, Sun, Type, Globe, User, Info, ChevronRight } from "lucide-react";
-import { useSettingsStore, type Theme, type FontSize, type Lang } from "@/lib/store/useSettingsStore";
+import { X, Moon, Sun, Type, Globe, User, Info, ChevronRight, Image as ImageIcon, Shuffle } from "lucide-react";
+import { useSettingsStore, type Theme, type FontSize, type Lang, type LoginBg, LOGIN_BG_COUNT } from "@/lib/store/useSettingsStore";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { ProfileModal } from "@/components/profile/ProfileModal";
@@ -78,7 +78,7 @@ function SegmentControl<T extends string>({
 }
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
-  const { theme, fontSize, lang, setTheme, setFontSize, setLang } = useSettingsStore();
+  const { theme, fontSize, lang, loginBg, setTheme, setFontSize, setLang, setLoginBg } = useSettingsStore();
   const { department, role } = useUserStore();
   const [showProfile, setShowProfile] = useState(false);
 
@@ -108,7 +108,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
       <div className="relative w-full max-w-sm mx-4 mb-4 md:mb-0 glass-card-strong rounded-app overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-stroke">
-          <h2 className="text-base font-bold text-gradient">Paramètres</h2>
+          <h2 className="text-base font-bold text-white">Paramètres</h2>
           <button onClick={onClose} className="text-muted hover:text-white">
             <X className="w-5 h-5" />
           </button>
@@ -153,6 +153,71 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                 Bientôt disponible
               </span>
             </Row>
+          </div>
+
+          {/* Fond d'écran connexion */}
+          <div className="py-3">
+            <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3">
+              Fond d&apos;écran connexion
+            </p>
+
+            {/* Random toggle */}
+            <Row
+              icon={<Shuffle className="w-4 h-4" />}
+              label="Aléatoire"
+              subtitle="Change chaque jour"
+            >
+              <Toggle
+                active={loginBg === "random"}
+                onToggle={() => setLoginBg(loginBg === "random" ? "1" : "random")}
+              />
+            </Row>
+
+            {/* Thumbnail grid */}
+            {loginBg !== "random" && (
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                {Array.from({ length: LOGIN_BG_COUNT }, (_, i) => {
+                  const n = String(i + 1) as LoginBg;
+                  const selected = loginBg === n;
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => setLoginBg(n)}
+                      className="relative aspect-[9/16] rounded-xl overflow-hidden transition-transform active:scale-95"
+                      style={{
+                        border: selected ? "2px solid #00E0D0" : "2px solid rgba(255,255,255,0.08)",
+                        boxShadow: selected ? "0 0 12px rgba(0,224,208,0.35)" : "none",
+                      }}
+                    >
+                      <img
+                        src={`/bg-${n}.jpg`}
+                        alt={`Fond ${n}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                      <div
+                        className="absolute inset-0 flex items-end justify-center pb-1"
+                        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%)" }}
+                      >
+                        <span className="text-[10px] font-bold text-white">{n}</span>
+                      </div>
+                      {selected && (
+                        <div
+                          className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{ background: "#00E0D0" }}
+                        >
+                          <svg viewBox="0 0 12 12" className="w-2.5 h-2.5" fill="none">
+                            <path d="M2 6l3 3 5-5" stroke="#021414" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Compte */}
