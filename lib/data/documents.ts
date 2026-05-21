@@ -151,3 +151,33 @@ export function catColor(cat: DocCategory): string {
   };
   return m[cat];
 }
+
+// ── Code admin ────────────────────────────────────────────────────────────────
+export const ADMIN_CODE = "PROD";
+
+// ── Documents personnalisés (localStorage) ────────────────────────────────────
+const CUSTOM_KEY = "cino_custom_docs";
+
+export function getCustomDocs(): DocEntry[] {
+  if (typeof window === "undefined") return [];
+  try { return JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]"); } catch { return []; }
+}
+
+export function upsertCustomDoc(doc: DocEntry): void {
+  const list = getCustomDocs();
+  const idx  = list.findIndex((d) => d.id === doc.id);
+  if (idx >= 0) list[idx] = doc; else list.push(doc);
+  localStorage.setItem(CUSTOM_KEY, JSON.stringify(list));
+}
+
+export function deleteCustomDoc(id: string): void {
+  localStorage.setItem(CUSTOM_KEY, JSON.stringify(getCustomDocs().filter((d) => d.id !== id)));
+}
+
+export function extToType(filename: string): DocEntry["type"] {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "xls" || ext === "xlsx") return "xls";
+  if (ext === "docx") return "docx";
+  if (ext === "doc")  return "doc";
+  return "pdf";
+}
