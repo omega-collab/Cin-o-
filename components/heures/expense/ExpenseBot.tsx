@@ -49,7 +49,7 @@ export function ExpenseBot() {
             {entries.length === 0
               ? "Aucune dépense à vérifier"
               : allClean
-              ? "Tout est en ordre ✓"
+              ? "Tout est en ordre"
               : errors > 0
               ? `${errors} erreur${errors > 1 ? "s" : ""} à corriger`
               : `${warnings} avertissement${warnings > 1 ? "s" : ""}`}

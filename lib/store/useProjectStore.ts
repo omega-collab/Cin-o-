@@ -18,6 +18,7 @@ interface ProjectState {
   // Sync
   lastSyncedAt: string | null;
   isSyncing: boolean;
+  syncError: string | null;
   // Actions
   setAuth: (user: User | null, session: Session | null) => void;
   setProfile: (profile: Profile | null) => void;
@@ -26,6 +27,7 @@ interface ProjectState {
   setMembers: (members: ProjectMember[]) => void;
   setSyncing: (v: boolean) => void;
   setLastSyncedAt: (v: string) => void;
+  setSyncError: (v: string | null) => void;
   addProject: (project: Project) => void;
   removeProject: (id: string) => void;
   signOut: () => Promise<void>;
@@ -42,6 +44,7 @@ export const useProjectStore = create<ProjectState>()(
       members: [],
       lastSyncedAt: null,
       isSyncing: false,
+      syncError: null,
 
       setAuth: (user, session) => set({ user, session }),
       setProfile: (profile) => set({ profile }),
@@ -50,6 +53,7 @@ export const useProjectStore = create<ProjectState>()(
       setMembers: (members) => set({ members }),
       setSyncing: (v) => set({ isSyncing: v }),
       setLastSyncedAt: (v) => set({ lastSyncedAt: v }),
+      setSyncError: (v) => set({ syncError: v }),
       addProject: (project) => set((s) => ({ projects: [...s.projects, project] })),
       removeProject: (id) => set((s) => ({ projects: s.projects.filter((p) => p.id !== id) })),
 

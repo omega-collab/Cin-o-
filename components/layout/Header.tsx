@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, ChevronLeft } from "lucide-react";
+import { Settings, ChevronLeft, WifiOff } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/store/useUserStore";
+import { useProjectStore } from "@/lib/store/useProjectStore";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { AvatarDisplay } from "@/components/ui/AvatarDisplay";
@@ -26,6 +27,7 @@ export function Header({ title, subtitle }: HeaderProps) {
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const avatarId = useUserStore((s) => s.avatarId);
+  const syncError = useProjectStore((s) => s.syncError);
   const pathname = usePathname();
   const router = useRouter();
   const backHref = getBackHref(pathname);
@@ -70,6 +72,13 @@ export function Header({ title, subtitle }: HeaderProps) {
             </button>
           </div>
         </div>
+
+        {syncError && (
+          <div className="flex items-center gap-1.5 text-[11px] text-orangeSoft bg-orangeSoft/10 border border-orangeSoft/20 rounded-xl px-3 py-1.5 mb-2">
+            <WifiOff className="w-3 h-3 shrink-0" />
+            {syncError}
+          </div>
+        )}
 
         {title && (
           <div>

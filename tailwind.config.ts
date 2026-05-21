@@ -14,9 +14,19 @@ const config: Config = {
         textSoft: "#C9D2E3",
         cyan: "#00E0D0",
         cyanSoft: "rgba(0,224,208,0.16)",
-        blueSoft: "#2D8CFF",
+        // Semantic tokens (DESIGN.md) — prefer these over legacy below
+        danger:     "#EF4444",
+        dangerSoft: "rgba(239,68,68,0.15)",
+        warning:    "#F5A623",
+        warningSoft:"rgba(245,166,35,0.15)",
+        info:       "#3B82F6",
+        infoSoft:   "rgba(59,130,246,0.15)",
+        success:    "#22C55E",
+        successSoft:"rgba(34,197,94,0.15)",
+        // Legacy — kept for backward compat, migrate progressively
+        blueSoft:   "#2D8CFF",
         orangeSoft: "#FFB020",
-        redSoft: "#FF4D4D",
+        redSoft:    "#FF4D4D",
         violetSoft: "#A855F7",
       },
       boxShadow: {

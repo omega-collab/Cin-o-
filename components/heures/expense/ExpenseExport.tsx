@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Printer, FileSpreadsheet } from "lucide-react";
+import { Download, Printer, FileSpreadsheet, AlertTriangle } from "lucide-react";
 import { useExpenseStore } from "@/lib/store/useExpenseStore";
 import { getCategoryDef, PAYMENT_METHODS } from "@/lib/data/expenseCategories";
 import type { ExpenseEntry } from "@/lib/types/expense";
@@ -67,7 +67,7 @@ export function ExpenseExport() {
     const rows = filtered.map((e) => {
       const cat = getCategoryDef(e.category).label;
       const flags = e.flags.length > 0 ? `<br><small style="color:#d97706">${e.flags.map((f) => f.message).join(" · ")}</small>` : "";
-      return `<tr><td>${e.date}</td><td>${cat}</td><td>${e.description}${flags}</td><td style="text-align:right">${e.amountHT.toFixed(2)} €</td><td style="text-align:right">${e.vatRate} %</td><td style="text-align:right;font-weight:bold">${e.amountTTC.toFixed(2)} €</td><td>${e.receiptUri ? "✓" : "—"}</td></tr>`;
+      return `<tr><td>${e.date}</td><td>${cat}</td><td>${e.description}${flags}</td><td style="text-align:right">${e.amountHT.toFixed(2)} €</td><td style="text-align:right">${e.vatRate} %</td><td style="text-align:right;font-weight:bold">${e.amountTTC.toFixed(2)} €</td><td>${e.receiptUri ? "Oui" : "—"}</td></tr>`;
     }).join("");
     printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Notes de frais</title>
     <style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px}
@@ -125,7 +125,12 @@ export function ExpenseExport() {
           <div className="flex justify-between text-xs"><span className="text-muted">Total HT</span><span className="text-white">{totalHT.toFixed(2)} €</span></div>
           <div className="flex justify-between text-xs"><span className="text-muted">TVA</span><span className="text-white">{totalTVA.toFixed(2)} €</span></div>
           <div className="flex justify-between text-sm border-t border-stroke/50 pt-2"><span className="text-white font-semibold">Total TTC</span><span className="text-cyan font-bold">{totalTTC.toFixed(2)} €</span></div>
-          {hasErrors && <p className="text-xs text-redSoft pt-1">⚠ Certaines dépenses ont des erreurs — vérifier avant d'envoyer.</p>}
+          {hasErrors && (
+            <p className="text-xs text-redSoft pt-1 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3 shrink-0" />
+              Certaines dépenses ont des erreurs — vérifier avant d&apos;envoyer.
+            </p>
+          )}
         </div>
       )}
 

@@ -115,9 +115,7 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
   const p = PERIOD_CONFIG[day.period];
   const endDisplay = day.endTime && day.endTime !== "00:00" ? day.endTime : "?";
   return (
-    <div className="glass-card rounded-app overflow-hidden border border-stroke/50"
-      style={{ borderTopColor: s.border, borderTopWidth: 2 }}
-    >
+    <div className="glass-card rounded-app overflow-hidden border border-stroke/50">
       <div className="p-4 space-y-3">
         {/* Row 1: label + date + status */}
         <div className="flex items-center gap-2 flex-wrap">

@@ -9,7 +9,7 @@ import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
 const DEBOUNCE_MS = 1500;
 
 export function useProjectSync(projectId: string | null) {
-  const { user, setSyncing, setLastSyncedAt } = useProjectStore();
+  const { user, setSyncing, setLastSyncedAt, setSyncError } = useProjectStore();
   const shootStore = useShootStore();
   const deptStore = useDepartmentStore();
 
@@ -79,11 +79,14 @@ export function useProjectSync(projectId: string | null) {
     if (!error && data) {
       lastRemoteAt.current = data.updated_at as string;
       setLastSyncedAt(data.updated_at as string);
+      setSyncError(null);
+    } else if (error) {
+      setSyncError("Sauvegarde échouée — mode hors-ligne");
     }
 
     isSavingRef.current = false;
     setSyncing(false);
-  }, [user, setSyncing, setLastSyncedAt]);
+  }, [user, setSyncing, setLastSyncedAt, setSyncError]);
 
   // ── Debounced save on store changes ──────────────────────────────────────────
   const scheduleSave = useCallback(() => {

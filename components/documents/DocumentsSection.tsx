@@ -15,10 +15,14 @@ function getUnlocked(): Record<string, number> {
   if (typeof window === "undefined") return {};
   try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) || "{}"); } catch { return {}; }
 }
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+
 function checkUnlocked(doc: DocEntry, map: Record<string, number>): boolean {
   if (!doc.restricted) return true;
   const ts = map[doc.id];
   if (!ts) return false;
+  // Expire after 24h regardless of doc-level expiry
+  if (Date.now() - ts > SESSION_TTL_MS) return false;
   if (doc.restricted.expiresAt) return Date.now() < new Date(doc.restricted.expiresAt).getTime();
   return true;
 }
