@@ -236,6 +236,7 @@ function departmentLabel(slug: DepartmentSlug): string {
     hmc: "HMC",
     production: "Production",
     cantine: "Cantine",
+    direction: "Réalisation",
   };
   return labels[slug] ?? slug;
 }

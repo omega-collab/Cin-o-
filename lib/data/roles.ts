@@ -10,6 +10,7 @@ export const DEPT_ROLES: Record<DepartmentSlug, string[]> = {
     "Cadreur",
     "1er assistant caméra",
     "2e assistant caméra",
+    "3e assistant caméra",
     "Stagiaire caméra",
   ],
 
@@ -77,5 +78,14 @@ export const DEPT_ROLES: Record<DepartmentSlug, string[]> = {
     "Traiteur de plateau",
     "Cuisinier",
     "Aide-cuisinier",
+  ],
+
+  // Réalisation / Direction
+  direction: [
+    "Réalisateur",
+    "Réalisatrice",
+    "1er assistant réalisateur",
+    "2e assistant réalisateur",
+    "Stagiaire mise en scène",
   ],
 };

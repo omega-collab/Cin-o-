@@ -7,7 +7,8 @@ export type DepartmentSlug =
   | "deco"
   | "hmc"
   | "production"
-  | "cantine";
+  | "cantine"
+  | "direction";
 
 export interface Department {
   slug: DepartmentSlug;

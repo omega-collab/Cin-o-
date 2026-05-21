@@ -73,6 +73,14 @@ export const DEPARTMENTS: Department[] = [
     bgColor: "bg-teal-50 border-teal-200",
     code: process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000",
   },
+  {
+    slug: "direction",
+    name: "Réalisation",
+    icon: "🎥",
+    color: "text-cyan-700",
+    bgColor: "bg-cyan-50 border-cyan-200",
+    code: process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000",
+  },
 ];
 
 export const INITIAL_STOCK: Record<string, StockItem[]> = {
@@ -85,4 +93,5 @@ export const INITIAL_STOCK: Record<string, StockItem[]> = {
   hmc: [],
   production: [],
   cantine: [],
+  direction: [],
 };

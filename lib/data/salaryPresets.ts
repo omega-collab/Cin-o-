@@ -16,6 +16,7 @@ export const ROLE_PRESETS: Record<string, RolePreset> = {
   "Cadreur":                      { tauxHoraireMin: 40, tauxHoraireMax: 58, tauxHoraireSuggere: 47, mgJournalier: 380, convention: "cinema" },
   "1er assistant caméra":         { tauxHoraireMin: 33, tauxHoraireMax: 46, tauxHoraireSuggere: 38, mgJournalier: 300, convention: "cinema" },
   "2e assistant caméra":          { tauxHoraireMin: 25, tauxHoraireMax: 35, tauxHoraireSuggere: 29, mgJournalier: 240, convention: "cinema" },
+  "3e assistant caméra":          { tauxHoraireMin: 20, tauxHoraireMax: 27, tauxHoraireSuggere: 23, mgJournalier: 190, convention: "cinema" },
   "Stagiaire caméra":             { tauxHoraireMin: 12, tauxHoraireMax: 15, tauxHoraireSuggere: 13, mgJournalier: 100, convention: "cinema", note: "Gratification légale minimum" },
 
   // ── Électricité ────────────────────────────────────────────────────────────
@@ -62,6 +63,11 @@ export const ROLE_PRESETS: Record<string, RolePreset> = {
   "Secrétaire de production": { tauxHoraireMin: 22, tauxHoraireMax: 32, tauxHoraireSuggere: 26, mgJournalier: 210, convention: "cinema" },
   "Stagiaire":                { tauxHoraireMin: 12, tauxHoraireMax: 15, tauxHoraireSuggere: 13, mgJournalier: 100, convention: "les deux", note: "Gratification légale minimum" },
 
+  // ── Réalisation ────────────────────────────────────────────────────────────
+  "Réalisateur":                { tauxHoraireMin: 80, tauxHoraireMax: 200, tauxHoraireSuggere: 110, mgJournalier: 800, convention: "cinema", note: "Variable selon notoriété et budget production" },
+  "Réalisatrice":               { tauxHoraireMin: 80, tauxHoraireMax: 200, tauxHoraireSuggere: 110, mgJournalier: 800, convention: "cinema", note: "Variable selon notoriété et budget production" },
+  "Stagiaire mise en scène":    { tauxHoraireMin: 12, tauxHoraireMax: 15,  tauxHoraireSuggere: 13,  mgJournalier: 100, convention: "cinema", note: "Gratification légale minimum" },
+
   // ── Cantine ────────────────────────────────────────────────────────────────
   "Traiteur de plateau": { tauxHoraireMin: 22, tauxHoraireMax: 32, tauxHoraireSuggere: 26, mgJournalier: 210, convention: "les deux" },
   "Cuisinier":           { tauxHoraireMin: 16, tauxHoraireMax: 25, tauxHoraireSuggere: 19, mgJournalier: 160, convention: "les deux" },
@@ -75,6 +81,7 @@ export const DEPT_SCALES: Record<DepartmentSlug, { label: string; range: string 
     { label: "Cadreur",                      range: "40–58 €/h" },
     { label: "1er assistant caméra",         range: "33–46 €/h" },
     { label: "2e assistant caméra",          range: "25–35 €/h" },
+    { label: "3e assistant caméra",          range: "20–27 €/h" },
   ],
   electro: [
     { label: "Chef électricien", range: "35–55 €/h" },
@@ -121,5 +128,10 @@ export const DEPT_SCALES: Record<DepartmentSlug, { label: string; range: string 
     { label: "Traiteur de plateau", range: "22–32 €/h" },
     { label: "Cuisinier",           range: "16–25 €/h" },
     { label: "Aide-cuisinier",      range: "13–18 €/h" },
+  ],
+  direction: [
+    { label: "Réalisateur/trice",         range: "80–200 €/h" },
+    { label: "1er assistant réalisateur", range: "40–60 €/h"  },
+    { label: "2e assistant réalisateur",  range: "28–40 €/h"  },
   ],
 };
