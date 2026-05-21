@@ -66,13 +66,18 @@ export function DocumentsSection() {
   const allDocs = useMemo(() => [...DOCUMENTS, ...customDocs], [customDocs]);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
+    const q   = search.toLowerCase();
+    const now = Date.now();
     return allDocs.filter((d) => {
+      // Masquer les docs expirés (sauf admin qui peut les voir pour les gérer)
+      if (!adminMode && d.restricted?.expiresAt && now >= new Date(d.restricted.expiresAt).getTime()) {
+        return false;
+      }
       const matchCat    = activeCat === "all" || d.category === activeCat;
       const matchSearch = !q || d.label.toLowerCase().includes(q) || d.description.toLowerCase().includes(q);
       return matchCat && matchSearch;
     });
-  }, [search, activeCat, allDocs]);
+  }, [search, activeCat, allDocs, adminMode]);
 
   function triggerDownload(doc: DocEntry) {
     const a = document.createElement("a");
