@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, User } from "lucide-react";
+import { Settings, User, ChevronLeft } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { ProfileModal } from "@/components/profile/ProfileModal";
@@ -13,19 +14,42 @@ interface HeaderProps {
   subtitle?: string;
 }
 
+function getBackHref(pathname: string): string | null {
+  if (/^\/departments\/[^/]+\/history$/.test(pathname))
+    return pathname.replace("/history", "");
+  if (/^\/departments\/[^/]+$/.test(pathname)) return "/departments";
+  if (pathname === "/cantine") return "/";
+  if (pathname === "/documents") return "/admin";
+  return null;
+}
+
 export function Header({ title, subtitle }: HeaderProps) {
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const department = useUserStore((s) => s.department);
   const dept = DEPARTMENTS.find((d) => d.slug === department);
+  const pathname = usePathname();
+  const router = useRouter();
+  const backHref = getBackHref(pathname);
 
   return (
     <>
       <header className="px-4 md:px-6 pt-5 pb-3">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <img src="/logo-wordmark.png" alt="CinéO" style={{ height: 24 }} className="object-contain" />
-          </div>
+          {/* Left: back button on sub-pages, logo on top-level */}
+          {backHref ? (
+            <button
+              onClick={() => router.push(backHref)}
+              className="flex items-center gap-1.5 text-muted hover:text-white transition-colors -ml-1"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span className="text-sm font-medium">Retour</span>
+            </button>
+          ) : (
+            <div className="flex items-center">
+              <img src="/logo-wordmark.png" alt="CinéO" style={{ height: 24 }} className="object-contain" />
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             {/* Avatar — accès rapide au profil */}
