@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { X, Moon, Sun, Type, Globe, User, Info, ChevronRight, Image as ImageIcon, Shuffle } from "lucide-react";
+import { X, Moon, Sun, Type, Globe, User, Info, ChevronRight, Image as ImageIcon, Shuffle, FolderOpen } from "lucide-react";
 import { useSettingsStore, type Theme, type FontSize, type Lang, type LoginBg, LOGIN_BG_COUNT } from "@/lib/store/useSettingsStore";
 import { useUserStore } from "@/lib/store/useUserStore";
+import { useProjectStore } from "@/lib/store/useProjectStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 
@@ -80,6 +81,7 @@ function SegmentControl<T extends string>({
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { theme, fontSize, lang, loginBg, setTheme, setFontSize, setLang, setLoginBg } = useSettingsStore();
   const { department, role } = useUserStore();
+  const { setActiveProject } = useProjectStore();
   const [showProfile, setShowProfile] = useState(false);
 
   const dept = DEPARTMENTS.find((d) => d.slug === department);
@@ -225,6 +227,17 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">
               Mon compte
             </p>
+
+            <button
+              onClick={() => { setActiveProject(null); onClose(); }}
+              className="w-full flex items-center justify-between py-3 border-b border-stroke"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-muted"><FolderOpen className="w-4 h-4" /></span>
+                <p className="text-sm font-medium text-white">Changer de projet</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted" />
+            </button>
 
             <button
               onClick={() => setShowProfile(true)}
