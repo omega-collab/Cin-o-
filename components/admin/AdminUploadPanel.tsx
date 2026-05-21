@@ -267,8 +267,8 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
               </div>
 
               {loaded ? (
-                <button onClick={() => removeDoc(loaded.id)} className="text-muted hover:text-redSoft shrink-0">
-                  <Trash2 className="w-3.5 h-3.5" />
+                <button onClick={() => removeDoc(loaded.id)} className="text-muted hover:text-redSoft shrink-0 w-10 h-10 flex items-center justify-center -mr-1">
+                  <Trash2 className="w-4 h-4" />
                 </button>
               ) : (
                 <button
