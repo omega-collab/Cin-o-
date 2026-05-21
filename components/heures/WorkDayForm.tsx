@@ -11,7 +11,7 @@ const INPUT = "w-full bg-white/5 border border-stroke rounded-xl px-3 py-2 text-
 const todayISO = () => new Date().toISOString().split("T")[0] as string;
 
 export function WorkDayForm() {
-  const { settings, addWorkDay, workDays } = useIntermittentStore();
+  const { settings, addWorkDay, workDays, updateSettings } = useIntermittentStore();
 
   const [date, setDate] = useState(todayISO());
   const [startTime, setStartTime] = useState("08:00");
@@ -66,7 +66,7 @@ export function WorkDayForm() {
           <button
             key={c}
             type="button"
-            onClick={() => setConvention(c)}
+            onClick={() => { setConvention(c); updateSettings({ convention: c }); }}
             className={`py-2.5 rounded-xl text-xs font-semibold border transition-all ${
               convention === c
                 ? "border-cyan bg-cyanSoft text-cyan"

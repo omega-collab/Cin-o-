@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, Search, X, ClipboardList, FileText, Timer, GraduationCap, Briefcase } from "lucide-react";
+import { useIntermittentStore } from "@/lib/store/useIntermittentStore";
 
 interface QA { q: string; a: string }
 interface Section { title: string; Icon: React.ElementType; content: QA[] }
@@ -282,6 +283,7 @@ const SUGGESTIONS = [
 ];
 
 export function LegalInfo() {
+  const { settings } = useIntermittentStore();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -298,6 +300,19 @@ export function LegalInfo() {
 
   return (
     <div className="space-y-4">
+      {/* Convention active */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted">Convention active :</span>
+        <span
+          className="text-xs font-semibold px-2.5 py-1 rounded-full border border-cyan/30 bg-cyanSoft text-cyan"
+        >
+          {settings.convention === "cinema" ? "Cinéma — SFACT" : "Audiovisuel — CCPAP"}
+        </span>
+        <span className="text-[10px] text-muted">
+          {settings.convention === "cinema" ? "Nuit +25%" : "Nuit +50%"}
+        </span>
+      </div>
+
       {/* Disclaimer */}
       <div className="glass-card rounded-2xl p-3 flex items-start gap-2 border border-orangeSoft/20">
         <AlertTriangle className="w-4 h-4 text-orangeSoft shrink-0 mt-0.5" />

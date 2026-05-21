@@ -19,6 +19,7 @@ export function SalarySettings() {
     tauxHoraire: String(settings.tauxHoraire),
   });
   const [presetApplied, setPresetApplied] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const preset = role ? ROLE_PRESETS[role] : null;
   const deptScales = department ? DEPT_SCALES[department as DepartmentSlug] : null;
@@ -47,6 +48,8 @@ export function SalarySettings() {
       tauxHoraire: parseFloat(local.tauxHoraire.replace(",", ".")) || 0,
       tauxJournalier: parseFloat(local.tauxJournalier.replace(",", ".")) || 0,
     });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   }
 
   return (
@@ -57,6 +60,24 @@ export function SalarySettings() {
           Les montants sont indicatifs et varient selon votre catégorie, votre ancienneté et les accords de production.
           Consultez votre convention collective et votre fiche de paie pour les taux exacts.
         </p>
+      </div>
+
+      {/* Convention active — toggle global */}
+      <div className="grid grid-cols-2 gap-2">
+        {(["cinema", "audiovisuel"] as const).map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => updateSettings({ convention: c })}
+            className={`py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+              settings.convention === c
+                ? "border-cyan bg-cyanSoft text-cyan"
+                : "border-stroke bg-white/5 text-textSoft"
+            }`}
+          >
+            {c === "cinema" ? "Cinéma (SFACT)" : "Audiovisuel (CCPAP)"}
+          </button>
+        ))}
       </div>
 
       {/* Suggestion basée sur le poste */}
@@ -146,9 +167,13 @@ export function SalarySettings() {
 
           <button
             onClick={save}
-            className="active-pill w-full py-3 rounded-2xl font-semibold text-sm"
+            className="active-pill w-full py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all"
           >
-            Enregistrer les paramètres
+            {saved ? (
+              <><Check className="w-4 h-4" /> Enregistré</>
+            ) : (
+              "Enregistrer les paramètres"
+            )}
           </button>
         </div>
       )}
@@ -174,8 +199,12 @@ export function SalarySettings() {
               ))}
               <div className="border-t border-stroke/50 pt-2 mt-1 space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-muted">Majoration nuit cinéma</span>
-                  <span className="text-cyan font-mono">+25%</span>
+                  <span className="text-muted">
+                    Majoration nuit {settings.convention === "audiovisuel" ? "audiovisuel" : "cinéma"}
+                  </span>
+                  <span className="text-cyan font-mono">
+                    {settings.convention === "audiovisuel" ? "+50%" : "+25%"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted">Journée continue</span>
@@ -202,12 +231,12 @@ export function SalarySettings() {
                 <span className="text-white font-mono">≈ 21–38 €/h</span>
               </div>
               <div className="flex justify-between border-t border-stroke/50 pt-2 mt-1">
-                <span className="text-muted">Majoration nuit cinéma</span>
-                <span className="text-cyan font-mono">+25%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted">Majoration nuit audiovisuel</span>
-                <span className="text-cyan font-mono">+50%</span>
+                <span className="text-muted">
+                  Majoration nuit {settings.convention === "audiovisuel" ? "audiovisuel" : "cinéma"}
+                </span>
+                <span className="text-cyan font-mono">
+                  {settings.convention === "audiovisuel" ? "+50%" : "+25%"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Journée continue</span>
