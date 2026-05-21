@@ -9,12 +9,14 @@ import {
   Users,
   History,
   MoreHorizontal,
+  Timer,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Aujourd'hui", Icon: Home },
   { href: "/calendrier", label: "Calendrier", Icon: CalendarDays },
   { href: "/departments", label: "Départements", Icon: Users },
+  { href: "/heures", label: "Heures", Icon: Timer },
   { href: "/history", label: "Historique", Icon: History },
   { href: "/admin", label: "Plus", Icon: MoreHorizontal },
 ];
@@ -65,7 +67,7 @@ export function Nav() {
         className="fixed bottom-0 left-0 right-0 md:hidden z-50 glass-card rounded-none border-t border-stroke/50"
         style={{ backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}
       >
-        <div className="grid grid-cols-5 h-[60px]">
+        <div className="grid grid-cols-6 h-[60px]">
           {NAV_ITEMS.map(({ href, label, Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
