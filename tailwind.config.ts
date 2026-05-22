@@ -23,6 +23,8 @@ const config: Config = {
         infoSoft:   "rgba(59,130,246,0.15)",
         success:    "#22C55E",
         successSoft:"rgba(34,197,94,0.15)",
+        night:      "#A855F7",
+        nightSoft:  "rgba(168,85,247,0.15)",
         // Legacy — kept for backward compat, migrate progressively
         blueSoft:   "#2D8CFF",
         orangeSoft: "#FFB020",

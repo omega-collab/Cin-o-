@@ -77,7 +77,7 @@ const STATUS_CONFIG: Record<Status, { label: string; bg: string; color: string; 
 
 const PERIOD_CONFIG: Record<Period, { label: string; bg: string; color: string }> = {
   day:   { label: "JOUR", bg: "bg-info/10",   color: "text-info"   },
-  night: { label: "NUIT", bg: "bg-violetSoft/10", color: "text-violetSoft" },
+  night: { label: "NUIT", bg: "bg-nightSoft/10", color: "text-night" },
 };
 
 // ── sub-components ────────────────────────────────────────────────────────────

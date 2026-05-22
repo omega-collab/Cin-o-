@@ -50,7 +50,7 @@ function DayRow({ day, onDelete, showSalary, tauxHoraire }: {
               <Badge label="Continue" color="text-warning bg-warning/10" />
             )}
             {computed.heuresDeNuit > 0 && (
-              <Badge label={`${computed.heuresDeNuit.toFixed(1)}h nuit`} color="text-violetSoft bg-violetSoft/10" />
+              <Badge label={`${computed.heuresDeNuit.toFixed(1)}h nuit`} color="text-night bg-nightSoft/10" />
             )}
             {computed.heuresAnticipees > 0 && (
               <Badge label={`${computed.heuresAnticipees.toFixed(1)}h antic.`} color="text-info bg-info/10" />

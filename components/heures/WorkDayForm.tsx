@@ -57,7 +57,7 @@ export function WorkDayForm() {
   const pills = [
     preview.isJourneeContinue && { label: "Journée continue", color: "text-warning bg-warning/10" },
     preview.heuresAnticipees > 0 && { label: `${preview.heuresAnticipees.toFixed(1)}h anticipées`, color: "text-info bg-info/10" },
-    preview.heuresDeNuit > 0 && { label: `${preview.heuresDeNuit.toFixed(1)}h de nuit`, color: "text-violetSoft bg-violetSoft/10" },
+    preview.heuresDeNuit > 0 && { label: `${preview.heuresDeNuit.toFixed(1)}h de nuit`, color: "text-night bg-nightSoft/10" },
     preview.heuresSup > 0 && { label: `${preview.heuresSup.toFixed(1)}h sup.`, color: "text-cyan bg-cyanSoft" },
   ].filter(Boolean) as { label: string; color: string }[];
 
