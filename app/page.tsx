@@ -19,10 +19,8 @@ export default function HomePage() {
         <Hero />
         <LocationsCard />
         <ScheduleList />
-        <div className="grid grid-cols-2 gap-3">
-          <AlertsCard />
-          <CanteenCard />
-        </div>
+        <AlertsCard />
+        <CanteenCard />
       </div>
     </Shell>
   );

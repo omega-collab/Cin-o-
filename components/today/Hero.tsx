@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Film, Share2 } from "lucide-react";
+import { MapPin, Film, Share2, Cloud, Clock, Info, AlertTriangle, AlertCircle } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useProjectStore, getActiveProject } from "@/lib/store/useProjectStore";
@@ -12,6 +12,27 @@ import { CallTimeBlock } from "@/components/today/CallTimeBlock";
 import { MealAlarmBlock } from "@/components/today/MealAlarmBlock";
 import { SequenceSheet } from "@/components/today/SequenceSheet";
 import type { DepartmentSlug } from "@/lib/types";
+import type { DeptNote } from "@/lib/types/shoot";
+
+const DEPT_KEYWORDS: Record<string, string[]> = {
+  camera: ["caméra", "camera", "image"],
+  electro: ["électro", "electro", "électricité"],
+  machino: ["machino", "machinerie"],
+  son: ["son"],
+  regie: ["régie", "regie", "production"],
+  deco: ["déco", "deco", "décoration"],
+  hmc: ["hmc", "maquillage", "coiffure", "costume"],
+  cantine: ["cantine"],
+  direction: ["direction", "réal", "real"],
+  production: [],
+};
+
+function matchesDept(note: DeptNote, slug: string | null): boolean {
+  if (!slug || slug === "production") return true;
+  const dept = note.department?.toLowerCase() ?? "";
+  if (dept === "tous" || dept === "all") return true;
+  return (DEPT_KEYWORDS[slug] ?? []).some((k) => dept.includes(k));
+}
 
 function timeToMinutes(t: string): number {
   const [h, m] = t.split(":").map(Number);
@@ -76,13 +97,28 @@ export function Hero() {
             <h1 className="text-3xl font-bold text-white leading-tight">
               {shoot.projectTitle}
             </h1>
+            {shoot.series && (
+              <p className="text-xs text-muted mt-0.5">{shoot.series}</p>
+            )}
             <p className="text-sm text-cyan font-semibold mt-0.5">
               Jour {shoot.shootingDay}{shoot.totalDays ? `/${shoot.totalDays}` : ""}
             </p>
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               <MapPin className="w-3.5 h-3.5 text-muted shrink-0" />
               <span className="text-sm text-textSoft">{shoot.location}</span>
+              {shoot.weather && (
+                <span className="flex items-center gap-1 text-xs text-textSoft bg-white/8 px-2 py-0.5 rounded-full">
+                  <Cloud className="w-3 h-3 shrink-0" />
+                  {shoot.weather}
+                </span>
+              )}
             </div>
+            {shoot.wrapTime && (
+              <div className="flex items-center gap-1.5 mt-1">
+                <Clock className="w-3 h-3 text-muted shrink-0" />
+                <span className="text-xs text-muted">Fin prévue <span className="text-textSoft font-semibold">{shoot.wrapTime}</span></span>
+              </div>
+            )}
           </div>
 
           {/* Call Time + Repas (enhanced) */}
@@ -95,6 +131,31 @@ export function Hero() {
             />
             <MealAlarmBlock mealTime={shoot.mealTime} />
           </div>
+
+          {/* Notes FDS du département */}
+          {(() => {
+            const relevantNotes = shoot.deptNotes.filter((n) => matchesDept(n, department));
+            if (relevantNotes.length === 0) return null;
+            return (
+              <div className="glass-card rounded-app p-3 space-y-2">
+                <p className="text-[9px] font-semibold uppercase tracking-widest text-muted">
+                  Notes FDS — {department === "production" ? "tous depts" : "votre section"}
+                </p>
+                {relevantNotes.map((n) => (
+                  <div key={n.id} className="flex items-start gap-2">
+                    {n.priority === "critical" ? (
+                      <AlertCircle size={12} className="text-danger shrink-0 mt-0.5" />
+                    ) : n.priority === "warning" ? (
+                      <AlertTriangle size={12} className="text-warning shrink-0 mt-0.5" />
+                    ) : (
+                      <Info size={12} className="text-info shrink-0 mt-0.5" />
+                    )}
+                    <p className="text-xs text-textSoft leading-snug">{n.content}</p>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
 
           {"share" in navigator && activeProject && (
             <button
