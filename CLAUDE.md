@@ -8,7 +8,7 @@ Stack : **Next.js 14 App Router · TypeScript strict · Tailwind CSS · Supabase
 Repo : `omega-collab/Cin-o-`
 Branche de dev : `claude/setflow-setup-deploy-KNKki`
 PR ouverte : #14 (draft)
-Version actuelle : **v0.2.0** (commit `8563226`)
+Version actuelle : **v0.2.3**
 
 ---
 
@@ -26,11 +26,26 @@ Version actuelle : **v0.2.0** (commit `8563226`)
 - ALWAYS run `npx tsc --noEmit` before committing
 - ALWAYS run the full TypeScript check, not just the changed files
 
+### Ruflo — obligatoire pour la performance
+
+**Utiliser systématiquement Ruflo** via les outils MCP `mcp__ruflo__*` :
+
+| Outil Ruflo | Quand l'utiliser |
+|-------------|-----------------|
+| `memory_search` | **DÉBUT de chaque session** — récupérer le contexte projet |
+| `memory_store` | **APRÈS chaque tâche** — mémoriser patterns, bugs, décisions |
+| `agent_spawn` | Tâches touchant 3+ fichiers ou domaines — paralléliser |
+| `swarm_init` | Orchestration multi-agents pour features complexes |
+
+Namespace Ruflo du projet : **`cin-o`**
+
+> Sans Ruflo : perte de contexte entre sessions, travail redondant, bugs déjà résolus ré-introduits.
+
 ---
 
 ## Skills disponibles — utiliser systématiquement
 
-Invoquer via `Skill({ skill: "nom" })` quand la tâche correspond.
+**Obligatoire** : invoquer via `Skill({ skill: "nom" })` dès que la tâche correspond. Ne jamais faire manuellement ce qu'un skill couvre.
 
 | Skill | Quand l'utiliser |
 |-------|-----------------|
@@ -140,7 +155,7 @@ lib/types/
 
 ---
 
-## Fonctionnalités — état v0.2.0
+## Fonctionnalités — état v0.2.3
 
 ### Authentification
 - Supabase Auth (email/mdp) — login, register, reset password
