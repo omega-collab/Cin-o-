@@ -3,6 +3,7 @@
 import { MapPin, Clock3, Utensils, Film, Share2 } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useShootStore } from "@/lib/store/useShootStore";
+import { useProjectStore, getActiveProject } from "@/lib/store/useProjectStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { DeptIcon } from "@/components/ui/DeptIcon";
 
@@ -35,6 +36,7 @@ export function Hero() {
   const department = useUserStore((s) => s.department);
   const role = useUserStore((s) => s.role);
   const shoot = useShootStore((s) => s.shoot);
+  const activeProject = useProjectStore(getActiveProject);
 
   const dept = DEPARTMENTS.find((d) => d.slug === department);
   const isLive = shoot.isPublished && !!shoot.projectTitle;
@@ -52,17 +54,16 @@ export function Hero() {
     return last;
   })();
 
-  // Web Share API
+  // Share the project invite link so a colleague can join
   async function handleShare() {
-    if (!isLive) return;
-    const lines = [
-      `${shoot.projectTitle}${shoot.series ? ` — ${shoot.series}` : ""} · Jour ${shoot.shootingDay}`,
-      `Lieu : ${shoot.location}`,
-      `Call : ${shoot.callTime}  |  Repas : ${shoot.mealTime}`,
-      shoot.sequences.length > 0 ? `${shoot.sequences.length} séquence(s)` : "",
-    ].filter(Boolean);
+    if (!activeProject) return;
+    const appUrl = typeof window !== "undefined" ? window.location.origin : "";
     try {
-      await navigator.share({ title: shoot.projectTitle, text: lines.join("\n") });
+      await navigator.share({
+        title: `Rejoindre ${activeProject.name} sur CinéO`,
+        text: `Rejoins le projet "${activeProject.name}" sur CinéO.\n\nCode d'invitation : ${activeProject.invite_code}\n\nOuvre l'application et entre ce code pour rejoindre le projet.`,
+        url: appUrl,
+      });
     } catch {
       // user cancelled or API not available
     }
@@ -83,35 +84,34 @@ export function Hero() {
 
       {isLive ? (
         <>
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h1 className="text-3xl font-bold text-white leading-tight">
-                {shoot.projectTitle}
-              </h1>
-              <p className="text-sm text-cyan font-semibold mt-0.5">
-                Jour {shoot.shootingDay}{shoot.totalDays ? `/${shoot.totalDays}` : ""}
-              </p>
-              <div className="flex items-center gap-1.5 mt-1">
-                <MapPin className="w-3.5 h-3.5 text-muted shrink-0" />
-                <span className="text-sm text-textSoft">{shoot.location}</span>
-              </div>
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold text-white leading-tight">
+              {shoot.projectTitle}
+            </h1>
+            <p className="text-sm text-cyan font-semibold mt-0.5">
+              Jour {shoot.shootingDay}{shoot.totalDays ? `/${shoot.totalDays}` : ""}
+            </p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <MapPin className="w-3.5 h-3.5 text-muted shrink-0" />
+              <span className="text-sm text-textSoft">{shoot.location}</span>
             </div>
-            {"share" in navigator && (
-              <button
-                onClick={() => void handleShare()}
-                className="glass-card shrink-0 w-9 h-9 flex items-center justify-center rounded-xl mt-1"
-                title="Partager la feuille du jour"
-                aria-label="Partager la feuille du jour"
-              >
-                <Share2 className="w-4 h-4 text-muted" />
-              </button>
-            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <InfoPill icon={<Clock3 className="w-4 h-4" />} label="Call Time" value={shoot.callTime} />
             <InfoPill icon={<Utensils className="w-4 h-4" />} label="Repas" value={shoot.mealTime} />
           </div>
+
+          {"share" in navigator && activeProject && (
+            <button
+              onClick={() => void handleShare()}
+              className="glass-card w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold text-muted active:opacity-70 transition-opacity"
+              aria-label="Inviter un collègue sur ce projet"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Inviter un collègue
+            </button>
+          )}
 
           {/* A1: Séquence active selon l'heure courante */}
           {activeSeq && (
