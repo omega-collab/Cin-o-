@@ -1,6 +1,7 @@
 "use client";
 
-import { MapPin, Navigation2, Map, Milestone } from "lucide-react";
+import { useState } from "react";
+import { MapPin, Navigation2, Map, Milestone, ChevronDown, ChevronUp } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 
@@ -20,6 +21,7 @@ function wazeUrl(address: string) {
 export function LocationsCard() {
   const hydrated = useHydrated();
   const shoot = useShootStore((s) => s.shoot);
+  const [placesOpen, setPlacesOpen] = useState(false);
 
   if (!hydrated || !shoot.isPublished) return null;
 
@@ -43,7 +45,7 @@ export function LocationsCard() {
           <div
             key={entry.label}
             className={`flex items-center justify-between gap-3 ${
-              i < entries.length - 1 || shoot.places.length > 0 ? "pb-3 border-b border-stroke/50" : ""
+              i < entries.length - 1 ? "pb-3 border-b border-stroke/50" : ""
             }`}
           >
             <div className="flex-1 min-w-0">
@@ -80,21 +82,41 @@ export function LocationsCard() {
           </div>
         ))}
 
-        {/* Points logistiques (sanitaire, parking, groupe électro, etc.) */}
-        {shoot.places.map((place, i) => (
-          <div
-            key={place.id}
-            className={`flex items-start gap-2 ${i < shoot.places.length - 1 ? "pb-3 border-b border-stroke/50" : ""}`}
-          >
-            <Milestone className="w-3.5 h-3.5 text-muted shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-0.5">
-                {place.label}{place.distance ? ` · ${place.distance}` : ""}
-              </p>
-              <p className="text-xs text-textSoft leading-snug">{place.description}</p>
-            </div>
-          </div>
-        ))}
+        {/* Points logistiques — collapsibles */}
+        {shoot.places.length > 0 && (
+          <>
+            <button
+              onClick={() => setPlacesOpen((o) => !o)}
+              className="w-full flex items-center justify-between py-2 text-left active:opacity-70 transition-opacity"
+            >
+              <div className="flex items-center gap-1.5">
+                <Milestone className="w-3.5 h-3.5 text-muted" />
+                <span className="text-xs text-muted font-medium">
+                  {placesOpen ? "Masquer" : `${shoot.places.length} point${shoot.places.length > 1 ? "s" : ""} logistique${shoot.places.length > 1 ? "s" : ""}`}
+                </span>
+              </div>
+              {placesOpen
+                ? <ChevronUp size={14} className="text-muted" />
+                : <ChevronDown size={14} className="text-muted" />}
+            </button>
+
+            {placesOpen && (
+              <div className="space-y-0 divide-y divide-stroke/30 border-t border-stroke/30">
+                {shoot.places.map((place) => (
+                  <div key={place.id} className="flex items-start gap-2 py-2.5">
+                    <Milestone className="w-3 h-3 text-muted shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold text-muted uppercase tracking-widest">
+                        {place.label}{place.distance ? <span className="text-cyan"> · {place.distance}</span> : ""}
+                      </p>
+                      <p className="text-xs text-textSoft leading-snug mt-0.5">{place.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
