@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Navigation2, Map } from "lucide-react";
+import { MapPin, Navigation2, Map, Milestone } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 
@@ -43,7 +43,7 @@ export function LocationsCard() {
           <div
             key={entry.label}
             className={`flex items-center justify-between gap-3 ${
-              i < entries.length - 1 ? "pb-3 border-b border-stroke/50" : ""
+              i < entries.length - 1 || shoot.places.length > 0 ? "pb-3 border-b border-stroke/50" : ""
             }`}
           >
             <div className="flex-1 min-w-0">
@@ -76,6 +76,22 @@ export function LocationsCard() {
                 <Navigation2 className="w-3 h-3" />
                 Waze
               </a>
+            </div>
+          </div>
+        ))}
+
+        {/* Points logistiques (sanitaire, parking, groupe électro, etc.) */}
+        {shoot.places.map((place, i) => (
+          <div
+            key={place.id}
+            className={`flex items-start gap-2 ${i < shoot.places.length - 1 ? "pb-3 border-b border-stroke/50" : ""}`}
+          >
+            <Milestone className="w-3.5 h-3.5 text-muted shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold text-muted uppercase tracking-widest mb-0.5">
+                {place.label}{place.distance ? ` · ${place.distance}` : ""}
+              </p>
+              <p className="text-xs text-textSoft leading-snug">{place.description}</p>
             </div>
           </div>
         ))}
