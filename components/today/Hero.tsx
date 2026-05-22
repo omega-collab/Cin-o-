@@ -46,7 +46,7 @@ export function Hero() {
   const activeProject = useProjectStore(getActiveProject);
   const [seqOpen, setSeqOpen] = useState(false);
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
-  const [notesFilter, setNotesFilter] = useState<"mine" | "all">("mine");
+  const [notesFilter, setNotesFilter] = useState<string>("mine");
 
   function toggleNote(id: string) {
     setExpandedNotes((prev) => {
@@ -148,28 +148,39 @@ export function Hero() {
             if (shoot.deptNotes.length === 0) return null;
             const visibleNotes = notesFilter === "mine"
               ? shoot.deptNotes.filter((n) => matchesDept(n, department))
-              : shoot.deptNotes;
+              : shoot.deptNotes.filter((n) => matchesDept(n, notesFilter));
+            const deptsWithNotes = DEPARTMENTS.filter((d) =>
+              shoot.deptNotes.some((n) => matchesDept(n, d.slug))
+            );
             return (
               <div className="glass-card rounded-app overflow-hidden">
-                <div className="px-3 pt-2.5 pb-2 flex items-center justify-between gap-2">
-                  <p className="text-[9px] font-semibold uppercase tracking-widest text-muted">
+                <div className="px-3 pt-2.5 pb-1">
+                  <p className="text-[9px] font-semibold uppercase tracking-widest text-muted mb-2">
                     Notes FDS · {visibleNotes.length}
                   </p>
-                  {/* Filter tabs */}
-                  <div className="flex rounded-lg overflow-hidden border border-stroke/40">
-                    {(["mine", "all"] as const).map((f) => (
+                  {/* Filter chips — scrollable */}
+                  <div className="overflow-x-auto -mx-3 px-3">
+                    <div className="flex gap-1.5 flex-nowrap pb-1.5">
                       <button
-                        key={f}
-                        onClick={() => setNotesFilter(f)}
-                        className={`px-2.5 py-1 text-[10px] font-semibold transition-colors ${
-                          notesFilter === f
-                            ? "bg-cyanSoft text-cyan"
-                            : "text-muted"
+                        onClick={() => setNotesFilter("mine")}
+                        className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors ${
+                          notesFilter === "mine" ? "bg-cyanSoft text-cyan" : "bg-white/5 text-muted"
                         }`}
                       >
-                        {f === "mine" ? "Ma section" : "Tous"}
+                        Ma section
                       </button>
-                    ))}
+                      {deptsWithNotes.map((d) => (
+                        <button
+                          key={d.slug}
+                          onClick={() => setNotesFilter(d.slug)}
+                          className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors ${
+                            notesFilter === d.slug ? "bg-cyanSoft text-cyan" : "bg-white/5 text-muted"
+                          }`}
+                        >
+                          {d.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div className="divide-y divide-stroke/30">
