@@ -55,6 +55,7 @@ interface ExpenseState {
   updateEntry: (id: string, patch: Partial<Omit<ExpenseEntry, "id" | "createdAt">>) => void;
   deleteEntry: (id: string) => void;
   recheck: () => void;
+  reset: () => void;
 }
 
 export const useExpenseStore = create<ExpenseState>()(
@@ -88,6 +89,8 @@ export const useExpenseStore = create<ExpenseState>()(
         const all = get().entries;
         set({ entries: all.map((e) => ({ ...e, flags: runChecks(e, all) })) });
       },
+
+      reset: () => set({ entries: [] }),
     }),
     {
       name: "cin-o-expense-v1",

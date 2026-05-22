@@ -15,6 +15,7 @@ interface DeptNotesState {
   notes: DeptPrivateNote[];
   addNote: (note: Omit<DeptPrivateNote, "id" | "createdAt">) => void;
   deleteNote: (id: string) => void;
+  reset: () => void;
 }
 
 export const useDeptNotesStore = create<DeptNotesState>()(
@@ -30,6 +31,7 @@ export const useDeptNotesStore = create<DeptNotesState>()(
         })),
       deleteNote: (id) =>
         set((s) => ({ notes: s.notes.filter((n) => n.id !== id) })),
+      reset: () => set({ notes: [] }),
     }),
     { name: "cin-o-dept-notes-v1" }
   )

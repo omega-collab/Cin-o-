@@ -5,6 +5,7 @@ import { persist } from "zustand/middleware";
 import type { User, Session } from "@supabase/supabase-js";
 import type { Project, ProjectMember, Profile } from "@/lib/supabase/types";
 import { supabase } from "@/lib/supabase/client";
+import { resetProjectScopedStores } from "./resetProjectStores";
 
 interface ProjectState {
   // Auth
@@ -49,16 +50,34 @@ export const useProjectStore = create<ProjectState>()(
       setAuth: (user, session) => set({ user, session }),
       setProfile: (profile) => set({ profile }),
       setProjects: (projects) => set({ projects }),
-      setActiveProject: (id) => set({ activeProjectId: id }),
+      setActiveProject: (id) =>
+        set((s) => {
+          // Project really changing → reset all project-scoped local stores so
+          // the new project starts from a clean slate. Supabase data (if any)
+          // will then be loaded by useProjectSync.
+          if (s.activeProjectId !== id) {
+            resetProjectScopedStores();
+          }
+          return { activeProjectId: id };
+        }),
       setMembers: (members) => set({ members }),
       setSyncing: (v) => set({ isSyncing: v }),
       setLastSyncedAt: (v) => set({ lastSyncedAt: v }),
       setSyncError: (v) => set({ syncError: v }),
       addProject: (project) => set((s) => ({ projects: [...s.projects, project] })),
-      removeProject: (id) => set((s) => ({ projects: s.projects.filter((p) => p.id !== id) })),
+      removeProject: (id) =>
+        set((s) => {
+          const wasActive = s.activeProjectId === id;
+          if (wasActive) resetProjectScopedStores();
+          return {
+            projects: s.projects.filter((p) => p.id !== id),
+            activeProjectId: wasActive ? null : s.activeProjectId,
+          };
+        }),
 
       signOut: async () => {
         await supabase.auth.signOut();
+        resetProjectScopedStores();
         set({
           user: null,
           session: null,
