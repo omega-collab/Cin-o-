@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Clock, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, Clock, AlertCircle, Pencil } from "lucide-react";
 import { useIntermittentStore } from "@/lib/store/useIntermittentStore";
 import { computeDay, fmtMinutes } from "@/lib/utils/intermittent";
 import type { ConventionType } from "@/lib/types/intermittent";
@@ -11,22 +11,35 @@ const INPUT = "w-full bg-white/5 border border-stroke rounded-xl px-3 py-2 text-
 const todayISO = () => new Date().toISOString().split("T")[0] as string;
 
 export function WorkDayForm() {
-  const { settings, addWorkDay, workDays, updateSettings } = useIntermittentStore();
+  const { settings, addWorkDay, updateWorkDay, workDays, updateSettings } = useIntermittentStore();
 
-  const [date, setDate] = useState(todayISO());
-  const [startTime, setStartTime] = useState("08:00");
-  const [endTime, setEndTime] = useState("18:00");
+  const [date, setDate]             = useState(todayISO());
+  const [startTime, setStartTime]   = useState("08:00");
+  const [endTime, setEndTime]       = useState("18:00");
   const [lunchStart, setLunchStart] = useState("12:00");
-  const [lunchEnd, setLunchEnd] = useState("13:00");
-  const [hasPause, setHasPause] = useState(true);
+  const [lunchEnd, setLunchEnd]     = useState("13:00");
+  const [hasPause, setHasPause]     = useState(true);
   const [convention, setConvention] = useState<ConventionType>(settings.convention);
-  const [notes, setNotes] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [notes, setNotes]           = useState("");
+  const [saved, setSaved]           = useState(false);
 
-  const alreadyExists = workDays.some((d) => d.date === date);
+  const existingEntry = workDays.find((d) => d.date === date) ?? null;
+  const isEditMode = existingEntry !== null;
 
-  const lunchInvalid =
-    hasPause && (!lunchStart || !lunchEnd || lunchEnd <= lunchStart);
+  // Pré-remplir le formulaire dès qu'une entrée existe pour la date sélectionnée
+  useEffect(() => {
+    if (existingEntry) {
+      setStartTime(existingEntry.startTime);
+      setEndTime(existingEntry.endTime);
+      setHasPause(!!(existingEntry.lunchStart && existingEntry.lunchEnd));
+      setLunchStart(existingEntry.lunchStart ?? "12:00");
+      setLunchEnd(existingEntry.lunchEnd ?? "13:00");
+      setConvention(existingEntry.convention);
+      setNotes(existingEntry.notes ?? "");
+    }
+  }, [existingEntry?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const lunchInvalid = hasPause && (!lunchStart || !lunchEnd || lunchEnd <= lunchStart);
 
   const preview = computeDay({
     id: "",
@@ -34,31 +47,38 @@ export function WorkDayForm() {
     startTime,
     endTime,
     lunchStart: hasPause ? lunchStart : undefined,
-    lunchEnd: hasPause ? lunchEnd : undefined,
+    lunchEnd:   hasPause ? lunchEnd   : undefined,
     convention,
   });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    addWorkDay({
+    const payload = {
       date,
       startTime,
       endTime,
       lunchStart: hasPause ? lunchStart : undefined,
-      lunchEnd: hasPause ? lunchEnd : undefined,
+      lunchEnd:   hasPause ? lunchEnd   : undefined,
       convention,
       notes: notes.trim() || undefined,
-    });
+    };
+
+    if (isEditMode && existingEntry) {
+      updateWorkDay(existingEntry.id, payload);
+    } else {
+      addWorkDay(payload);
+    }
+
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-    setNotes("");
+    if (!isEditMode) setNotes("");
   }
 
   const pills = [
-    preview.isJourneeContinue && { label: "Journée continue", color: "text-warning bg-warning/10" },
-    preview.heuresAnticipees > 0 && { label: `${preview.heuresAnticipees.toFixed(1)}h anticipées`, color: "text-info bg-info/10" },
-    preview.heuresDeNuit > 0 && { label: `${preview.heuresDeNuit.toFixed(1)}h de nuit`, color: "text-night bg-nightSoft/10" },
-    preview.heuresSup > 0 && { label: `${preview.heuresSup.toFixed(1)}h sup.`, color: "text-cyan bg-cyanSoft" },
+    preview.isJourneeContinue    && { label: "Journée continue",                        color: "text-warning bg-warning/10"  },
+    preview.heuresAnticipees > 0 && { label: `${preview.heuresAnticipees.toFixed(1)}h anticipées`, color: "text-info bg-info/10"      },
+    preview.heuresDeNuit > 0     && { label: `${preview.heuresDeNuit.toFixed(1)}h de nuit`,        color: "text-night bg-nightSoft/10" },
+    preview.heuresSup > 0        && { label: `${preview.heuresSup.toFixed(1)}h sup.`,              color: "text-cyan bg-cyanSoft"      },
   ].filter(Boolean) as { label: string; color: string }[];
 
   return (
@@ -85,10 +105,10 @@ export function WorkDayForm() {
       <div>
         <label className="text-xs text-muted block mb-1">Date</label>
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT} />
-        {alreadyExists && (
-          <p className="text-xs text-warning mt-1 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
-            Une entrée existe déjà pour ce jour.
+        {isEditMode && (
+          <p className="text-xs text-info mt-1 flex items-center gap-1">
+            <Pencil className="w-3 h-3" />
+            Mode modification — les champs sont pré-remplis avec les données existantes.
           </p>
         )}
       </div>
@@ -182,10 +202,19 @@ export function WorkDayForm() {
 
       <button
         type="submit"
-        disabled={alreadyExists || lunchInvalid}
-        className="active-pill w-full py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled={lunchInvalid}
+        className={`w-full py-3.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed transition-all ${
+          isEditMode
+            ? "bg-info/20 border border-info/40 text-info"
+            : "active-pill"
+        }`}
       >
-        {saved ? <><Check className="w-4 h-4" /> Enregistré</> : alreadyExists ? "Journée déjà saisie" : "Enregistrer la journée"}
+        {saved
+          ? <><Check className="w-4 h-4" /> {isEditMode ? "Mis à jour" : "Enregistré"}</>
+          : isEditMode
+            ? <><Pencil className="w-4 h-4" /> Mettre à jour</>
+            : "Enregistrer la journée"
+        }
       </button>
     </form>
   );
