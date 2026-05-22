@@ -269,6 +269,36 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
             <input value={pe?.canteenLocation?.value ?? shoot.canteenLocation ?? ""} onChange={(e) => updateField({ canteenLocation: e.target.value })} className={INPUT} />
           </Row>
         </div>
+        {/* PAT time */}
+        <Row label="PAT (Prêt À Tourner)">
+          <input
+            type="time"
+            value={shoot.patTime ?? ""}
+            onChange={(e) => updateField({ patTime: e.target.value || undefined })}
+            className={INPUT}
+          />
+        </Row>
+      </Section>
+
+      {/* Dept call times section */}
+      <Section title="Heures de convocation par département">
+        <p className="text-xs text-muted">Laisser vide pour utiliser le Call Time global.</p>
+        <div className="grid grid-cols-2 gap-2">
+          {(["camera", "electro", "machino", "son", "regie", "deco", "hmc", "cantine", "direction"] as const).map((slug) => (
+            <Row key={slug} label={slug.charAt(0).toUpperCase() + slug.slice(1)}>
+              <input
+                type="time"
+                value={shoot.deptCallTimes?.[slug] ?? ""}
+                onChange={(e) =>
+                  updateField({
+                    deptCallTimes: { ...shoot.deptCallTimes, [slug]: e.target.value || undefined },
+                  })
+                }
+                className={INPUT}
+              />
+            </Row>
+          ))}
+        </div>
       </Section>
 
       {/* Sequences — E3: cast[] per sequence editable */}

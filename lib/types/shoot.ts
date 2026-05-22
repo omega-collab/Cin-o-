@@ -74,6 +74,8 @@ export interface FullShoot {
   callTime: string;
   mealTime: string;
   wrapTime?: string;
+  patTime?: string;
+  deptCallTimes?: Partial<Record<DepartmentSlug, string>>;
   weather?: string;
   logeLocation?: string;
   canteenLocation?: string;

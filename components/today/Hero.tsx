@@ -1,47 +1,33 @@
 "use client";
 
-import { MapPin, Clock3, Utensils, Film, Share2 } from "lucide-react";
+import { useState } from "react";
+import { MapPin, Film, Share2 } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useProjectStore, getActiveProject } from "@/lib/store/useProjectStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { DeptIcon } from "@/components/ui/DeptIcon";
+import { LiveTimecode } from "@/components/today/LiveTimecode";
+import { CallTimeBlock } from "@/components/today/CallTimeBlock";
+import { MealAlarmBlock } from "@/components/today/MealAlarmBlock";
+import { SequenceSheet } from "@/components/today/SequenceSheet";
+import type { DepartmentSlug } from "@/lib/types";
 
 function timeToMinutes(t: string): number {
   const [h, m] = t.split(":").map(Number);
   return (h ?? 0) * 60 + (m ?? 0);
 }
 
-function InfoPill({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="glass-card rounded-app flex items-center gap-2 px-3 py-2.5">
-      <span className="text-muted">{icon}</span>
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted">
-        {label}
-      </span>
-      <span className="font-mono text-sm font-bold text-cyan">{value}</span>
-    </div>
-  );
-}
-
 export function Hero() {
-  const department = useUserStore((s) => s.department);
+  const department = useUserStore((s) => s.department) as DepartmentSlug | null;
   const role = useUserStore((s) => s.role);
   const shoot = useShootStore((s) => s.shoot);
   const activeProject = useProjectStore(getActiveProject);
+  const [seqOpen, setSeqOpen] = useState(false);
 
   const dept = DEPARTMENTS.find((d) => d.slug === department);
   const isLive = shoot.isPublished && !!shoot.projectTitle;
 
-  // A1: find active sequence — null if no sequence has started yet
   const activeSeq = (() => {
     if (shoot.sequences.length === 0) return null;
     const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
@@ -54,7 +40,6 @@ export function Hero() {
     return last;
   })();
 
-  // Share the project invite link so a colleague can join
   async function handleShare() {
     if (!activeProject) return;
     const appUrl = typeof window !== "undefined" ? window.location.origin : "";
@@ -71,16 +56,19 @@ export function Hero() {
 
   return (
     <div className="space-y-3">
-      {/* Badge département */}
-      {dept && (
-        <div className="flex items-center gap-2">
-          <span className="text-cyan"><DeptIcon slug={dept.slug} className="w-4 h-4" /></span>
-          <span className="text-xs font-semibold text-cyan uppercase tracking-widest">
-            {dept.name}
-          </span>
-          {role && <span className="text-xs text-muted">· {role}</span>}
-        </div>
-      )}
+      {/* Dept badge + Live Timecode */}
+      <div className="flex items-center justify-between">
+        {dept ? (
+          <div className="flex items-center gap-2">
+            <span className="text-cyan"><DeptIcon slug={dept.slug} className="w-4 h-4" /></span>
+            <span className="text-xs font-semibold text-cyan uppercase tracking-widest">
+              {dept.name}
+            </span>
+            {role && <span className="text-xs text-muted">· {role}</span>}
+          </div>
+        ) : <div />}
+        <LiveTimecode />
+      </div>
 
       {isLive ? (
         <>
@@ -97,9 +85,15 @@ export function Hero() {
             </div>
           </div>
 
+          {/* Call Time + Repas (enhanced) */}
           <div className="grid grid-cols-2 gap-3">
-            <InfoPill icon={<Clock3 className="w-4 h-4" />} label="Call Time" value={shoot.callTime} />
-            <InfoPill icon={<Utensils className="w-4 h-4" />} label="Repas" value={shoot.mealTime} />
+            <CallTimeBlock
+              callTime={shoot.callTime}
+              patTime={shoot.patTime}
+              deptCallTimes={shoot.deptCallTimes}
+              department={department}
+            />
+            <MealAlarmBlock mealTime={shoot.mealTime} />
           </div>
 
           {"share" in navigator && activeProject && (
@@ -113,26 +107,38 @@ export function Hero() {
             </button>
           )}
 
-          {/* A1: Séquence active selon l'heure courante */}
+          {/* Active sequence — clickable to expand details */}
           {activeSeq && (
-            <div className="glass-card-strong rounded-app p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Film className="w-4 h-4 text-cyan" />
-                  <span className="text-xs font-semibold text-textSoft uppercase tracking-wider">
-                    Séquence en cours
+            <div className="space-y-2">
+              <button
+                onClick={() => setSeqOpen((o) => !o)}
+                className="w-full text-left glass-card-strong rounded-app p-4 space-y-3 active:opacity-80 transition-opacity"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Film className="w-4 h-4 text-cyan" />
+                    <span className="text-xs font-semibold text-textSoft uppercase tracking-wider">
+                      Séquence en cours
+                    </span>
+                  </div>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-cyanSoft text-cyan">
+                    {activeSeq.time}
                   </span>
                 </div>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-cyanSoft text-cyan">
-                  {activeSeq.time}
-                </span>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white leading-tight">{activeSeq.label}</p>
-                <p className="text-sm font-medium text-muted mt-0.5 uppercase tracking-wide">
-                  {activeSeq.location}
+                <div>
+                  <p className="text-2xl font-bold text-white leading-tight">{activeSeq.label}</p>
+                  <p className="text-sm font-medium text-muted mt-0.5 uppercase tracking-wide">
+                    {activeSeq.location}
+                  </p>
+                </div>
+                <p className="text-[10px] text-cyan font-semibold">
+                  {seqOpen ? "Masquer les détails ▲" : "Voir les détails ▼"}
                 </p>
-              </div>
+              </button>
+
+              {seqOpen && (
+                <SequenceSheet seq={activeSeq} onClose={() => setSeqOpen(false)} />
+              )}
             </div>
           )}
         </>

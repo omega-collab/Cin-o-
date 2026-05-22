@@ -110,6 +110,7 @@ const INITIAL: FullShoot = {
   extractionStatus: "idle",
   codesEnabled: false,
   deptCodes: {},
+  deptCallTimes: {},
 };
 
 export const useShootStore = create<ShootStore>()(
