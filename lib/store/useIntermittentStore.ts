@@ -22,12 +22,15 @@ export const useIntermittentStore = create<IntermittentState>()(
       settings: DEFAULT_SETTINGS,
 
       addWorkDay: (day) =>
-        set((s) => ({
-          workDays: [
-            { ...day, id: crypto.randomUUID() },
-            ...s.workDays,
-          ].sort((a, b) => b.date.localeCompare(a.date)),
-        })),
+        set((s) => {
+          if (s.workDays.some((d) => d.date === day.date)) return s;
+          return {
+            workDays: [
+              { ...day, id: crypto.randomUUID() },
+              ...s.workDays,
+            ].sort((a, b) => b.date.localeCompare(a.date)),
+          };
+        }),
 
       updateWorkDay: (id, patch) =>
         set((s) => ({

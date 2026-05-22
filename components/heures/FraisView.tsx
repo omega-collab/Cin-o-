@@ -117,32 +117,24 @@ export function FraisView() {
         ))}
       </div>
 
-      {/* Actions onglet Dépenses */}
-      {subTab === "liste" && !showForm && (
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => setShowImport(true)}
-            className="active-pill flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold"
-          >
-            <ScanLine className="w-4 h-4" /> Scanner ticket
-          </button>
+      {/* Actions onglets Dépenses et Matrice */}
+      {(subTab === "liste" || subTab === "matrice") && !showForm && (
+        <div className="space-y-2">
+          {subTab === "liste" && (
+            <button
+              onClick={() => setShowImport(true)}
+              className="active-pill w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold"
+            >
+              <ScanLine className="w-4 h-4" /> Importer une note de frais
+            </button>
+          )}
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold glass-card text-textSoft active:scale-95 transition-transform"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-semibold glass-card text-textSoft active:scale-95 transition-transform"
           >
-            <Plus className="w-4 h-4" /> Saisie manuelle
+            <Plus className="w-4 h-4" /> Ajouter une dépense
           </button>
         </div>
-      )}
-
-      {/* Bouton ajout (onglets Vérifier / Exporter) */}
-      {subTab !== "liste" && subTab !== "matrice" && !showForm && (
-        <button
-          onClick={() => setShowForm(true)}
-          className="active-pill w-full py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> Ajouter une dépense
-        </button>
       )}
 
       {/* Formulaire inline */}
