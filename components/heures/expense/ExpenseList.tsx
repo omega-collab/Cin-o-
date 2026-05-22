@@ -48,15 +48,11 @@ function formatDate(iso: string) {
 
 function TotalsBar({ entries }: { entries: ExpenseEntry[] }) {
   const totalTTC = entries.reduce((s, e) => s + e.amountTTC, 0);
-  const totalHT  = entries.reduce((s, e) => s + e.amountHT, 0);
   const flags    = entries.reduce((s, e) => s + e.flags.filter((f) => f.severity === "error").length, 0);
   if (entries.length === 0) return null;
   return (
     <div className="glass-card rounded-2xl p-3 flex items-center justify-between text-xs">
-      <div>
-        <span className="text-muted">{entries.length} dépense{entries.length > 1 ? "s" : ""}</span>
-        {totalHT > 0 && <span className="text-muted"> · {totalHT.toFixed(2)} € HT</span>}
-      </div>
+      <span className="text-muted">{entries.length} dépense{entries.length > 1 ? "s" : ""}</span>
       <div className="flex items-center gap-3">
         {flags > 0 && (
           <span className="text-danger font-medium">{flags} erreur{flags > 1 ? "s" : ""}</span>
@@ -69,7 +65,7 @@ function TotalsBar({ entries }: { entries: ExpenseEntry[] }) {
 
 export function ExpenseList() {
   const entries = useExpenseStore((s) => s.entries);
-  const [period, setPeriod] = useState<Period>("semaine");
+  const [period, setPeriod] = useState<Period>("tout");
 
   const filtered = filterByPeriod(entries, period);
   const groups   = groupByDate(filtered);

@@ -37,12 +37,6 @@ function runChecks(entry: ExpenseEntry, all: ExpenseEntry[]): ExpenseFlag[] {
     flags.push({ type: "high_amount", severity: "warning", message: "Montant élevé (> 500 €) — vérifier la justification." });
   }
 
-  // Incohérence TVA : écart > 0,10 € entre TTC calculé et TTC saisi
-  const expectedTTC = Math.round(entry.amountHT * (1 + entry.vatRate / 100) * 100) / 100;
-  if (entry.vatRate > 0 && Math.abs(expectedTTC - entry.amountTTC) > 0.1) {
-    flags.push({ type: "vat_mismatch", severity: "error", message: `TVA incohérente : HT ${entry.amountHT} € × ${entry.vatRate}% = ${expectedTTC} € TTC attendu.` });
-  }
-
   // Dépassement plafond journalier (200 € hors hébergement)
   if (entry.category !== "hebergement") {
     const sameDay = all.filter((e) => e.id !== entry.id && e.date === entry.date && e.category !== "hebergement");
