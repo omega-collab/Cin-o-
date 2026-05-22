@@ -261,7 +261,7 @@ const LINKS = [
 ];
 
 export function LegalInfo() {
-  const { settings } = useIntermittentStore();
+  const { settings, updateSettings } = useIntermittentStore();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -277,23 +277,22 @@ export function LegalInfo() {
 
   return (
     <div className="space-y-4">
-      {/* Convention active */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-muted">Convention active :</span>
-        <span
-          className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-            settings.convention === "cinema"
-              ? "border-cyan/30 bg-cyanSoft text-cyan"
-              : "border-purple-500/30 bg-purple-500/10 text-purple-300"
-          }`}
-        >
-          {settings.convention === "cinema"
-            ? "Cinéma — IDCC 3097"
-            : "Audiovisuel — IDCC 2642"}
-        </span>
-        <span className="text-[10px] text-muted">
-          {settings.convention === "cinema" ? "Nuit +25%" : "Nuit +50%"}
-        </span>
+      {/* Convention switcher */}
+      <div className="grid grid-cols-2 gap-2">
+        {(["cinema", "audiovisuel"] as const).map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => updateSettings({ convention: c })}
+            className={`py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+              settings.convention === c
+                ? "border-cyan bg-cyanSoft text-cyan"
+                : "border-stroke bg-white/5 text-textSoft"
+            }`}
+          >
+            {c === "cinema" ? "Cinéma (SFACT)" : "Audiovisuel (CCPAP)"}
+          </button>
+        ))}
       </div>
 
       {/* Disclaimer */}
