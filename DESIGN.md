@@ -2,6 +2,7 @@
 
 > Référence unique pour tout développement UI sur CinéO. Chaque décision ici est définitive.
 > Stack : Next.js 14 · TypeScript · Tailwind CSS · lucide-react · Supabase
+> Version : v0.2.0 — 22 mai 2026
 
 ---
 
@@ -43,6 +44,10 @@
 | `dangerSoft`   | `rgba(239,68,68,0.15)` | Fond badge danger           |
 | `info`         | `#3B82F6` | Information, toast info                  |
 | `infoSoft`     | `rgba(59,130,246,0.15)` | Fond badge info            |
+| `night`        | `#A855F7` | Heures de nuit (badge uniquement)        |
+| `nightSoft`    | `rgba(168,85,247,0.15)` | Fond badge nuit            |
+
+> **Tokens legacy supprimés du code** : `redSoft` → `danger`, `orangeSoft` → `warning`, `blueSoft` → `info`, `violetSoft` → `night`. Migration complète en v0.2.0. Les tokens legacy restent dans `tailwind.config.ts` pour compat descendante mais **aucune nouvelle occurrence n'est autorisée**.
 
 ### Règles impératives
 
@@ -536,6 +541,62 @@ Structure en 3 zones verticales :
 2. **Brand** : `CineoWordmark` taille display, tagline, ligne cyan "Conçu pour les équipes cinéma & TV"
 3. **Form card** : `glass-card rounded-app p-6`, inputs underline, bouton `active-pill` full-width, lien S'inscrire, lien "Comment ça marche ?"
 
+### Bandeau erreur sync (WifiOff)
+
+Affiché dans `Header.tsx` quand `useProjectStore.syncError` est non-null.
+
+```tsx
+<div className="flex items-center gap-1.5 text-[11px] text-warning bg-warning/10 border border-warning/20 rounded-xl px-3 py-1.5 mb-2">
+  <WifiOff className="w-3 h-3 shrink-0" />
+  {syncError}
+</div>
+```
+- Effacé automatiquement (`setSyncError(null)`) dès que la prochaine sauvegarde réussit.
+- Jamais de `danger` ici — c'est un avertissement réseau, pas une erreur bloquante.
+
+### Panneau codes d'accès département (AdminCodesPanel)
+
+```
+┌─────────────────────────────────────────┐
+│ [Lock cyan]  Protection par code        │
+│ Les départements configurés exigent…    │
+│                              [toggle ●] │
+├─────────────────────────────────────────┤
+│ Codes par département        [Eye]      │
+│ Laisser vide = accès libre              │
+│                                         │
+│ [Film]  Caméra         [••••••••]       │
+│ [Zap]   Électro        [        ]       │
+│ [Mic]   Son            [••••]           │
+│  …                                      │
+│                                         │
+│ [active-pill]  Enregistrer les codes   │
+└─────────────────────────────────────────┘
+```
+
+Comportement :
+- Toggle off → `lockAll()` immédiat (réinitialise tous les accès)
+- Enregistrer → `setDeptCodes()` + `lockAll()` (force re-vérification)
+- Input `type="password"` par défaut, bouton Eye pour révéler
+- Vide = département en accès libre même si codes globalement activés
+
+### Écran de déverrouillage département (DepartmentRoute)
+
+Auto-unlock silencieux si `codesEnabled = false` ou si aucun code n'est configuré pour ce département. L'écran de saisie n'est affiché que si les deux conditions sont réunies.
+
+```
+┌─────────────────────────────────────────┐
+│         [Lucide dept icon cyan]         │
+│              Caméra                     │
+│          Accès protégé par code         │
+│                                         │
+│   [●●●●●●   ]   ← input password       │
+│                                         │
+│   [active-pill]  Accéder                │
+│        ← Retour                         │
+└─────────────────────────────────────────┘
+```
+
 ---
 
 ## 11. Motion
@@ -649,7 +710,10 @@ const config: Config = {
         dangerSoft:     "rgba(239,68,68,0.15)",
         info:           "#3B82F6",
         infoSoft:       "rgba(59,130,246,0.15)",
-        // Legacy (à ne plus utiliser dans le nouveau code)
+        // Nuit
+        night:          "#A855F7",
+        nightSoft:      "rgba(168,85,247,0.15)",
+        // Legacy — compat descendante, INTERDIT dans le nouveau code
         blueSoft:       "#2D8CFF",
         orangeSoft:     "#F5A623",
         redSoft:        "#EF4444",
@@ -731,4 +795,4 @@ Avant tout merge d'un composant UI :
 
 ---
 
-*CinéO Design System v1.1 — 21 mai 2026 — Ajouts : badge IDCC, flux OCR frais, EntryCard, matrice TTC*
+*CinéO Design System v1.2 — 22 mai 2026 — Ajouts : token night/nightSoft, bandeau sync WifiOff, panneau codes département, migration tokens legacy complète (redSoft/orangeSoft/blueSoft/violetSoft → danger/warning/info/night)*

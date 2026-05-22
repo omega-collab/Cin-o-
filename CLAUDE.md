@@ -1,190 +1,227 @@
-# Ruflo — Claude Code Configuration
+# CinéO — Claude Code Configuration
 
-## Rules
+## Projet
+
+**CinéO** est une application mobile-first de gestion de tournage cinéma/TV (équipes intermittentes).
+Stack : **Next.js 14 App Router · TypeScript strict · Tailwind CSS · Supabase · Zustand · lucide-react**
+
+Repo : `omega-collab/Cin-o-`
+Branche de dev : `claude/setflow-setup-deploy-KNKki`
+PR ouverte : #14 (draft)
+Version actuelle : **v0.2.0** (commit `8563226`)
+
+---
+
+## Règles impératives
 
 - Do what has been asked; nothing more, nothing less
 - NEVER create files unless absolutely necessary — prefer editing existing files
 - NEVER create documentation files unless explicitly requested
-- NEVER save working files or tests to root — use `/src`, `/tests`, `/docs`, `/config`, `/scripts`
 - ALWAYS read a file before editing it
 - NEVER commit secrets, credentials, or .env files
-- Keep files under 500 lines
-- Validate input at system boundaries
+- Keep files under 500 lines — extract when nécessaire
+- Validate input at system boundaries only
+- Default language : **français** dans l'UI, anglais dans le code
+- Zéro emoji dans le code — `lucide-react` uniquement (voir DESIGN.md §7)
+- ALWAYS run `npx tsc --noEmit` before committing
+- ALWAYS run the full TypeScript check, not just the changed files
 
-## Agent Comms (SendMessage-First Coordination)
+---
 
-Named agents coordinate via `SendMessage`, not polling or shared state.
+## Skills disponibles — utiliser systématiquement
 
+Invoquer via `Skill({ skill: "nom" })` quand la tâche correspond.
+
+| Skill | Quand l'utiliser |
+|-------|-----------------|
+| `supabase` | Toute tâche impliquant Supabase (auth, DB, storage, realtime, RLS, migrations, SSR) |
+| `supabase-postgres-best-practices` | Écriture / review de requêtes SQL, optimisation schéma |
+| `impeccable` | Design UI/UX, redesign composant, audit visuel, polish |
+| `gstack` | Vérifier que l'UI fonctionne dans le navigateur, QA, screenshots, tests flows |
+| `verify` | Confirmer qu'un fix fonctionne réellement dans l'app |
+| `run` | Lancer l'app pour tester une fonctionnalité |
+| `code-review` | Review du diff courant avant PR |
+| `security-review` | Après tout changement auth, permissions, données utilisateur |
+| `sparc:tdd` | Développer avec tests en premier (TDD London School) |
+| `sparc:coder` | Implémentation complexe avec spec précise |
+| `sparc:reviewer` | Revue qualité code + sécurité post-implémentation |
+| `github:pr-manager` | Gérer le cycle de vie de la PR |
+| `github:code-review` | Review automatisée multi-agents de la PR |
+| `analysis:performance-report` | Détecter les régressions perf |
+| `hooks:post-task` | Après chaque tâche réussie (mémorise les patterns) |
+
+---
+
+## Architecture — fichiers clés
+
+### App Router
 ```
-Lead (you) ←→ architect ←→ developer ←→ tester ←→ reviewer
-              (named agents message each other directly)
-```
-
-### Spawning a Coordinated Team
-
-```javascript
-// ALL agents in ONE message, each knows WHO to message next
-Agent({ prompt: "Research the codebase. SendMessage findings to 'architect'.",
-  subagent_type: "researcher", name: "researcher", run_in_background: true })
-Agent({ prompt: "Wait for 'researcher'. Design solution. SendMessage to 'coder'.",
-  subagent_type: "system-architect", name: "architect", run_in_background: true })
-Agent({ prompt: "Wait for 'architect'. Implement it. SendMessage to 'tester'.",
-  subagent_type: "coder", name: "coder", run_in_background: true })
-Agent({ prompt: "Wait for 'coder'. Write tests. SendMessage results to 'reviewer'.",
-  subagent_type: "tester", name: "tester", run_in_background: true })
-Agent({ prompt: "Wait for 'tester'. Review code quality and security.",
-  subagent_type: "reviewer", name: "reviewer", run_in_background: true })
-
-// Kick off the pipeline
-SendMessage({ to: "researcher", summary: "Start", message: "[task context]" })
-```
-
-### Patterns
-
-| Pattern | Flow | Use When |
-|---------|------|----------|
-| **Pipeline** | A → B → C → D | Sequential dependencies (feature dev) |
-| **Fan-out** | Lead → A, B, C → Lead | Independent parallel work (research) |
-| **Supervisor** | Lead ↔ workers | Ongoing coordination (complex refactor) |
-
-### Rules
-
-- ALWAYS name agents — `name: "role"` makes them addressable
-- ALWAYS include comms instructions in prompts — who to message, what to send
-- Spawn ALL agents in ONE message with `run_in_background: true`
-- After spawning: STOP, tell user what's running, wait for results
-- NEVER poll status — agents message back or complete automatically
-
-## Swarm & Routing
-
-### Config
-- **Topology**: hierarchical-mesh (anti-drift)
-- **Max Agents**: 15
-- **Memory**: hybrid
-- **HNSW**: Enabled
-- **Neural**: Enabled
-
-```bash
-npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized
+app/
+  layout.tsx          # metadata, viewport (zoom activé), Shell
+  page.tsx            # root — redirige vers /today ou login
+  [section]/page.tsx  # today, departments, calendar, documents, heures, admin, cantine
 ```
 
-### Agent Routing
-
-| Task | Agents | Topology |
-|------|--------|----------|
-| Bug Fix | researcher, coder, tester | hierarchical |
-| Feature | architect, coder, tester, reviewer | hierarchical |
-| Refactor | architect, coder, reviewer | hierarchical |
-| Performance | perf-engineer, coder | hierarchical |
-| Security | security-architect, auditor | hierarchical |
-
-### When to Swarm
-- **YES**: 3+ files, new features, cross-module refactoring, API changes, security, performance
-- **NO**: single file edits, 1-2 line fixes, docs updates, config changes, questions
-
-### 3-Tier Model Routing
-
-| Tier | Handler | Use Cases |
-|------|---------|-----------|
-| 1 | Agent Booster (WASM) | Simple transforms — skip LLM, use Edit directly |
-| 2 | Haiku | Simple tasks, low complexity |
-| 3 | Sonnet/Opus | Architecture, security, complex reasoning |
-
-## Memory & Learning
-
-### Before Any Task
-```bash
-npx @claude-flow/cli@latest memory search --query "[task keywords]" --namespace patterns
-npx @claude-flow/cli@latest hooks route --task "[task description]"
+### Stores Zustand (client-side, persistés localStorage + sync Supabase)
+```
+lib/store/
+  useProjectStore.ts  # auth Supabase, projets, syncError, isSyncing
+  useShootStore.ts    # feuille de service, séquences, cast, codes dept (codesEnabled + deptCodes)
+  useDepartmentStore  # stock, mouvements
+  useAccessStore.ts   # départements déverrouillés (Set<DepartmentSlug>)
+  useCanteenStore.ts  # menu cantine du jour
+  useExpenseStore.ts  # notes de frais (persist key: "cin-o-expense-v1")
+  useIntermittentStore# journées de travail, paramètres salaires
+  useSettingsStore.ts # thème, langue, taille police
 ```
 
-### After Success
-```bash
-npx @claude-flow/cli@latest memory store --namespace patterns --key "[name]" --value "[what worked]"
-npx @claude-flow/cli@latest hooks post-task --task-id "[id]" --success true --store-results true
+### Sync Supabase
+```
+lib/hooks/useProjectSync.ts  # debounce 1.5s, upsert project_data, signale syncError
+lib/supabase/client.ts       # guard env vars manquantes
+lib/supabase/types.ts        # Project, Profile, ProjectMember, ProjectData, FraisEntry
 ```
 
-### MCP Tools (use `ToolSearch("keyword")` to discover)
-
-| Category | Key Tools |
-|----------|-----------|
-| **Memory** | `memory_store`, `memory_search`, `memory_search_unified` |
-| **Bridge** | `memory_import_claude`, `memory_bridge_status` |
-| **Swarm** | `swarm_init`, `swarm_status`, `swarm_health` |
-| **Agents** | `agent_spawn`, `agent_list`, `agent_status` |
-| **Hooks** | `hooks_route`, `hooks_post-task`, `hooks_worker-dispatch` |
-| **Security** | `aidefence_scan`, `aidefence_is_safe`, `aidefence_has_pii` |
-| **Hive-Mind** | `hive-mind_init`, `hive-mind_consensus`, `hive-mind_spawn` |
-
-### Background Workers
-
-| Worker | When |
-|--------|------|
-| `audit` | After security changes |
-| `optimize` | After performance work |
-| `testgaps` | After adding features |
-| `map` | Every 5+ file changes |
-| `document` | After API changes |
-
-```bash
-npx @claude-flow/cli@latest hooks worker dispatch --trigger audit
+### Services
+```
+lib/services/
+  auth.service.ts     # verifyDepartmentCode — vérifie contre useShootStore.deptCodes
+  storage.service.ts  # upload Supabase Storage bucket "documents"
+  document.service.ts # analyse IA (non déployée — retourne erreur honnête)
 ```
 
-## Agents
-
-**Core**: `coder`, `reviewer`, `tester`, `planner`, `researcher`
-**Architecture**: `system-architect`, `backend-dev`, `mobile-dev`
-**Security**: `security-architect`, `security-auditor`
-**Performance**: `performance-engineer`, `perf-analyzer`
-**Coordination**: `hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`
-**GitHub**: `pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`
-
-Any string works as a custom agent type.
-
-## Build & Test
-
-- ALWAYS run tests after code changes
-- ALWAYS verify build succeeds before committing
-
-```bash
-npm run build && npm test
+### Composants principaux
+```
+components/
+  layout/
+    Shell.tsx           # hydration guard (spinner, pas return null)
+    Header.tsx          # sync error banner (WifiOff + setSyncError)
+    Nav.tsx             # onTouchEnd + preventDefault (anti double-tap)
+  auth/
+    AuthModal.tsx       # login / register / resetPassword
+  departments/
+    DepartmentRoute.tsx # auto-unlock si codesEnabled=false ou pas de code dept
+    DepartmentGrid.tsx  # grille avec DEPT_ICONS (lucide)
+    DepartmentDetail.tsx
+  admin/
+    AdminPanel.tsx      # tabs: dashboard/upload/review/publish/codes (Lock)
+    AdminCodesPanel.tsx # toggle global + code par département → sync Supabase auto
+  heures/
+    WorkDayForm.tsx     # lunchInvalid guard (fin > début requis)
+    expense/MatriceForm.tsx   # < 500 lignes, extracted EntryCard + printReleve
+    expense/MatriceEntryCard.tsx
+  calendar/CalendarView.tsx   # pas de borderTop coloré
+  cantine/CanteenStaffInterface.tsx  # direct sur form (pas de PIN)
+  documents/DocumentsSection.tsx     # TTL 24h localStorage
 ```
 
-## CLI Quick Reference
-
-```bash
-npx @claude-flow/cli@latest init --wizard           # Setup
-npx @claude-flow/cli@latest swarm init --v3-mode     # Start swarm
-npx @claude-flow/cli@latest memory search --query "" # Vector search
-npx @claude-flow/cli@latest hooks route --task ""    # Route to agent
-npx @claude-flow/cli@latest doctor --fix             # Diagnostics
-npx @claude-flow/cli@latest security scan            # Security scan
-npx @claude-flow/cli@latest performance benchmark    # Benchmarks
+### Utilitaires
+```
+lib/utils/
+  intermittent.ts   # heures nuit : if (end <= start) end += 24*60
+  matricePdf.ts     # printReleve() avec escHtml() (XSS safe)
+lib/data/
+  departments.ts    # DEPARTMENTS[] avec code: process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE
+  departmentIcons.ts # DEPT_ICONS: Record<DepartmentSlug, LucideIcon>
+  documents.ts      # ADMIN_CODE = process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "PROD"
+  expenseCategories.ts # icon: LucideIcon (plus emoji)
+  legalChunks.ts    # corpus IDCC 2642/3097
 ```
 
-26 commands, 140+ subcommands. Use `--help` on any command for details.
-
-## Setup
-
-```bash
-claude mcp add claude-flow -- npx -y @claude-flow/cli@latest
-npx @claude-flow/cli@latest daemon start
-npx @claude-flow/cli@latest doctor --fix
+### Types
+```
+lib/types/
+  index.ts       # DepartmentSlug, Department, CanteenMenu (mealTime?), DailyShoot
+  shoot.ts       # FullShoot (codesEnabled, deptCodes), ShootSequence, etc.
+  intermittent.ts
+  expense.ts
+  matrice.ts
 ```
 
-**Agent tool** handles execution (agents, files, code, git). **MCP tools** handle coordination (swarm, memory, hooks). **CLI** is the same via Bash.
+---
+
+## Fonctionnalités — état v0.2.0
+
+### Authentification
+- Supabase Auth (email/mdp) — login, register, reset password
+- Profil : département + rôle + avatar (onboarding obligatoire)
+- Projets multi-utilisateurs avec code d'invitation (invite_code)
+
+### Feuille de service (admin)
+- Import PDF/doc → OCR (endpoint `/api/extract-frais`)
+- Extraction : séquences, cast, lieux, alertes, notes département, jours à venir
+- Révision manuelle avant publication
+- Sync Supabase temps réel (Realtime postgres_changes)
+
+### Codes d'accès département (nouveau v0.2.0)
+- Admin → onglet "Codes" : toggle global `codesEnabled`, code par département
+- Stocké dans `shoot.deptCodes` (synced Supabase via shoot_store)
+- `DepartmentRoute` : auto-unlock si codes off ou dept non configuré
+- `lockAll()` déclenché à chaque modification de codes
+
+### Heures intermittentes
+- Calcul IDCC 2642 (audiovisuel) et 3097 (cinéma/SFACT)
+- Heures supplémentaires, heures de nuit, heures anticipées, journée continue
+- Heures nuit : calcul correct pour passages minuit (23:00→06:00)
+- Validation pause déjeuner : fin > début obligatoire
+
+### Notes de frais / Matrice
+- OCR ticket via Mistral : date, fournisseur, nature, montantTTC, plaqueImmat
+- Plaque immat : détection auto (cyan) ou saisie manuelle / bypass non-véhicule
+- Matrice PDF : colonnes TTC uniquement (pas TVA/HT), escHtml() XSS-safe
+- Sync Supabase avec RLS (useFraisEntries)
+
+### Cantine
+- Formulaire staff (lieu tournage, lieu cantine, heure repas, menu 4 champs)
+- Accès direct sans PIN (auth Supabase suffit)
+- Sync via useCanteenStore
+
+### Documents
+- Catalogue statique + documents uploadés (Supabase Storage)
+- Accès restreint : code d'accès avec TTL 24h (localStorage)
+- Admin doc : code via NEXT_PUBLIC_DEFAULT_DEPT_CODE
+
+### Calendrier / Planning
+- Vue mensuelle des jours de tournage avec statuts
+- Pas de borderTop coloré (fond teinté + badge statut uniquement)
+
+### Sync & offline
+- Sauvegarde auto debounce 1.5s
+- Bandeau WifiOff si sauvegarde échoue
+- Message d'erreur si chargement initial échoue
+
+---
+
+## Design tokens — référence rapide
+
+```
+appBg #071018 · cyan #00E0D0 · cyanSoft rgba(0,224,208,0.16)
+danger #EF4444 · dangerSoft · warning #F5A623 · warningSoft
+info #3B82F6 · infoSoft · success #22C55E · successSoft
+night #A855F7 · nightSoft   ← heures de nuit uniquement
+stroke rgba(255,255,255,0.10) · muted #8E9AAF · textSoft #C9D2E3
+```
+
+Tokens legacy (`redSoft`, `orangeSoft`, `blueSoft`, `violetSoft`) : **conservés dans tailwind.config.ts pour compat**, mais **AUCUNE nouvelle occurrence autorisée**.
+
+---
+
+## Variables d'environnement requises
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_DEFAULT_DEPT_CODE=    # code admin (ADMIN_CODE, PROD_CODE, dept codes)
+MISTRAL_API_KEY=                  # OCR frais (server-side uniquement)
+```
+
+---
 
 ## Versioning — process à suivre quand demandé
 
-Repo : `omega-collab/Cin-o-` · branche de dev : `claude/setflow-setup-deploy-KNKki`
-Version actuelle : **v0.2.0** (commit `8563226`, PR #14)
-
 ### Étapes pour créer une nouvelle version (ex. v0.3.0)
 
-1. **Bumper `package.json`**
-   ```
-   "version": "0.2.0" → "0.3.0"
-   ```
+1. **Bumper `package.json`** : `"version": "0.2.0"` → `"0.3.0"`
 
 2. **Commit + push**
    ```bash
@@ -197,12 +234,12 @@ Version actuelle : **v0.2.0** (commit `8563226`, PR #14)
    ```bash
    git tag -a v0.3.0 -m "v0.3.0 — [titre résumé]"
    ```
-   *(Le push du tag échoue en 403 — tag reste local, la PR GitHub fait foi)*
+   *(push tag bloqué en 403 — tag reste local, la PR GitHub fait foi)*
 
 4. **Mettre à jour la PR #14** via `mcp__github__update_pull_request`
    - `owner: "omega-collab"`, `repo: "Cin-o-"`, `pullNumber: 14`
-   - Nouveau titre : `v0.3.0 — [description]`
-   - Body : changelog complet (sections, tableau tokens, plan de test)
+   - Titre : `v0.3.0 — [description]`
+   - Body : changelog complet avec sections, tableau tokens, plan de test
 
 ### Numérotation sémantique
 | Type | Incrément | Exemple |
@@ -210,3 +247,31 @@ Version actuelle : **v0.2.0** (commit `8563226`, PR #14)
 | Correctifs / audit | patch | 0.2.0 → 0.2.1 |
 | Nouvelles fonctionnalités | minor | 0.2.0 → 0.3.0 |
 | Refonte majeure | major | 0.2.0 → 1.0.0 |
+
+---
+
+## Agent Routing — quand spawner des agents
+
+### Swarm (3+ fichiers ou feature transverse)
+```javascript
+Agent({ subagent_type: "researcher", name: "researcher", run_in_background: true, prompt: "..." })
+Agent({ subagent_type: "system-architect", name: "architect", run_in_background: true, prompt: "..." })
+Agent({ subagent_type: "coder", name: "coder", run_in_background: true, prompt: "..." })
+```
+
+| Task | Agents | Note |
+|------|--------|------|
+| Bug fix | researcher, coder, tester | |
+| Feature | architect, coder, tester, reviewer | |
+| Refactor | architect, coder, reviewer | |
+| Audit sécurité | security-architect, auditor | Utiliser `security-review` skill |
+| UI/UX | impeccable skill + coder | |
+
+**Swarm : OUI** si 3+ fichiers, nouvelle feature, API change, sécurité
+**Swarm : NON** si 1-2 fichiers, fix simple, config, questions
+
+### Build & Test
+```bash
+npx tsc --noEmit          # TOUJOURS avant commit
+npm run build             # vérifier build prod
+```
