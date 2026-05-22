@@ -25,7 +25,12 @@ export function useProjectSync(projectId: string | null) {
       .eq("project_id", pid)
       .maybeSingle();
 
-    if (error || !data) return;
+    if (error) {
+      useProjectStore.getState().setSyncError("Chargement échoué — données locales utilisées");
+      return;
+    }
+    if (!data) return;
+    useProjectStore.getState().setSyncError(null);
 
     lastRemoteAt.current = data.updated_at;
 

@@ -7,7 +7,7 @@ import { useProjectStore } from "@/lib/store/useProjectStore";
 import type { Project } from "@/lib/supabase/types";
 import { extractMsg } from "@/lib/utils";
 
-const PROD_CODE = "0000";
+const PROD_CODE = process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000";
 
 const INPUT =
   "w-full bg-white/5 border border-stroke rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-cyan/40";

@@ -1,23 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Film, LayoutDashboard, Upload, ClipboardList, Radio } from "lucide-react";
+import { Film, LayoutDashboard, Upload, ClipboardList, Radio, Lock } from "lucide-react";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { AdminDashboard } from "./AdminDashboard";
 import { AdminUploadPanel } from "./AdminUploadPanel";
 import { AdminExtractionReview } from "./AdminExtractionReview";
 import { AdminPublishPanel } from "./AdminPublishPanel";
+import { AdminCodesPanel } from "./AdminCodesPanel";
 
 const ADMIN_CODE = process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000";
 
-type Tab = "dashboard" | "upload" | "review" | "publish";
+type Tab = "dashboard" | "upload" | "review" | "publish" | "codes";
 
 const TABS: { id: Tab; label: string; Icon: React.ElementType }[] = [
-  { id: "dashboard", label: "Accueil", Icon: LayoutDashboard },
-  { id: "upload", label: "Import", Icon: Upload },
-  { id: "review", label: "Révision", Icon: ClipboardList },
-  { id: "publish", label: "Publier", Icon: Radio },
+  { id: "dashboard", label: "Accueil",  Icon: LayoutDashboard },
+  { id: "upload",    label: "Import",   Icon: Upload           },
+  { id: "review",    label: "Révision", Icon: ClipboardList    },
+  { id: "publish",   label: "Publier",  Icon: Radio            },
+  { id: "codes",     label: "Codes",    Icon: Lock             },
 ];
 
 function AuthForm({ onSuccess }: { onSuccess: () => void }) {
@@ -71,7 +73,6 @@ function AdminDashboardContainer({ onLogout }: { onLogout: () => void }) {
   const extractionStatus = useShootStore((s) => s.shoot.extractionStatus);
   const hasUploadedDocs = useShootStore((s) => s.shoot.uploadedDocs.length > 0);
 
-  // E2: guard tabs — review/publish require extraction to have started
   const tabDisabled = (id: Tab): boolean => {
     if (id === "review") return !hasUploadedDocs && extractionStatus === "idle";
     if (id === "publish") return extractionStatus !== "review" && extractionStatus !== "done";
@@ -111,6 +112,7 @@ function AdminDashboardContainer({ onLogout }: { onLogout: () => void }) {
       {tab === "upload"    && <AdminUploadPanel onNext={() => setTab("review")} />}
       {tab === "review"    && <AdminExtractionReview onApply={() => setTab("publish")} />}
       {tab === "publish"   && <AdminPublishPanel onDone={() => setTab("dashboard")} />}
+      {tab === "codes"     && <AdminCodesPanel />}
     </div>
   );
 }

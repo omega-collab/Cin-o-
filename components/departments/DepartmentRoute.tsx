@@ -6,6 +6,7 @@ import type { DepartmentSlug } from "@/lib/types";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { DEPT_ICONS } from "@/lib/data/departmentIcons";
 import { useAccessStore } from "@/lib/store/useAccessStore";
+import { useShootStore } from "@/lib/store/useShootStore";
 import { verifyDepartmentCode } from "@/lib/services/auth.service";
 import { DepartmentDetail } from "./DepartmentDetail";
 
@@ -17,6 +18,8 @@ export function DepartmentRoute({ slug }: DepartmentRouteProps) {
   const dept = DEPARTMENTS.find((d) => d.slug === slug);
   const isUnlocked = useAccessStore((s) => s.isUnlocked(slug));
   const unlock = useAccessStore((s) => s.unlock);
+  const codesEnabled = useShootStore((s) => s.shoot.codesEnabled);
+  const hasDeptCode = useShootStore((s) => !!(s.shoot.deptCodes?.[slug]));
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +28,13 @@ export function DepartmentRoute({ slug }: DepartmentRouteProps) {
   useEffect(() => {
     if (!dept) router.push("/departments");
   }, [dept, router]);
+
+  // Auto-unlock when codes are disabled or this dept has no code configured
+  useEffect(() => {
+    if (!isUnlocked && (!codesEnabled || !hasDeptCode)) {
+      unlock(slug);
+    }
+  }, [codesEnabled, hasDeptCode, isUnlocked, unlock, slug]);
 
   if (!dept) return null;
 

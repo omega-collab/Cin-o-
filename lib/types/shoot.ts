@@ -1,3 +1,5 @@
+import type { DepartmentSlug } from "@/lib/types";
+
 export interface ShootSequence {
   id: string;
   time: string;
@@ -86,6 +88,8 @@ export interface FullShoot {
   uploadedDocs: UploadedDoc[];
   extractionStatus: "idle" | "extracting" | "review" | "done" | "error";
   extractionError?: string;
+  codesEnabled: boolean;
+  deptCodes: Partial<Record<DepartmentSlug, string>>;
 }
 
 export type ExtractionConfidence = "high" | "medium" | "low";

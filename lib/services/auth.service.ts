@@ -1,21 +1,25 @@
 import { supabase } from "@/lib/supabase/client";
+import { useShootStore } from "@/lib/store/useShootStore";
+import type { DepartmentSlug } from "@/lib/types";
 
 export interface AuthResult {
   success: boolean;
   error?: string;
 }
 
-// Vérification d'appartenance au département via les membres du projet
 export async function verifyDepartmentCode(
   departmentSlug: string,
-  _code: string
+  code: string
 ): Promise<AuthResult> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Non authentifié" };
 
-  // L'accès est accordé si l'utilisateur est membre du projet en cours
-  // La restriction par département est gérée par le profil utilisateur (useUserStore)
-  // Le code PIN département est remplacé par l'auth Supabase
-  void departmentSlug;
-  return { success: true };
+  const { codesEnabled, deptCodes } = useShootStore.getState().shoot;
+  if (!codesEnabled) return { success: true };
+
+  const expected = deptCodes[departmentSlug as DepartmentSlug];
+  if (!expected) return { success: true };
+
+  if (code === expected) return { success: true };
+  return { success: false, error: "Code incorrect" };
 }

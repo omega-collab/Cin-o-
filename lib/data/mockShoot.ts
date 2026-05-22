@@ -85,4 +85,6 @@ export const MOCK_SHOOT: FullShoot = {
   isPublished: false,
   uploadedDocs: [],
   extractionStatus: "idle",
+  codesEnabled: false,
+  deptCodes: {},
 };

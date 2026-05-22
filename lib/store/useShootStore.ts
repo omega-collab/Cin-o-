@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { FullShoot, ShootSequence, CastMember, DeptNote, PlacePoint, ShootAlert, AuditEntry, UploadedDoc, ExtractionResult } from "@/lib/types/shoot";
+import type { DepartmentSlug } from "@/lib/types";
 import { MOCK_SHOOT } from "@/lib/data/mockShoot";
 
 function makeAudit(action: string, source: AuditEntry["source"], details?: string): AuditEntry {
@@ -81,6 +82,10 @@ interface ShootStore {
   publish: () => void;
   unpublish: () => void;
 
+  // Dept codes
+  setCodesEnabled: (v: boolean) => void;
+  setDeptCodes: (codes: Partial<Record<DepartmentSlug, string>>) => void;
+
   // Reset
   resetToMock: () => void;
   resetFull: () => void;
@@ -103,6 +108,8 @@ const INITIAL: FullShoot = {
   isPublished: false,
   uploadedDocs: [],
   extractionStatus: "idle",
+  codesEnabled: false,
+  deptCodes: {},
 };
 
 export const useShootStore = create<ShootStore>()(
@@ -211,6 +218,12 @@ export const useShootStore = create<ShootStore>()(
             auditLog: [...s.shoot.auditLog, makeAudit("Feuille dépubliée", "publish")],
           },
         })),
+
+      setCodesEnabled: (v) =>
+        set((s) => ({ shoot: { ...s.shoot, codesEnabled: v } })),
+
+      setDeptCodes: (codes) =>
+        set((s) => ({ shoot: { ...s.shoot, deptCodes: codes } })),
 
       resetToMock: () =>
         set({ shoot: { ...MOCK_SHOOT, isPublished: false }, pendingExtraction: null }),
