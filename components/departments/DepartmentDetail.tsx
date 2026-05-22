@@ -23,8 +23,8 @@ const MOVEMENT_TYPES: { value: MovementType; label: string; Icon: React.ElementT
   { value: "retour",     label: "Retour",       Icon: ArrowDownLeft, color: "text-green-400" },
   { value: "reception",  label: "Réception",    Icon: Package,       color: "text-blue-400" },
   { value: "emprunt",    label: "Emprunt",      Icon: Handshake,     color: "text-purple-400" },
-  { value: "casse",      label: "Casse",        Icon: AlertOctagon,  color: "text-redSoft" },
-  { value: "defectueux", label: "Défectueux",   Icon: TriangleAlert, color: "text-orangeSoft" },
+  { value: "casse",      label: "Casse",        Icon: AlertOctagon,  color: "text-danger" },
+  { value: "defectueux", label: "Défectueux",   Icon: TriangleAlert, color: "text-warning" },
   { value: "note",       label: "Note",         Icon: FileText,      color: "text-muted" },
 ];
 
@@ -388,7 +388,7 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
           <ModalField label="Photo (optionnel — max 2 Mo)">
             {/* D4: show error when photo too large */}
             {photoError && (
-              <p className="text-xs text-redSoft mb-1.5">{photoError}</p>
+              <p className="text-xs text-danger mb-1.5">{photoError}</p>
             )}
             {photo ? (
               <div className="relative rounded-xl overflow-hidden">

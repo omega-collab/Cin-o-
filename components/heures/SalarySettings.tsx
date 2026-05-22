@@ -55,7 +55,7 @@ export function SalarySettings() {
   return (
     <div className="space-y-4">
       <div className="glass-card rounded-2xl p-3 flex items-start gap-2">
-        <Info className="w-4 h-4 text-blueSoft shrink-0 mt-0.5" />
+        <Info className="w-4 h-4 text-info shrink-0 mt-0.5" />
         <p className="text-xs text-textSoft leading-relaxed">
           Les montants sont indicatifs et varient selon votre catégorie, votre ancienneté et les accords de production.
           Consultez votre convention collective et votre fiche de paie pour les taux exacts.
@@ -208,7 +208,7 @@ export function SalarySettings() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted">Journée continue</span>
-                  <span className="text-orangeSoft font-mono">+15%</span>
+                  <span className="text-warning font-mono">+15%</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted">Heure sup / anticipée</span>
@@ -240,7 +240,7 @@ export function SalarySettings() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Journée continue</span>
-                <span className="text-orangeSoft font-mono">+15%</span>
+                <span className="text-warning font-mono">+15%</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">Heure anticipée / sup</span>

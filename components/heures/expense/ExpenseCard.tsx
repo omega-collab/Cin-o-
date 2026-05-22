@@ -8,9 +8,9 @@ import type { ExpenseEntry, ExpenseFlag } from "@/lib/types/expense";
 
 function FlagBadge({ flag }: { flag: ExpenseFlag }) {
   const cfg = {
-    error:   { Icon: AlertCircle,   cls: "text-redSoft bg-red-500/10 border-red-500/20" },
-    warning: { Icon: AlertTriangle, cls: "text-orangeSoft bg-orange-500/10 border-orange-500/20" },
-    info:    { Icon: Info,          cls: "text-blueSoft bg-blue-500/10 border-blue-500/20" },
+    error:   { Icon: AlertCircle,   cls: "text-danger bg-red-500/10 border-red-500/20" },
+    warning: { Icon: AlertTriangle, cls: "text-warning bg-orange-500/10 border-orange-500/20" },
+    info:    { Icon: Info,          cls: "text-info bg-blue-500/10 border-blue-500/20" },
   }[flag.severity];
   const { Icon, cls } = cfg;
   return (
@@ -95,7 +95,7 @@ export function ExpenseCard({ entry }: { entry: ExpenseEntry }) {
           {/* Delete */}
           <button
             onClick={() => deleteEntry(entry.id)}
-            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs text-redSoft bg-red-500/8 border border-red-500/20"
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs text-danger bg-red-500/8 border border-red-500/20"
           >
             <Trash2 className="w-3.5 h-3.5" /> Supprimer cette dépense
           </button>

@@ -42,10 +42,10 @@ export function ExpenseBot() {
           : "glass-card"
       }`}>
         <Bot className={`w-5 h-5 shrink-0 mt-0.5 ${
-          errors > 0 ? "text-redSoft" : warnings > 0 ? "text-orangeSoft" : allClean ? "text-emerald-400" : "text-muted"
+          errors > 0 ? "text-danger" : warnings > 0 ? "text-warning" : allClean ? "text-emerald-400" : "text-muted"
         }`} />
         <div className="flex-1">
-          <p className={`text-sm font-semibold ${errors > 0 ? "text-redSoft" : warnings > 0 ? "text-orangeSoft" : allClean ? "text-emerald-400" : "text-white"}`}>
+          <p className={`text-sm font-semibold ${errors > 0 ? "text-danger" : warnings > 0 ? "text-warning" : allClean ? "text-emerald-400" : "text-white"}`}>
             {entries.length === 0
               ? "Aucune dépense à vérifier"
               : allClean
@@ -70,9 +70,9 @@ export function ExpenseBot() {
         <div className="grid grid-cols-4 gap-2">
           {[
             { icon: CheckCircle2, label: "OK",       count: clean,    color: "text-emerald-400" },
-            { icon: AlertCircle,  label: "Erreurs",  count: errors,   color: "text-redSoft"     },
-            { icon: AlertTriangle,label: "Alertes",  count: warnings, color: "text-orangeSoft"  },
-            { icon: Info,         label: "Infos",    count: infos,    color: "text-blueSoft"    },
+            { icon: AlertCircle,  label: "Erreurs",  count: errors,   color: "text-danger"     },
+            { icon: AlertTriangle,label: "Alertes",  count: warnings, color: "text-warning"  },
+            { icon: Info,         label: "Infos",    count: infos,    color: "text-info"    },
           ].map(({ icon: Icon, label, count, color }) => (
             <div key={label} className="glass-card rounded-xl p-2.5 flex flex-col items-center gap-1">
               <Icon className={`w-4 h-4 ${count > 0 ? color : "text-muted"}`} />
@@ -97,7 +97,7 @@ export function ExpenseBot() {
                   <p className="text-[10px] text-muted">{entry.date} · {entry.amountTTC.toFixed(2)} € TTC</p>
                 </div>
                 <span className={`text-[10px] font-semibold uppercase ${
-                  topSeverity === "error" ? "text-redSoft" : topSeverity === "warning" ? "text-orangeSoft" : "text-blueSoft"
+                  topSeverity === "error" ? "text-danger" : topSeverity === "warning" ? "text-warning" : "text-info"
                 }`}>
                   {topSeverity === "error" ? "erreur" : topSeverity === "warning" ? "alerte" : "info"}
                 </span>
@@ -105,7 +105,7 @@ export function ExpenseBot() {
               <div className="space-y-0.5">
                 {entry.flags.map((f, i) => (
                   <p key={i} className={`text-[10px] ${
-                    f.severity === "error" ? "text-redSoft" : f.severity === "warning" ? "text-orangeSoft" : "text-blueSoft"
+                    f.severity === "error" ? "text-danger" : f.severity === "warning" ? "text-warning" : "text-info"
                   }`}>
                     · {f.message}
                   </p>

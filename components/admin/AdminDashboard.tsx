@@ -151,7 +151,7 @@ export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
               </button>
               <button
                 onClick={handleReset}
-                className="flex-1 py-2 rounded-xl bg-redSoft/20 text-redSoft border border-redSoft/30 text-sm font-semibold"
+                className="flex-1 py-2 rounded-xl bg-danger/20 text-danger border border-danger/30 text-sm font-semibold"
               >
                 Tout effacer
               </button>

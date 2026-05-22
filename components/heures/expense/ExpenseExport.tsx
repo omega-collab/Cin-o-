@@ -126,7 +126,7 @@ export function ExpenseExport() {
           <div className="flex justify-between text-xs"><span className="text-muted">TVA</span><span className="text-white">{totalTVA.toFixed(2)} €</span></div>
           <div className="flex justify-between text-sm border-t border-stroke/50 pt-2"><span className="text-white font-semibold">Total TTC</span><span className="text-cyan font-bold">{totalTTC.toFixed(2)} €</span></div>
           {hasErrors && (
-            <p className="text-xs text-redSoft pt-1 flex items-center gap-1">
+            <p className="text-xs text-danger pt-1 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3 shrink-0" />
               Certaines dépenses ont des erreurs — vérifier avant d&apos;envoyer.
             </p>

@@ -53,7 +53,7 @@ function AuthForm({ onSuccess }: { onSuccess: () => void }) {
             onKeyDown={(e) => { if (e.key === "Enter") attempt(); }}
             autoComplete="off"
           />
-          {error && <p className="text-redSoft text-sm text-center">{error}</p>}
+          {error && <p className="text-danger text-sm text-center">{error}</p>}
           <button
             className="active-pill w-full py-3 rounded-2xl font-semibold text-sm"
             onClick={attempt}

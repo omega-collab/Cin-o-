@@ -93,7 +93,7 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
               className="w-full bg-white/5 border border-stroke rounded-2xl px-4 py-3 text-center text-2xl font-mono tracking-[0.5em] text-white focus:outline-none focus:ring-2 focus:ring-cyan/50 placeholder:text-muted"
               autoFocus
             />
-            {codeError && <p className="text-redSoft text-sm text-center">{codeError}</p>}
+            {codeError && <p className="text-danger text-sm text-center">{codeError}</p>}
             <button
               onClick={handleCodeSubmit}
               disabled={!code}

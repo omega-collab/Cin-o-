@@ -55,8 +55,8 @@ export function WorkDayForm() {
   }
 
   const pills = [
-    preview.isJourneeContinue && { label: "Journée continue", color: "text-orangeSoft bg-orangeSoft/10" },
-    preview.heuresAnticipees > 0 && { label: `${preview.heuresAnticipees.toFixed(1)}h anticipées`, color: "text-blueSoft bg-blueSoft/10" },
+    preview.isJourneeContinue && { label: "Journée continue", color: "text-warning bg-warning/10" },
+    preview.heuresAnticipees > 0 && { label: `${preview.heuresAnticipees.toFixed(1)}h anticipées`, color: "text-info bg-info/10" },
     preview.heuresDeNuit > 0 && { label: `${preview.heuresDeNuit.toFixed(1)}h de nuit`, color: "text-violetSoft bg-violetSoft/10" },
     preview.heuresSup > 0 && { label: `${preview.heuresSup.toFixed(1)}h sup.`, color: "text-cyan bg-cyanSoft" },
   ].filter(Boolean) as { label: string; color: string }[];
@@ -86,7 +86,7 @@ export function WorkDayForm() {
         <label className="text-xs text-muted block mb-1">Date</label>
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT} />
         {alreadyExists && (
-          <p className="text-xs text-orangeSoft mt-1 flex items-center gap-1">
+          <p className="text-xs text-warning mt-1 flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />
             Une entrée existe déjà pour ce jour.
           </p>
@@ -130,7 +130,7 @@ export function WorkDayForm() {
               </div>
             </div>
             {lunchInvalid && (
-              <p className="text-xs text-orangeSoft flex items-center gap-1">
+              <p className="text-xs text-warning flex items-center gap-1">
                 <AlertCircle className="w-3 h-3 shrink-0" />
                 L&apos;heure de fin doit être après le début de la pause.
               </p>

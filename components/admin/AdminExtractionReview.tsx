@@ -13,8 +13,8 @@ function ConfidenceBadge({ confidence }: { confidence?: ExtractionConfidence }) 
   if (!confidence) return null;
   const cfg = {
     high:   { label: "✓",  cls: "bg-green-900/30 text-green-400" },
-    medium: { label: "~",  cls: "bg-orange-900/30 text-orangeSoft" },
-    low:    { label: "?",  cls: "bg-red-900/30 text-redSoft" },
+    medium: { label: "~",  cls: "bg-orange-900/30 text-warning" },
+    low:    { label: "?",  cls: "bg-red-900/30 text-danger" },
   };
   const { label, cls } = cfg[confidence];
   return (
@@ -68,9 +68,9 @@ function Row({ label, confidence, children }: {
 
 function SeverityBadge({ severity }: { severity: "info" | "warning" | "critical" }) {
   const map = {
-    info: { icon: Info, cls: "text-blueSoft bg-blueSoft/10" },
-    warning: { icon: AlertTriangle, cls: "text-orangeSoft bg-orangeSoft/10" },
-    critical: { icon: AlertTriangle, cls: "text-redSoft bg-redSoft/10" },
+    info: { icon: Info, cls: "text-info bg-info/10" },
+    warning: { icon: AlertTriangle, cls: "text-warning bg-warning/10" },
+    critical: { icon: AlertTriangle, cls: "text-danger bg-danger/10" },
   };
   const { icon: Icon, cls } = map[severity];
   return (
@@ -275,7 +275,7 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
       <Section title="Déroulé" count={seqs.length}>
         {seqs.map((seq) => (
           <div key={seq.id} className="space-y-2 p-3 bg-white/3 rounded-xl relative">
-            <button onClick={() => rmSeq(seq.id)} className="absolute top-2 right-2 text-muted hover:text-redSoft">
+            <button onClick={() => rmSeq(seq.id)} className="absolute top-2 right-2 text-muted hover:text-danger">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
             <div className="grid grid-cols-4 gap-2">
@@ -320,7 +320,7 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
       <Section title="Comédiens" count={cast.length}>
         {cast.map((c) => (
           <div key={c.id} className="grid grid-cols-2 gap-2 items-start relative">
-            <button onClick={() => rmCast(c.id)} className="absolute -top-1 right-0 text-muted hover:text-redSoft">
+            <button onClick={() => rmCast(c.id)} className="absolute -top-1 right-0 text-muted hover:text-danger">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
             <input value={c.name} onChange={(e) => patchCast(c.id, "name", e.target.value)} placeholder="Prénom / Personnage" className={INPUT} />
@@ -348,7 +348,7 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
               <option value="critical" className="bg-appBg">critical</option>
             </select>
             <input value={a.message} onChange={(e) => patchAlert(a.id, "message", e.target.value)} placeholder="Message d'alerte" className={INPUT} />
-            <button onClick={() => rmAlert(a.id)} className="text-muted hover:text-redSoft shrink-0 pt-2">
+            <button onClick={() => rmAlert(a.id)} className="text-muted hover:text-danger shrink-0 pt-2">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -362,7 +362,7 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
       <Section title="Notes départements" count={deptNotes.length}>
         {deptNotes.map((n) => (
           <div key={n.id} className="space-y-1.5 relative p-2 bg-white/3 rounded-xl">
-            <button onClick={() => rmNote(n.id)} className="absolute top-2 right-2 text-muted hover:text-redSoft">
+            <button onClick={() => rmNote(n.id)} className="absolute top-2 right-2 text-muted hover:text-danger">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
             <div className="grid grid-cols-2 gap-2">
@@ -389,7 +389,7 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
       <Section title="Lieux" count={places.length}>
         {places.map((p) => (
           <div key={p.id} className="grid grid-cols-3 gap-2 items-start relative">
-            <button onClick={() => rmPlace(p.id)} className="absolute -top-1 right-0 text-muted hover:text-redSoft">
+            <button onClick={() => rmPlace(p.id)} className="absolute -top-1 right-0 text-muted hover:text-danger">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
             <input value={p.label} onChange={(e) => patchPlace(p.id, "label", e.target.value)} placeholder="Label" className={INPUT} />

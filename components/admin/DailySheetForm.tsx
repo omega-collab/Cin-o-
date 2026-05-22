@@ -145,7 +145,7 @@ export function DailySheetForm() {
               />
               <button
                 onClick={() => removeRow(seq.id)}
-                className="text-muted hover:text-redSoft shrink-0"
+                className="text-muted hover:text-danger shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

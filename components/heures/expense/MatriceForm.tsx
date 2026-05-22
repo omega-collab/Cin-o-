@@ -345,7 +345,7 @@ export function MatriceForm() {
 
       {/* Note */}
       <div className="glass-card rounded-2xl p-3 flex items-start gap-2">
-        <Info className="w-4 h-4 text-blueSoft shrink-0 mt-0.5" />
+        <Info className="w-4 h-4 text-info shrink-0 mt-0.5" />
         <p className="text-xs text-textSoft leading-relaxed">
           Les dépenses sont enregistrées dans Supabase. Seul vous pouvez les modifier ou supprimer.
         </p>

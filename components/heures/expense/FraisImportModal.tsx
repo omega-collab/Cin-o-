@@ -209,7 +209,7 @@ export function FraisImportModal({ onClose, onConfirm }: Props) {
             />
 
             {error && (
-              <div className="flex items-center gap-2 text-xs text-redSoft">
+              <div className="flex items-center gap-2 text-xs text-danger">
                 <AlertCircle className="w-4 h-4 shrink-0" /> {error}
               </div>
             )}

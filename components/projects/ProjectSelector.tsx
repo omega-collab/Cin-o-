@@ -228,7 +228,7 @@ export function ProjectSelector() {
               const isTarget = deleteTarget?.id === proj.id;
               return (
                 <div key={proj.id} className="space-y-1">
-                  <div className={`glass-card rounded-2xl p-4 flex items-center gap-3 transition-colors ${isTarget ? "border-redSoft/40" : "hover:border-cyan/30"}`}>
+                  <div className={`glass-card rounded-2xl p-4 flex items-center gap-3 transition-colors ${isTarget ? "border-danger/40" : "hover:border-cyan/30"}`}>
                     <button
                       onClick={() => setActiveProject(proj.id)}
                       className="flex items-center gap-3 flex-1 min-w-0 text-left"
@@ -249,7 +249,7 @@ export function ProjectSelector() {
                     ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeleteTarget(proj); setDeleteCode(""); setDeleteError(""); }}
-                        className="shrink-0 w-8 h-8 flex items-center justify-center text-muted hover:text-redSoft"
+                        className="shrink-0 w-8 h-8 flex items-center justify-center text-muted hover:text-danger"
                         title={isOwner ? "Supprimer le projet" : "Quitter le projet"}
                       >
                         {isOwner ? <Trash2 className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
@@ -259,7 +259,7 @@ export function ProjectSelector() {
 
                   {/* Inline confirmation panel */}
                   {isTarget && (
-                    <div className="glass-card rounded-2xl p-4 border border-redSoft/30 space-y-3">
+                    <div className="glass-card rounded-2xl p-4 border border-danger/30 space-y-3">
                       {isOwner ? (
                         <>
                           <p className="text-sm font-semibold text-white">Supprimer &quot;{proj.name}&quot; ?</p>
@@ -277,12 +277,12 @@ export function ProjectSelector() {
                                 autoFocus
                                 className={`${INPUT} font-mono tracking-widest text-center text-lg`}
                               />
-                              {deleteError && <p className="text-xs text-redSoft mt-1">{deleteError}</p>}
+                              {deleteError && <p className="text-xs text-danger mt-1">{deleteError}</p>}
                             </div>
                             <button
                               type="submit"
                               disabled={deleting || !deleteCode}
-                              className="w-full py-2.5 rounded-xl text-sm font-semibold bg-redSoft/20 text-redSoft border border-redSoft/30 flex items-center justify-center gap-2 disabled:opacity-40"
+                              className="w-full py-2.5 rounded-xl text-sm font-semibold bg-danger/20 text-danger border border-danger/30 flex items-center justify-center gap-2 disabled:opacity-40"
                             >
                               {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmer la suppression"}
                             </button>
@@ -292,11 +292,11 @@ export function ProjectSelector() {
                         <>
                           <p className="text-sm font-semibold text-white">Quitter &quot;{proj.name}&quot; ?</p>
                           <p className="text-xs text-muted">Vous pourrez rejoindre à nouveau avec le code d&apos;invitation.</p>
-                          {deleteError && <p className="text-xs text-redSoft">{deleteError}</p>}
+                          {deleteError && <p className="text-xs text-danger">{deleteError}</p>}
                           <button
                             onClick={() => void handleLeave(proj)}
                             disabled={deleting}
-                            className="w-full py-2.5 rounded-xl text-sm font-semibold bg-redSoft/20 text-redSoft border border-redSoft/30 flex items-center justify-center gap-2 disabled:opacity-40"
+                            className="w-full py-2.5 rounded-xl text-sm font-semibold bg-danger/20 text-danger border border-danger/30 flex items-center justify-center gap-2 disabled:opacity-40"
                           >
                             {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Quitter le projet"}
                           </button>

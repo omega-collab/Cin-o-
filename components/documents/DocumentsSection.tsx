@@ -33,14 +33,14 @@ function saveUnlock(id: string) {
 
 function TypeIcon({ type }: { type: DocEntry["type"] }) {
   if (type === "xls")  return <FileSpreadsheet className="w-5 h-5 text-emerald-400 shrink-0" />;
-  if (type === "doc" || type === "docx") return <FileType className="w-5 h-5 text-blueSoft shrink-0" />;
-  return <FileText className="w-5 h-5 text-redSoft shrink-0" />;
+  if (type === "doc" || type === "docx") return <FileType className="w-5 h-5 text-info shrink-0" />;
+  return <FileText className="w-5 h-5 text-danger shrink-0" />;
 }
 function TypeBadge({ type }: { type: DocEntry["type"] }) {
   const cls =
-    type === "pdf" ? "text-redSoft bg-redSoft/10" :
+    type === "pdf" ? "text-danger bg-danger/10" :
     type === "xls" ? "text-emerald-400 bg-emerald-400/10" :
-                     "text-blueSoft bg-blueSoft/10";
+                     "text-info bg-info/10";
   return <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${cls}`}>{type.toUpperCase()}</span>;
 }
 
@@ -228,7 +228,7 @@ export function DocumentsSection() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     {adminMode && isCustom && (
-                      <button onClick={() => handleDeleteDoc(doc.id)} className="text-muted hover:text-redSoft p-1 transition-colors">
+                      <button onClick={() => handleDeleteDoc(doc.id)} className="text-muted hover:text-danger p-1 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}
@@ -274,7 +274,7 @@ export function DocumentsSection() {
                 placeholder="Code PROD…"
                 className="w-full bg-white/5 border border-stroke rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan/40"
               />
-              {adminError && <p className="text-xs text-redSoft mt-1">Code incorrect.</p>}
+              {adminError && <p className="text-xs text-danger mt-1">Code incorrect.</p>}
             </div>
             <button onClick={tryAdminUnlock} className="active-pill w-full py-3 rounded-2xl text-sm font-semibold">
               Accéder
@@ -316,7 +316,7 @@ export function DocumentsSection() {
                 placeholder="Entrer le code…"
                 className="w-full bg-white/5 border border-stroke rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan/40"
               />
-              {codeError && <p className="text-xs text-redSoft mt-1">Code incorrect.</p>}
+              {codeError && <p className="text-xs text-danger mt-1">Code incorrect.</p>}
               {lockDoc.restricted?.expiresAt && (
                 <p className="text-xs text-muted mt-1">
                   Accès valable jusqu&apos;au {new Date(lockDoc.restricted.expiresAt).toLocaleDateString("fr-FR")}

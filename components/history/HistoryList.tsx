@@ -108,8 +108,8 @@ export function HistoryList() {
       <div className="glass-card rounded-app p-4 grid grid-cols-3 gap-3 text-center">
         {[
           { value: joursTournes, label: "Jours terminés", icon: <CheckCircle2 size={16} className="text-cyan mx-auto mb-1" /> },
-          { value: incidents,    label: "Incidents",       icon: <TriangleAlert size={16} className="text-orangeSoft mx-auto mb-1" /> },
-          { value: rapports,     label: "Rapports",        icon: <FileText size={16} className="text-blueSoft mx-auto mb-1" /> },
+          { value: incidents,    label: "Incidents",       icon: <TriangleAlert size={16} className="text-warning mx-auto mb-1" /> },
+          { value: rapports,     label: "Rapports",        icon: <FileText size={16} className="text-info mx-auto mb-1" /> },
         ].map((stat) => (
           <div key={stat.label}>
             {stat.icon}
@@ -132,7 +132,7 @@ export function HistoryList() {
               </button>
               <button
                 onClick={() => { clearHistory(); setConfirmClear(false); }}
-                className="text-xs text-redSoft bg-redSoft/10 border border-redSoft/20 px-3 py-1.5 rounded-full font-semibold"
+                className="text-xs text-danger bg-danger/10 border border-danger/20 px-3 py-1.5 rounded-full font-semibold"
               >
                 Confirmer la suppression
               </button>

@@ -71,12 +71,12 @@ type Period = ProductionDay["period"];
 
 const STATUS_CONFIG: Record<Status, { label: string; bg: string; color: string; border: string }> = {
   confirmed: { label: "Confirmé",  bg: "bg-cyanSoft",         color: "text-cyan",       border: "#00E0D0" },
-  pending:   { label: "À vérifier", bg: "bg-orangeSoft/10",   color: "text-orangeSoft", border: "#FFB020" },
-  cancelled: { label: "Annulé",    bg: "bg-redSoft/10",        color: "text-redSoft",    border: "#FF4D4D" },
+  pending:   { label: "À vérifier", bg: "bg-warning/10",   color: "text-warning", border: "#FFB020" },
+  cancelled: { label: "Annulé",    bg: "bg-danger/10",        color: "text-danger",    border: "#FF4D4D" },
 };
 
 const PERIOD_CONFIG: Record<Period, { label: string; bg: string; color: string }> = {
-  day:   { label: "JOUR", bg: "bg-blueSoft/10",   color: "text-blueSoft"   },
+  day:   { label: "JOUR", bg: "bg-info/10",   color: "text-info"   },
   night: { label: "NUIT", bg: "bg-violetSoft/10", color: "text-violetSoft" },
 };
 

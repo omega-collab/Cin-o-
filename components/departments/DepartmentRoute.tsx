@@ -74,7 +74,7 @@ export function DepartmentRoute({ slug }: DepartmentRouteProps) {
               autoFocus
             />
             {error && (
-              <p className="text-sm mt-2 text-center font-medium text-redSoft">{error}</p>
+              <p className="text-sm mt-2 text-center font-medium text-danger">{error}</p>
             )}
           </div>
 

@@ -297,8 +297,8 @@ export function LegalInfo() {
       </div>
 
       {/* Disclaimer */}
-      <div className="glass-card rounded-2xl p-3 flex items-start gap-2 border border-orangeSoft/20">
-        <AlertTriangle className="w-4 h-4 text-orangeSoft shrink-0 mt-0.5" />
+      <div className="glass-card rounded-2xl p-3 flex items-start gap-2 border border-warning/20">
+        <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
         <p className="text-xs text-textSoft leading-relaxed">
           Informations indicatives — source Légifrance. Ne remplace pas un conseil juridique.
           En cas de litige, consultez un syndicat ou un avocat spécialisé.

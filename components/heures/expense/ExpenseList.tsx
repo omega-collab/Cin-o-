@@ -59,7 +59,7 @@ function TotalsBar({ entries }: { entries: ExpenseEntry[] }) {
       </div>
       <div className="flex items-center gap-3">
         {flags > 0 && (
-          <span className="text-redSoft font-medium">{flags} erreur{flags > 1 ? "s" : ""}</span>
+          <span className="text-danger font-medium">{flags} erreur{flags > 1 ? "s" : ""}</span>
         )}
         <span className="text-white font-bold text-sm">{totalTTC.toFixed(2)} € TTC</span>
       </div>

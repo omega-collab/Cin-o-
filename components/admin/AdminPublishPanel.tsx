@@ -76,9 +76,9 @@ export function AdminPublishPanel({ onDone }: { onDone: () => void }) {
             </div>
 
             {shoot.alerts.filter((a) => a.severity === "critical").length > 0 && (
-              <div className="flex items-center gap-2 p-2 bg-redSoft/10 rounded-xl">
-                <AlertTriangle className="w-3.5 h-3.5 text-redSoft shrink-0" />
-                <p className="text-xs text-redSoft">
+              <div className="flex items-center gap-2 p-2 bg-danger/10 rounded-xl">
+                <AlertTriangle className="w-3.5 h-3.5 text-danger shrink-0" />
+                <p className="text-xs text-danger">
                   {shoot.alerts.filter((a) => a.severity === "critical").length} alerte(s) critique(s)
                 </p>
               </div>

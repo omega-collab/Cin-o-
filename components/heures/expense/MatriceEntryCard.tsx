@@ -79,7 +79,7 @@ export function MatriceEntryCard({ num, entry, isEditing, editPatch, onEditStart
           <button onClick={onEditStart} className="text-muted hover:text-textSoft p-1 transition-colors">
             <Pencil className="w-3.5 h-3.5" />
           </button>
-          <button onClick={onDelete} className="text-muted hover:text-redSoft p-1 transition-colors">
+          <button onClick={onDelete} className="text-muted hover:text-danger p-1 transition-colors">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>

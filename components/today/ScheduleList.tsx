@@ -38,9 +38,9 @@ function activeIndex(rows: { time: string }[]): number {
 }
 
 function SeverityIcon({ s }: { s: DeptNote["priority"] }) {
-  if (s === "critical") return <AlertCircle size={11} className="text-redSoft shrink-0 mt-0.5" />;
-  if (s === "warning")  return <AlertTriangle size={11} className="text-orangeSoft shrink-0 mt-0.5" />;
-  return <Info size={11} className="text-blueSoft shrink-0 mt-0.5" />;
+  if (s === "critical") return <AlertCircle size={11} className="text-danger shrink-0 mt-0.5" />;
+  if (s === "warning")  return <AlertTriangle size={11} className="text-warning shrink-0 mt-0.5" />;
+  return <Info size={11} className="text-info shrink-0 mt-0.5" />;
 }
 
 export function ScheduleList() {

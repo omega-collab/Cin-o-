@@ -33,7 +33,7 @@ export function Button({
   const styles: Record<string, string> = {
     secondary: "glass-card text-textSoft hover:text-white",
     ghost: "text-muted hover:text-textSoft",
-    danger: "bg-redSoft/10 text-redSoft border border-redSoft/20",
+    danger: "bg-danger/10 text-danger border border-danger/20",
   };
 
   return (

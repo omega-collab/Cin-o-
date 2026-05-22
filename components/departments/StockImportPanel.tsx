@@ -130,9 +130,9 @@ export function StockImportPanel({ slug, onClose }: Props) {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 p-3 bg-redSoft/10 border border-redSoft/20 rounded-2xl">
-          <AlertCircle className="w-4 h-4 text-redSoft shrink-0 mt-0.5" />
-          <p className="text-sm text-redSoft">{error}</p>
+        <div className="flex items-start gap-2 p-3 bg-danger/10 border border-danger/20 rounded-2xl">
+          <AlertCircle className="w-4 h-4 text-danger shrink-0 mt-0.5" />
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 
@@ -152,7 +152,7 @@ export function StockImportPanel({ slug, onClose }: Props) {
                   placeholder="Nom de l'équipement"
                   className="flex-1 bg-white/5 border border-stroke rounded-xl px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan/40"
                 />
-                <button onClick={() => removeItem(it.id)} className="text-muted hover:text-redSoft">
+                <button onClick={() => removeItem(it.id)} className="text-muted hover:text-danger">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>

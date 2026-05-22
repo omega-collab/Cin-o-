@@ -262,7 +262,7 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-semibold ${loaded ? "text-cyan" : "text-white"}`}>
                   {TYPE_LABELS[slot.type]}
-                  {slot.required && <span className="text-redSoft ml-1 text-xs">*</span>}
+                  {slot.required && <span className="text-danger ml-1 text-xs">*</span>}
                 </p>
                 <p className="text-xs text-muted truncate">
                   {loaded ? loaded.filename : TYPE_DESC[slot.type]}
@@ -285,7 +285,7 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
                     if (ref?.current) ref.current.value = "";
                     removeDoc(loaded.id);
                   }}
-                  className="text-muted hover:text-redSoft shrink-0 w-10 h-10 flex items-center justify-center -mr-1"
+                  className="text-muted hover:text-danger shrink-0 w-10 h-10 flex items-center justify-center -mr-1"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -361,7 +361,7 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
               </button>
               <button
                 onClick={() => { clearDocs(); setConfirmClear(false); setSkipped([]); }}
-                className="text-xs text-redSoft font-semibold"
+                className="text-xs text-danger font-semibold"
               >
                 Confirmer la suppression
               </button>
@@ -376,10 +376,10 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
 
       {/* E4: skipped files notice */}
       {skipped.length > 0 && (
-        <div className="flex items-start gap-2 p-3 bg-orangeSoft/10 border border-orangeSoft/20 rounded-2xl">
-          <TriangleAlert className="w-4 h-4 text-orangeSoft shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-2xl">
+          <TriangleAlert className="w-4 h-4 text-warning shrink-0 mt-0.5" />
           <div>
-            <p className="text-xs text-orangeSoft font-semibold">
+            <p className="text-xs text-warning font-semibold">
               {skipped.length} fichier(s) ignoré(s) par l'OCR
             </p>
             <ul className="mt-1 space-y-0.5">
@@ -392,9 +392,9 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
       )}
 
       {error && (
-        <div className="flex items-start gap-2 p-3 bg-redSoft/10 border border-redSoft/20 rounded-2xl">
-          <AlertCircle className="w-4 h-4 text-redSoft shrink-0 mt-0.5" />
-          <p className="text-sm text-redSoft">{error}</p>
+        <div className="flex items-start gap-2 p-3 bg-danger/10 border border-danger/20 rounded-2xl">
+          <AlertCircle className="w-4 h-4 text-danger shrink-0 mt-0.5" />
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 

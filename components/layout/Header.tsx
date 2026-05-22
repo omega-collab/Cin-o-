@@ -74,7 +74,7 @@ export function Header({ title, subtitle }: HeaderProps) {
         </div>
 
         {syncError && (
-          <div className="flex items-center gap-1.5 text-[11px] text-orangeSoft bg-orangeSoft/10 border border-orangeSoft/20 rounded-xl px-3 py-1.5 mb-2">
+          <div className="flex items-center gap-1.5 text-[11px] text-warning bg-warning/10 border border-warning/20 rounded-xl px-3 py-1.5 mb-2">
             <WifiOff className="w-3 h-3 shrink-0" />
             {syncError}
           </div>

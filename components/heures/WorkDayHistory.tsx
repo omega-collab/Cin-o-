@@ -47,13 +47,13 @@ function DayRow({ day, onDelete, showSalary, tauxHoraire }: {
               <Badge label={`+${computed.heuresSup.toFixed(1)}h sup`} color="text-cyan bg-cyanSoft" />
             )}
             {computed.isJourneeContinue && (
-              <Badge label="Continue" color="text-orangeSoft bg-orangeSoft/10" />
+              <Badge label="Continue" color="text-warning bg-warning/10" />
             )}
             {computed.heuresDeNuit > 0 && (
               <Badge label={`${computed.heuresDeNuit.toFixed(1)}h nuit`} color="text-violetSoft bg-violetSoft/10" />
             )}
             {computed.heuresAnticipees > 0 && (
-              <Badge label={`${computed.heuresAnticipees.toFixed(1)}h antic.`} color="text-blueSoft bg-blueSoft/10" />
+              <Badge label={`${computed.heuresAnticipees.toFixed(1)}h antic.`} color="text-info bg-info/10" />
             )}
           </div>
           {day.notes && <p className="text-xs text-muted italic mt-1">{day.notes}</p>}
@@ -64,7 +64,7 @@ function DayRow({ day, onDelete, showSalary, tauxHoraire }: {
           )}
           <button
             onClick={() => onDelete(day.id)}
-            className="text-muted hover:text-redSoft transition-colors"
+            className="text-muted hover:text-danger transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
