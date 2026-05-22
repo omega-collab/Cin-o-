@@ -26,11 +26,13 @@ function applyExtraction(current: FullShoot, result: ExtractionResult): FullShoo
   if (result.date) patch.date = result.date.value;
   if (result.location) patch.location = result.location.value;
   if (result.callTime) patch.callTime = result.callTime.value;
+  if (result.patTime) patch.patTime = result.patTime.value;
   if (result.mealTime) patch.mealTime = result.mealTime.value;
   if (result.wrapTime) patch.wrapTime = result.wrapTime.value;
   if (result.weather) patch.weather = result.weather.value;
   if (result.logeLocation) patch.logeLocation = result.logeLocation.value;
   if (result.canteenLocation) patch.canteenLocation = result.canteenLocation.value;
+  if (result.deptCallTimes) patch.deptCallTimes = result.deptCallTimes.value as Partial<Record<DepartmentSlug, string>>;
   if (result.sequences) patch.sequences = result.sequences.value;
   if (result.cast) patch.cast = result.cast.value;
   if (result.deptNotes) patch.deptNotes = result.deptNotes.value;
