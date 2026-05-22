@@ -13,6 +13,7 @@ interface IntermittentState {
   updateWorkDay: (id: string, patch: Partial<Omit<WorkDay, "id">>) => void;
   deleteWorkDay: (id: string) => void;
   updateSettings: (patch: Partial<IntermittentSettings>) => void;
+  reset: () => void;
 }
 
 export const useIntermittentStore = create<IntermittentState>()(
@@ -42,6 +43,8 @@ export const useIntermittentStore = create<IntermittentState>()(
 
       updateSettings: (patch) =>
         set((s) => ({ settings: { ...s.settings, ...patch } })),
+
+      reset: () => set({ workDays: [], settings: DEFAULT_SETTINGS }),
     }),
     { name: "cin-o-intermittent", version: 1 }
   )

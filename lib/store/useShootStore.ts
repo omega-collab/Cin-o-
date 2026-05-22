@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { FullShoot, ShootSequence, CastMember, DeptNote, PlacePoint, ShootAlert, AuditEntry, UploadedDoc, ExtractionResult } from "@/lib/types/shoot";
+import type { FullShoot, ShootSequence, CastMember, DeptNote, PlacePoint, ShootAlert, AuditEntry, UploadedDoc, ExtractionResult, NextDayInfo } from "@/lib/types/shoot";
 import type { DepartmentSlug } from "@/lib/types";
 import { MOCK_SHOOT } from "@/lib/data/mockShoot";
 
@@ -26,11 +26,13 @@ function applyExtraction(current: FullShoot, result: ExtractionResult): FullShoo
   if (result.date) patch.date = result.date.value;
   if (result.location) patch.location = result.location.value;
   if (result.callTime) patch.callTime = result.callTime.value;
+  if (result.patTime) patch.patTime = result.patTime.value;
   if (result.mealTime) patch.mealTime = result.mealTime.value;
   if (result.wrapTime) patch.wrapTime = result.wrapTime.value;
   if (result.weather) patch.weather = result.weather.value;
   if (result.logeLocation) patch.logeLocation = result.logeLocation.value;
   if (result.canteenLocation) patch.canteenLocation = result.canteenLocation.value;
+  if (result.deptCallTimes) patch.deptCallTimes = result.deptCallTimes.value as Partial<Record<DepartmentSlug, string>>;
   if (result.sequences) patch.sequences = result.sequences.value;
   if (result.cast) patch.cast = result.cast.value;
   if (result.deptNotes) patch.deptNotes = result.deptNotes.value;
@@ -77,6 +79,7 @@ interface ShootStore {
   setDeptNotes: (notes: DeptNote[]) => void;
   setPlaces: (places: PlacePoint[]) => void;
   setAlerts: (alerts: ShootAlert[]) => void;
+  setNextDays: (days: NextDayInfo[]) => void;
 
   // Publish
   publish: () => void;
@@ -110,6 +113,7 @@ const INITIAL: FullShoot = {
   extractionStatus: "idle",
   codesEnabled: false,
   deptCodes: {},
+  deptCallTimes: {},
 };
 
 export const useShootStore = create<ShootStore>()(
@@ -199,6 +203,15 @@ export const useShootStore = create<ShootStore>()(
       setAlerts: (alerts) =>
         set((s) => ({
           shoot: { ...s.shoot, alerts, auditLog: [...s.shoot.auditLog, makeAudit("Alertes mises à jour", "manual")] },
+        })),
+
+      setNextDays: (days) =>
+        set((s) => ({
+          shoot: {
+            ...s.shoot,
+            nextDays: days,
+            auditLog: [...s.shoot.auditLog, makeAudit("PDT importé", "upload", `${days.length} jour(s)`)],
+          },
         })),
 
       publish: () =>

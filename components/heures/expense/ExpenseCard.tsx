@@ -50,9 +50,6 @@ export function ExpenseCard({ entry }: { entry: ExpenseEntry }) {
         </div>
         <div className="text-right shrink-0">
           <p className="text-sm font-bold text-white">{entry.amountTTC.toFixed(2)} €</p>
-          {entry.amountHT > 0 && entry.vatRate > 0 && (
-            <p className="text-[10px] text-muted">{entry.amountHT.toFixed(2)} € HT</p>
-          )}
         </div>
         {entry.flags.length > 0 && (
           <span className={`w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shrink-0 ${
@@ -69,9 +66,6 @@ export function ExpenseCard({ entry }: { entry: ExpenseEntry }) {
         <div className="px-3 pb-3 space-y-3 border-t border-stroke/50">
           <div className="pt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
             <div><span className="text-muted">Règlement</span><p className="text-textSoft">{paymentLabel}</p></div>
-            <div><span className="text-muted">TVA</span><p className="text-textSoft">{entry.vatRate} %</p></div>
-            {entry.amountHT > 0 && <div><span className="text-muted">HT</span><p className="text-textSoft">{entry.amountHT.toFixed(2)} €</p></div>}
-            <div><span className="text-muted">TVA montant</span><p className="text-textSoft">{(entry.amountTTC - entry.amountHT).toFixed(2)} €</p></div>
           </div>
 
           {entry.notes && <p className="text-xs text-muted italic">{entry.notes}</p>}

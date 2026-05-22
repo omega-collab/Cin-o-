@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase/client";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
+import { resetProjectScopedStores } from "@/lib/store/resetProjectStores";
 
 const DEBOUNCE_MS = 1500;
 
@@ -29,17 +30,30 @@ export function useProjectSync(projectId: string | null) {
       useProjectStore.getState().setSyncError("Chargement échoué — données locales utilisées");
       return;
     }
-    if (!data) return;
     useProjectStore.getState().setSyncError(null);
+
+    // No row in project_data → brand-new project. Make sure local stores are
+    // clean (in case setActiveProject didn't reset them, or the user opened
+    // a tab with stale localStorage).
+    if (!data) {
+      resetProjectScopedStores();
+      return;
+    }
 
     lastRemoteAt.current = data.updated_at;
 
-    // Hydrate shoot store
+    // Hydrate shoot store — if the snapshot has no `shoot` key, treat the
+    // project as empty and reset the local store rather than keeping the old
+    // project's data.
     if (data.shoot_store && typeof data.shoot_store === "object") {
       const { shoot } = data.shoot_store as { shoot?: unknown };
       if (shoot) {
         useShootStore.setState({ shoot: shoot as ReturnType<typeof useShootStore.getState>["shoot"] });
+      } else {
+        useShootStore.getState().resetFull();
       }
+    } else {
+      useShootStore.getState().resetFull();
     }
 
     // Hydrate department store
@@ -53,7 +67,11 @@ export function useProjectSync(projectId: string | null) {
           ...(stock ? { stock: stock as ReturnType<typeof useDepartmentStore.getState>["stock"] } : {}),
           ...(movements ? { movements: movements as ReturnType<typeof useDepartmentStore.getState>["movements"] } : {}),
         });
+      } else {
+        useDepartmentStore.getState().resetStock();
       }
+    } else {
+      useDepartmentStore.getState().resetStock();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

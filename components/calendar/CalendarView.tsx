@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, MapPin, Film } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { ChevronLeft, ChevronRight, MapPin, Film, Upload, CheckCircle, AlertCircle, Loader } from "lucide-react";
 import type { ProductionDay } from "@/lib/data/calendar";
 import { useShootStore } from "@/lib/store/useShootStore";
+import { useUserStore } from "@/lib/store/useUserStore";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -159,34 +160,82 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
   );
 }
 
+// ── PDT import types ──────────────────────────────────────────────────────────
+
+type PdtStatus = "idle" | "loading" | "success" | "error";
+
 // ── main component ────────────────────────────────────────────────────────────
 
 export function CalendarView() {
-  const { shoot } = useShootStore();
+  const { shoot, setNextDays } = useShootStore();
+  const department = useUserStore((s) => s.department);
+  const isAdmin = department === "production";
   const today = useMemo(() => toISODate(new Date()), []);
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [weekOffset, setWeekOffset] = useState(0);
+  const [pdtStatus, setPdtStatus] = useState<PdtStatus>("idle");
+  const [pdtMessage, setPdtMessage] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Build ProductionDay list from published shoot data
+  async function handlePdtFile(file: File) {
+    if (!file) return;
+    setPdtStatus("loading");
+    setPdtMessage("");
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1] ?? "");
+        };
+        reader.onerror = () => reject(new Error("Lecture impossible"));
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch("/api/extract-pdt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdfBase64: base64, pdfMime: file.type || "application/pdf" }),
+      });
+
+      const data = await res.json() as { days?: unknown[]; error?: string };
+      if (!res.ok || data.error) {
+        setPdtStatus("error");
+        setPdtMessage(data.error ?? "Erreur inconnue");
+        return;
+      }
+
+      const days = data.days ?? [];
+      setNextDays(days as Parameters<typeof setNextDays>[0]);
+      setPdtStatus("success");
+      setPdtMessage(`${days.length} jour(s) importé(s)`);
+    } catch (err) {
+      setPdtStatus("error");
+      setPdtMessage(err instanceof Error ? err.message : "Erreur d'import");
+    }
+  }
+
+  // Build ProductionDay list
+  // — current day requires published FDS
+  // — nextDays (PDT) are shown regardless of published state
   const productionDays = useMemo<ProductionDay[]>(() => {
-    if (!shoot.isPublished || !shoot.date) return [];
     const days: ProductionDay[] = [];
 
-    // Current shoot day
-    const callT = shoot.callTime || "08:00";
-    days.push({
-      id: `j${shoot.shootingDay}`,
-      label: `J${shoot.shootingDay}`,
-      date: shoot.date,
-      location: shoot.location || "—",
-      scenes: shoot.sequences.map((s) => s.label).slice(0, 5),
-      startTime: callT,
-      endTime: shoot.wrapTime || "",
-      period: calcPeriod(callT),
-      status: "confirmed",
-    });
+    if (shoot.isPublished && shoot.date) {
+      const callT = shoot.callTime || "08:00";
+      days.push({
+        id: `j${shoot.shootingDay}`,
+        label: `J${shoot.shootingDay}`,
+        date: shoot.date,
+        location: shoot.location || "—",
+        scenes: shoot.sequences.map((s) => s.label).slice(0, 5),
+        startTime: callT,
+        endTime: shoot.wrapTime || "",
+        period: calcPeriod(callT),
+        status: "confirmed",
+      });
+    }
 
-    // Next days from extraction
     for (const nd of shoot.nextDays) {
       const callT = nd.callTime || "08:00";
       days.push({
@@ -221,6 +270,55 @@ export function CalendarView() {
 
   return (
     <div className="space-y-5">
+      {/* PDT Import — admin only */}
+      {isAdmin && (
+        <div className="glass-card rounded-app p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">Plan de travail (PDT)</p>
+              <p className="text-xs text-muted mt-0.5">Importez le PDT PDF pour peupler le calendrier</p>
+            </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={pdtStatus === "loading"}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-cyanSoft text-cyan active:opacity-70 transition-opacity disabled:opacity-40"
+            >
+              {pdtStatus === "loading" ? (
+                <Loader size={14} className="animate-spin" />
+              ) : (
+                <Upload size={14} />
+              )}
+              {pdtStatus === "loading" ? "Analyse…" : "Importer PDT"}
+            </button>
+          </div>
+
+          {pdtStatus === "success" && (
+            <div className="flex items-center gap-2 text-xs text-cyan">
+              <CheckCircle size={13} />
+              <span>{pdtMessage}</span>
+            </div>
+          )}
+          {pdtStatus === "error" && (
+            <div className="flex items-center gap-2 text-xs text-danger">
+              <AlertCircle size={13} />
+              <span>{pdtMessage}</span>
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handlePdtFile(f);
+              e.target.value = "";
+            }}
+          />
+        </div>
+      )}
+
       {/* Week strip */}
       <div className="glass-card rounded-app p-4">
         <div className="flex items-center justify-between mb-3">
@@ -264,11 +362,9 @@ export function CalendarView() {
           <div className="glass-card rounded-app p-6 text-center space-y-2">
             <Film className="w-8 h-8 text-muted mx-auto" />
             <p className="text-sm text-muted">
-              {!shoot.isPublished
-                ? "La feuille du jour n'a pas encore été publiée."
-                : selectedDate !== today
+              {selectedDate !== today
                 ? "Aucun tournage prévu ce jour."
-                : "Aucun jour de tournage à venir."}
+                : "Aucun jour de tournage à venir. Importez le PDT pour peupler le calendrier."}
             </p>
           </div>
         ) : (

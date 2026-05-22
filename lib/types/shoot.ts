@@ -74,6 +74,8 @@ export interface FullShoot {
   callTime: string;
   mealTime: string;
   wrapTime?: string;
+  patTime?: string;
+  deptCallTimes?: Partial<Record<DepartmentSlug, string>>;
   weather?: string;
   logeLocation?: string;
   canteenLocation?: string;
@@ -107,11 +109,13 @@ export interface ExtractionResult {
   date?: ExtractedField<string>;
   location?: ExtractedField<string>;
   callTime?: ExtractedField<string>;
+  patTime?: ExtractedField<string>;
   mealTime?: ExtractedField<string>;
   wrapTime?: ExtractedField<string>;
   weather?: ExtractedField<string>;
   logeLocation?: ExtractedField<string>;
   canteenLocation?: ExtractedField<string>;
+  deptCallTimes?: ExtractedField<Partial<Record<string, string>>>;
   sequences?: ExtractedField<ShootSequence[]>;
   cast?: ExtractedField<CastMember[]>;
   deptNotes?: ExtractedField<DeptNote[]>;
