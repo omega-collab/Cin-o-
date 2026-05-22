@@ -173,3 +173,40 @@ npx @claude-flow/cli@latest doctor --fix
 ```
 
 **Agent tool** handles execution (agents, files, code, git). **MCP tools** handle coordination (swarm, memory, hooks). **CLI** is the same via Bash.
+
+## Versioning — process à suivre quand demandé
+
+Repo : `omega-collab/Cin-o-` · branche de dev : `claude/setflow-setup-deploy-KNKki`
+Version actuelle : **v0.2.0** (commit `8563226`, PR #14)
+
+### Étapes pour créer une nouvelle version (ex. v0.3.0)
+
+1. **Bumper `package.json`**
+   ```
+   "version": "0.2.0" → "0.3.0"
+   ```
+
+2. **Commit + push**
+   ```bash
+   git add package.json
+   git commit -m "chore: bump version 0.2.0 → 0.3.0"
+   git push -u origin claude/setflow-setup-deploy-KNKki
+   ```
+
+3. **Tag annoté local**
+   ```bash
+   git tag -a v0.3.0 -m "v0.3.0 — [titre résumé]"
+   ```
+   *(Le push du tag échoue en 403 — tag reste local, la PR GitHub fait foi)*
+
+4. **Mettre à jour la PR #14** via `mcp__github__update_pull_request`
+   - `owner: "omega-collab"`, `repo: "Cin-o-"`, `pullNumber: 14`
+   - Nouveau titre : `v0.3.0 — [description]`
+   - Body : changelog complet (sections, tableau tokens, plan de test)
+
+### Numérotation sémantique
+| Type | Incrément | Exemple |
+|------|-----------|---------|
+| Correctifs / audit | patch | 0.2.0 → 0.2.1 |
+| Nouvelles fonctionnalités | minor | 0.2.0 → 0.3.0 |
+| Refonte majeure | major | 0.2.0 → 1.0.0 |
