@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { FullShoot, ShootSequence, CastMember, DeptNote, PlacePoint, ShootAlert, AuditEntry, UploadedDoc, ExtractionResult } from "@/lib/types/shoot";
+import type { FullShoot, ShootSequence, CastMember, DeptNote, PlacePoint, ShootAlert, AuditEntry, UploadedDoc, ExtractionResult, NextDayInfo } from "@/lib/types/shoot";
 import type { DepartmentSlug } from "@/lib/types";
 import { MOCK_SHOOT } from "@/lib/data/mockShoot";
 
@@ -79,6 +79,7 @@ interface ShootStore {
   setDeptNotes: (notes: DeptNote[]) => void;
   setPlaces: (places: PlacePoint[]) => void;
   setAlerts: (alerts: ShootAlert[]) => void;
+  setNextDays: (days: NextDayInfo[]) => void;
 
   // Publish
   publish: () => void;
@@ -202,6 +203,15 @@ export const useShootStore = create<ShootStore>()(
       setAlerts: (alerts) =>
         set((s) => ({
           shoot: { ...s.shoot, alerts, auditLog: [...s.shoot.auditLog, makeAudit("Alertes mises à jour", "manual")] },
+        })),
+
+      setNextDays: (days) =>
+        set((s) => ({
+          shoot: {
+            ...s.shoot,
+            nextDays: days,
+            auditLog: [...s.shoot.auditLog, makeAudit("PDT importé", "upload", `${days.length} jour(s)`)],
+          },
         })),
 
       publish: () =>
