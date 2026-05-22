@@ -6,6 +6,7 @@ import { useSettingsStore, type Theme, type FontSize, type Lang, type LoginBg, L
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
+import { DEPT_ICONS } from "@/lib/data/departmentIcons";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 
 const APP_VERSION = "0.2.0";
@@ -250,8 +251,9 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                 <div className="text-left">
                   <p className="text-sm font-medium text-white">Département & poste</p>
                   {dept && role ? (
-                    <p className="text-xs text-muted">
-                      {dept.icon} {dept.name} · {role}
+                    <p className="text-xs text-muted flex items-center gap-1">
+                      {(() => { const Icon = DEPT_ICONS[dept.slug as keyof typeof DEPT_ICONS]; return Icon ? <Icon className="w-3 h-3 shrink-0" /> : null; })()}
+                      {dept.name} · {role}
                     </p>
                   ) : (
                     <p className="text-xs text-muted">Non renseigné</p>

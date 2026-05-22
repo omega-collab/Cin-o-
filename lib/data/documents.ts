@@ -153,7 +153,7 @@ export function catColor(cat: DocCategory): string {
 }
 
 // ── Code admin ────────────────────────────────────────────────────────────────
-export const ADMIN_CODE = "PROD";
+export const ADMIN_CODE = process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "PROD";
 
 // ── Documents personnalisés (localStorage) ────────────────────────────────────
 const CUSTOM_KEY = "cino_custom_docs";
