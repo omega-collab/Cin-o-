@@ -251,7 +251,7 @@ const SUGGESTIONS_3097 = [
 // ── main ──────────────────────────────────────────────────────────────────────
 
 const LINKS = [
-  { label: "Pôle Emploi — Intermittents",       url: "https://www.francetravail.fr/spectacle" },
+  { label: "Pôle Emploi — Intermittents",       url: "https://www.francetravail.fr/candidat/vos-services-en-ligne/les-services-en-ligne-pour-les-demandeurs-d-emploi/espaces-numeriques-pour-les-intermittents-du-spectacle.html" },
   { label: "AFDAS — Formation",                  url: "https://www.afdas.com" },
   { label: "AUDIENS — Protection sociale",       url: "https://www.audiens.org" },
   { label: "Caisse des Congés Spectacles",       url: "https://www.conges-spectacles.fr" },
