@@ -251,13 +251,13 @@ const SUGGESTIONS_3097 = [
 // ── main ──────────────────────────────────────────────────────────────────────
 
 const LINKS = [
-  { label: "Légifrance — Conventions collectives", url: "https://www.legifrance.gouv.fr" },
-  { label: "USPA — Production audiovisuelle", url: "https://www.uspa.fr" },
-  { label: "SPI — Producteurs indépendants", url: "https://lespi.org" },
-  { label: "SPIAC-CGT — Grilles audiovisuel", url: "https://spiac-cgt.org" },
-  { label: "AFAR — Assistants réalisateur cinéma", url: "https://www.afar-fiction.com" },
-  { label: "AUDIENS — Protection sociale", url: "https://www.audiens.org" },
-  { label: "AFDAS — Formation", url: "https://www.afdas.com" },
+  { label: "Pôle Emploi — Intermittents",       url: "https://www.francetravail.fr/spectacle" },
+  { label: "AFDAS — Formation",                  url: "https://www.afdas.com" },
+  { label: "AUDIENS — Protection sociale",       url: "https://www.audiens.org" },
+  { label: "Caisse des Congés Spectacles",       url: "https://www.conges-spectacles.fr" },
+  { label: "Légifrance — Conventions",           url: "https://www.legifrance.gouv.fr/conv_coll/" },
+  { label: "GUSO — Guichet unique",              url: "https://www.guso.fr" },
+  { label: "Mon Compte Formation (CPF)",         url: "https://www.moncompteformation.gouv.fr" },
 ];
 
 export function LegalInfo() {
@@ -382,7 +382,7 @@ export function LegalInfo() {
               ))}
             </div>
             <p className="text-xs text-muted text-center pt-1">
-              Sources officielles — s&apos;ouvrent dans votre navigateur.
+              Liens officiels — s&apos;ouvrent dans un nouvel onglet.
             </p>
           </div>
         </>
