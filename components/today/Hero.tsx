@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MapPin, Film, Share2, Cloud, Clock, Info, AlertTriangle, AlertCircle } from "lucide-react";
+import { MapPin, Film, Share2, Cloud, Clock, Info, AlertTriangle, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useProjectStore, getActiveProject } from "@/lib/store/useProjectStore";
@@ -45,6 +45,17 @@ export function Hero() {
   const shoot = useShootStore((s) => s.shoot);
   const activeProject = useProjectStore(getActiveProject);
   const [seqOpen, setSeqOpen] = useState(false);
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
+  const [notesFilter, setNotesFilter] = useState<string>("mine");
+
+  function toggleNote(id: string) {
+    setExpandedNotes((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const dept = DEPARTMENTS.find((d) => d.slug === department);
   const isLive = shoot.isPublished && !!shoot.projectTitle;
@@ -132,27 +143,81 @@ export function Hero() {
             <MealAlarmBlock mealTime={shoot.mealTime} />
           </div>
 
-          {/* Notes FDS du département */}
+          {/* Notes FDS du département — accordion + filtre */}
           {(() => {
-            const relevantNotes = shoot.deptNotes.filter((n) => matchesDept(n, department));
-            if (relevantNotes.length === 0) return null;
+            if (shoot.deptNotes.length === 0) return null;
+            const visibleNotes = notesFilter === "mine"
+              ? shoot.deptNotes.filter((n) => matchesDept(n, department))
+              : shoot.deptNotes.filter((n) => matchesDept(n, notesFilter));
+            const deptsWithNotes = DEPARTMENTS.filter((d) =>
+              shoot.deptNotes.some((n) => matchesDept(n, d.slug))
+            );
             return (
-              <div className="glass-card rounded-app p-3 space-y-2">
-                <p className="text-[9px] font-semibold uppercase tracking-widest text-muted">
-                  Notes FDS — {department === "production" ? "tous depts" : "votre section"}
-                </p>
-                {relevantNotes.map((n) => (
-                  <div key={n.id} className="flex items-start gap-2">
-                    {n.priority === "critical" ? (
-                      <AlertCircle size={12} className="text-danger shrink-0 mt-0.5" />
-                    ) : n.priority === "warning" ? (
-                      <AlertTriangle size={12} className="text-warning shrink-0 mt-0.5" />
-                    ) : (
-                      <Info size={12} className="text-info shrink-0 mt-0.5" />
-                    )}
-                    <p className="text-xs text-textSoft leading-snug">{n.content}</p>
+              <div className="glass-card rounded-app overflow-hidden">
+                <div className="px-3 pt-2.5 pb-1">
+                  <p className="text-[9px] font-semibold uppercase tracking-widest text-muted mb-2">
+                    Notes FDS · {visibleNotes.length}
+                  </p>
+                  {/* Filter chips — scrollable */}
+                  <div className="overflow-x-auto -mx-3 px-3">
+                    <div className="flex gap-1.5 flex-nowrap pb-1.5">
+                      <button
+                        onClick={() => setNotesFilter("mine")}
+                        className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors ${
+                          notesFilter === "mine" ? "bg-cyanSoft text-cyan" : "bg-white/5 text-muted"
+                        }`}
+                      >
+                        Ma section
+                      </button>
+                      {deptsWithNotes.map((d) => (
+                        <button
+                          key={d.slug}
+                          onClick={() => setNotesFilter(d.slug)}
+                          className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors ${
+                            notesFilter === d.slug ? "bg-cyanSoft text-cyan" : "bg-white/5 text-muted"
+                          }`}
+                        >
+                          {d.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                </div>
+                <div className="divide-y divide-stroke/30">
+                  {visibleNotes.length === 0 && (
+                    <p className="px-3 py-3 text-xs text-muted">Aucune note pour votre section.</p>
+                  )}
+                  {visibleNotes.map((n) => {
+                    const isOpen = expandedNotes.has(n.id);
+                    const PriorityIcon = n.priority === "critical"
+                      ? <AlertCircle size={12} className="text-danger shrink-0 mt-0.5" />
+                      : n.priority === "warning"
+                      ? <AlertTriangle size={12} className="text-warning shrink-0 mt-0.5" />
+                      : <Info size={12} className="text-info shrink-0 mt-0.5" />;
+                    return (
+                      <button
+                        key={n.id}
+                        onClick={() => toggleNote(n.id)}
+                        className="w-full text-left px-3 py-2.5 flex items-start gap-2 active:bg-white/5 transition-colors"
+                      >
+                        {PriorityIcon}
+                        <div className="flex-1 min-w-0">
+                          {n.department && (
+                            <span className="text-[10px] font-semibold text-muted uppercase tracking-wide mr-1">
+                              {n.department} —
+                            </span>
+                          )}
+                          <span className={`text-xs text-textSoft leading-snug ${isOpen ? "" : "line-clamp-1"}`}>
+                            {n.content}
+                          </span>
+                        </div>
+                        {isOpen
+                          ? <ChevronUp size={12} className="text-muted shrink-0 mt-0.5" />
+                          : <ChevronDown size={12} className="text-muted shrink-0 mt-0.5" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             );
           })()}
