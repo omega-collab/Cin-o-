@@ -20,6 +20,8 @@ export const MOCK_SHOOT: FullShoot = {
       label: "Séq. 802 – Découverte du corps de Théo",
       location: "EXT. PLAGE CORPS DE GARDE – MATIN",
       cast: ["Mélissa", "Gaëlle", "Tahina"],
+      script:
+        "Aube grise sur la plage. Le vent soulève le sable. Mélissa marche d'un pas lent vers la silhouette allongée près du brise-lames.\n\nGaëlle la suit, talkie en main. Tahina cadre la scène à distance.\n\nMÉLISSA (à voix basse) : « C'est lui. C'est bien Théo. »\n\nGros plan sur le visage de Mélissa, le regard fixe. Travelling arrière qui révèle l'étendue de la plage déserte. Mouettes en fond sonore.",
     },
     {
       id: "s2",
@@ -27,6 +29,8 @@ export const MOCK_SHOOT: FullShoot = {
       label: "Séq. 808 – Fouille de la cabane du pêcheur",
       location: "EXT. CABANE PÊCHEUR – MATIN",
       cast: ["Mélissa", "Gaëlle"],
+      script:
+        "Mélissa et Gaëlle forcent la porte de la cabane. Intérieur sombre, odeur de poisson séché.\n\nElles ouvrent placards et tiroirs. Mélissa découvre un portefeuille avec une carte de club et des clés.\n\nGAËLLE : « Théo venait ici régulièrement, on dirait. »\nMÉLISSA : « Et il avait quelque chose à cacher. »\n\nCaméra épaule, lumière naturelle filtrant par les interstices des planches. Plan rapproché sur les objets découverts.",
     },
     {
       id: "s3",
@@ -34,6 +38,8 @@ export const MOCK_SHOOT: FullShoot = {
       label: "Séq. 815 – Discussion avec l'oncle de Théo",
       location: "EXT. TERRASSE – APRÈS-MIDI",
       cast: ["Mélissa", "Oncle Théo"],
+      script:
+        "Terrasse face à la mer. Paul Magnon, l'oncle de Théo, est assis face à Mélissa. Il fume lentement, le regard perdu sur l'horizon.\n\nMÉLISSA : « Quand l'avez-vous vu pour la dernière fois ? »\nPAUL : « Dimanche soir. Il devait passer me prendre lundi matin. Il n'est jamais venu. »\n\nLong silence. Paul écrase sa cigarette.\n\nPAUL (presque pour lui-même) : « Je lui avais dit de ne plus traîner avec ces gens-là. »\n\nPlan large sur la terrasse, puis gros plan sur les mains tremblantes de Paul. La caméra reste fixe pour laisser respirer le moment.",
     },
     {
       id: "s4",
@@ -41,6 +47,8 @@ export const MOCK_SHOOT: FullShoot = {
       label: "Séq. 816 – Mélissa part, Gaëlle reste",
       location: "EXT. PARKING PLAGE – APRÈS-MIDI",
       cast: ["Mélissa", "Gaëlle"],
+      script:
+        "Parking de la plage. Mélissa monte dans la voiture de service. Gaëlle reste appuyée contre une autre voiture, talkie à la main.\n\nMÉLISSA : « Tu m'appelles dès que tu as quelque chose sur la carte de club. »\nGAËLLE : « Compris. Roule prudemment. »\n\nMélissa démarre. Plan en contre-plongée sur Gaëlle qui regarde la voiture s'éloigner, puis sort un téléphone et compose un numéro.",
     },
     {
       id: "s5",
@@ -48,6 +56,8 @@ export const MOCK_SHOOT: FullShoot = {
       label: "Séq. 801DR – Plan drone",
       location: "EXT. VUE AÉRIENNE PLAGE – SOIR",
       notes: "Drone 16h00–17h30",
+      script:
+        "Vue aérienne au drone. La plage de Corps de Garde dans la lumière dorée du couchant.\n\nLe drone s'élève progressivement, révélant l'ensemble du décor : la cabane isolée, le parking, la silhouette des enquêteurs minuscule sur le sable.\n\nMouvement circulaire lent, puis arrêt suspendu au-dessus de la baie. Pas de dialogue. Musique d'ambiance à l'image.",
     },
   ],
   cast: [
