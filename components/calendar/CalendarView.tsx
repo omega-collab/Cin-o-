@@ -112,14 +112,12 @@ function DayColumn({
   );
 }
 
-function ProductionDayCard({ day, department }: { day: ProductionDay; department: string | null }) {
+function ProductionDayCard({ day }: { day: ProductionDay }) {
+  const [expanded, setExpanded] = useState(false);
   const s = STATUS_CONFIG[day.status];
   const p = PERIOD_CONFIG[day.period];
   const endDisplay = day.endTime && day.endTime !== "00:00" ? day.endTime : null;
-
-  const showScenes = !department || ["camera", "machino", "son", "regie", "direction", "production"].includes(department);
-  const showSets   = !department || ["camera", "machino", "deco", "electro", "regie", "production"].includes(department);
-  const showMeal   = true;
+  const hasDetails = !!(day.sets || day.scenes.length > 0 || day.mealTime || day.interior);
 
   return (
     <div className="glass-card rounded-app overflow-hidden border border-stroke/50">
@@ -141,62 +139,69 @@ function ProductionDayCard({ day, department }: { day: ProductionDay; department
           <span className="text-xs text-textSoft">{day.location}</span>
         </div>
 
-        {/* Row 3: sets (décors détaillés) */}
-        {showSets && day.sets && (
-          <div className="text-xs text-muted leading-snug line-clamp-2">
-            {day.sets}
-          </div>
-        )}
-
-        {/* Row 4: effects badges */}
-        {(day.effects || day.interior) && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {day.effects && (
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide ${p.bg} ${p.color}`}>
-                {day.effects}
-              </span>
-            )}
-            {day.interior && (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-muted tracking-wide">
-                {day.interior}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Row 5: scenes (numéros de séquences) */}
-        {showScenes && day.scenes.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap">
-            <Film size={11} className="text-muted shrink-0" />
-            {day.scenes.slice(0, 12).map((scene) => (
-              <span key={scene} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-muted font-mono">
-                {scene}
-              </span>
-            ))}
-            {day.scenes.length > 12 && (
-              <span className="text-[10px] text-muted">+{day.scenes.length - 12}</span>
-            )}
-          </div>
-        )}
-
-        {/* Row 6: times + meal */}
-        <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
+        {/* Row 3: horaires + effets (toujours visible) */}
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-mono font-semibold text-textSoft">
             {day.startTime}{endDisplay ? ` — ${endDisplay}` : ""}
           </span>
-          <div className="flex items-center gap-2">
-            {showMeal && day.mealTime && (
-              <span className="text-[10px] text-muted font-medium">
-                Repas {day.mealTime}
-              </span>
+          {day.effects ? (
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide ${p.bg} ${p.color}`}>
+              {day.effects}
+            </span>
+          ) : (
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide ${p.bg} ${p.color}`}>
+              {p.label}
+            </span>
+          )}
+        </div>
+
+        {/* Détails dépliables */}
+        {expanded && (
+          <div className="space-y-2.5 pt-1 border-t border-stroke/30">
+            {/* Décors */}
+            {day.sets && (
+              <div className="text-xs text-muted leading-snug">
+                {day.sets}
+              </div>
             )}
-            {!day.effects && (
-              <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wide ${p.bg} ${p.color}`}>
-                {p.label}
-              </span>
+
+            {/* INT/EXT + Repas */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {day.interior && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-muted tracking-wide">
+                  {day.interior}
+                </span>
+              )}
+              {day.mealTime && (
+                <span className="text-[10px] text-muted font-medium">
+                  Repas {day.mealTime}
+                </span>
+              )}
+            </div>
+
+            {/* Séquences */}
+            {day.scenes.length > 0 && (
+              <div className="flex items-center gap-1 flex-wrap">
+                <Film size={11} className="text-muted shrink-0" />
+                {day.scenes.map((scene) => (
+                  <span key={scene} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-muted font-mono">
+                    {scene}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
-        </div>
+        )}
+
+        {/* Voir plus / Voir moins */}
+        {hasDetails && (
+          <button
+            onClick={() => setExpanded((o) => !o)}
+            className="text-[10px] font-semibold text-cyan active:opacity-70 transition-opacity"
+          >
+            {expanded ? "Voir moins ▲" : "Voir plus ▼"}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -449,7 +454,7 @@ export function CalendarView() {
             </p>
           </div>
         ) : (
-          visibleDays.map((day) => <ProductionDayCard key={day.id} day={day} department={effectiveDept} />)
+          visibleDays.map((day) => <ProductionDayCard key={day.id} day={day} />)
         )}
       </div>
     </div>
