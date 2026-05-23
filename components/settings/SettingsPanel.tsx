@@ -8,8 +8,7 @@ import { useProjectStore } from "@/lib/store/useProjectStore";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { DEPT_ICONS } from "@/lib/data/departmentIcons";
 import { ProfileModal } from "@/components/profile/ProfileModal";
-
-const APP_VERSION = "0.2.0";
+import { version as APP_VERSION } from "@/package.json";
 
 function Row({
   icon,
