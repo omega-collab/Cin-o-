@@ -145,6 +145,7 @@ export const useShootStore = create<ShootStore>()(
       clearDocs: () =>
         set((s) => ({
           shoot: { ...s.shoot, uploadedDocs: [], extractionStatus: "idle", extractionError: undefined },
+          pendingExtraction: null,
         })),
 
       setExtractionStatus: (status, error) =>
@@ -158,6 +159,10 @@ export const useShootStore = create<ShootStore>()(
         const { shoot, pendingExtraction } = get();
         if (!pendingExtraction) return;
         const updated = applyExtraction(shoot, pendingExtraction);
+        // Keep `pendingExtraction` around after applying so the review screen
+        // can still surface confidence badges next to each field. It is
+        // cleared on publish (see AdminPublishPanel) or when the user starts
+        // a new upload (clearDocs).
         set({
           shoot: {
             ...updated,
@@ -167,7 +172,6 @@ export const useShootStore = create<ShootStore>()(
               makeAudit("Extraction appliquée", "upload", `${shoot.uploadedDocs.length} document(s)`),
             ],
           },
-          pendingExtraction: null,
         });
       },
 
@@ -244,6 +248,8 @@ export const useShootStore = create<ShootStore>()(
             isPublished: true,
             auditLog: [...s.shoot.auditLog, makeAudit("Feuille publiée", "publish")],
           },
+          // Extraction flow done — drop the confidence metadata
+          pendingExtraction: null,
         })),
 
       unpublish: () =>

@@ -8,6 +8,7 @@ import { AVATARS } from "@/lib/data/avatars";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import { supabase } from "@/lib/supabase/client";
+import { useEscapeClose } from "@/lib/hooks/useEscapeClose";
 import { DeptIcon } from "@/components/ui/DeptIcon";
 import { AvatarDisplay } from "@/components/ui/AvatarDisplay";
 import type { DepartmentSlug } from "@/lib/types";
@@ -19,6 +20,7 @@ type Step = "code" | "dept" | "role" | "avatar" | "done";
 export function ProfileModal({ onClose }: { onClose: () => void }) {
   const { department: currentDept, role: currentRole, avatarId, setProfile, setAvatar } = useUserStore();
   const user = useProjectStore((s) => s.user);
+  useEscapeClose(onClose);
 
   const [step, setStep] = useState<Step>("code");
   const [code, setCode] = useState("");

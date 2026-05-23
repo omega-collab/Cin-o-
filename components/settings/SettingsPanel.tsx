@@ -5,6 +5,7 @@ import { X, Moon, Sun, Type, Globe, User, Info, ChevronRight, Image as ImageIcon
 import { useSettingsStore, type Theme, type FontSize, type Lang, type LoginBg, LOGIN_BG_COUNT } from "@/lib/store/useSettingsStore";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useProjectStore } from "@/lib/store/useProjectStore";
+import { useEscapeClose } from "@/lib/hooks/useEscapeClose";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { DEPT_ICONS } from "@/lib/data/departmentIcons";
 import { ProfileModal } from "@/components/profile/ProfileModal";
@@ -83,6 +84,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { department, role } = useUserStore();
   const { setActiveProject } = useProjectStore();
   const [showProfile, setShowProfile] = useState(false);
+  // Only catch Escape on the panel itself — ProfileModal manages its own listener
+  useEscapeClose(showProfile ? null : onClose);
 
   const dept = DEPARTMENTS.find((d) => d.slug === department);
 

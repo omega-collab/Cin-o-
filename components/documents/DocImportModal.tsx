@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, FolderOpen } from "lucide-react";
 import { DOC_CATEGORIES, extToType } from "@/lib/data/documents";
+import { useEscapeClose } from "@/lib/hooks/useEscapeClose";
 import type { DocCategory, DocEntry } from "@/lib/data/documents";
 
 const INPUT = "w-full bg-white/5 border border-stroke rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan/40 placeholder:text-muted";
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function DocImportModal({ onClose, onSave }: Props) {
+  useEscapeClose(onClose);
   const [label,       setLabel]       = useState("");
   const [filename,    setFilename]    = useState("");
   const [category,    setCategory]    = useState<DocCategory>("planning");

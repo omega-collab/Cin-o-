@@ -1,6 +1,7 @@
 import type { FraisEntry } from "@/lib/supabase/types";
 import type { MatriceData } from "@/lib/types/matrice";
 import { escHtml } from "@/lib/utils";
+import { PRODUCTION } from "@/lib/data/production";
 
 export function printReleve(
   entries: FraisEntry[],
@@ -40,8 +41,8 @@ export function printReleve(
     .note{color:#c00;font-size:9px;margin-top:12px;font-style:italic}
     @media print{@page{margin:12mm}}
   </style></head><body>
-  <div class="company">FEDERATION STUDIO France — 10 rue Royale 75008 Paris — SIRET 922 429 097 00012</div>
-  <h2>NOTE DE FRAIS — Films « Tropiques Criminels » Saison 8</h2>
+  <div class="company">${escHtml(PRODUCTION.company)} — ${escHtml(PRODUCTION.address)} — SIRET ${escHtml(PRODUCTION.siret)}</div>
+  <h2>NOTE DE FRAIS — ${escHtml(PRODUCTION.title)}</h2>
   <div class="meta">
     <div>N° : <strong>${escHtml(data.numero ?? "")}</strong> &nbsp; Date : <strong>${escHtml(data.dateReleve ?? "")}</strong></div>
     <div>Région : <strong>${escHtml(data.regionGlobale ?? "")}</strong></div>
@@ -63,7 +64,7 @@ export function printReleve(
     <div>Visa chef département<br><br>&nbsp;</div>
     <div>Direction de production<br><br>&nbsp;</div>
   </div>
-  <p class="note">Envoyer par email à Administration : lydia.bareille@orange.fr avec les justificatifs numérotés. Remboursement par virement après validation.</p>
+  <p class="note">Envoyer par email à Administration : ${escHtml(PRODUCTION.adminEmail)} avec les justificatifs numérotés. Remboursement par virement après validation.</p>
   </body></html>`);
   win.document.close();
   win.print();

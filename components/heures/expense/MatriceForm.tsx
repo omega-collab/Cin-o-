@@ -8,6 +8,7 @@ import { useFraisEntries } from "@/lib/hooks/useFraisEntries";
 import type { FraisEntry, FraisEntryInsert } from "@/lib/supabase/types";
 import type { DepartmentSlug } from "@/lib/types";
 import { MATRICE_DEPTS } from "@/lib/types/matrice";
+import { PRODUCTION } from "@/lib/data/production";
 import { MatriceEntryCard } from "./MatriceEntryCard";
 import { printReleve } from "@/lib/utils/matricePdf";
 
@@ -151,10 +152,10 @@ export function MatriceForm() {
       <div className="glass-card rounded-2xl p-4 space-y-3">
         <div>
           <p className="text-[10px] text-muted font-semibold uppercase tracking-widest mb-1">Production</p>
-          <p className="text-xs text-white font-medium">Films « Tropiques Criminels » Saison 8</p>
-          <p className="text-xs text-muted">FEDERATION STUDIO France · SIRET 922 429 097 00012</p>
+          <p className="text-xs text-white font-medium">{PRODUCTION.title}</p>
+          <p className="text-xs text-muted">{PRODUCTION.company} · SIRET {PRODUCTION.siret}</p>
           <p className="text-xs text-muted mt-0.5">
-            Envoi à : <span className="text-cyan">lydia.bareille@orange.fr</span>
+            Envoi à : <span className="text-cyan">{PRODUCTION.adminEmail}</span>
           </p>
         </div>
         <a

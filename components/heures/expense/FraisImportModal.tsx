@@ -5,6 +5,7 @@ import {
   X, Camera, Loader2, AlertCircle, AlertTriangle, ReceiptText,
   ChevronLeft, Check, Car,
 } from "lucide-react";
+import { useEscapeClose } from "@/lib/hooks/useEscapeClose";
 
 // ── types ─────────────────────────────────────────────────────────────────────
 
@@ -81,6 +82,8 @@ export function FraisImportModal({ onClose, onConfirm }: Props) {
   const [plaqueManuelle, setPlaqueManuelle] = useState("");
   const [plaqueIgnored, setPlaqueIgnored] = useState(false);
   const ticketRef = useRef<HTMLInputElement>(null);
+  // Don't close mid-OCR (would leave a hanging request and a confused user).
+  useEscapeClose(step === "processing" ? null : onClose);
 
   const naturesVehicule = ["Carburant", "Péage", "Transport"];
   const needsPlaque = naturesVehicule.includes(extracted.nature ?? "");
