@@ -54,11 +54,20 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
     setTimeout(onClose, 1200);
   }
 
-  async function handleAvatarOnly(id: string) {
+  async function handleAvatarSelect(id: string) {
+    setSelectedAvatar(id);
+    if (!selectedDept || !selectedRole) return;
+    setProfile(selectedDept, selectedRole);
     setAvatar(id);
     if (user) {
-      await supabase.from("profiles").update({ avatar_id: id }).eq("id", user.id);
+      supabase
+        .from("profiles")
+        .update({ department: selectedDept, role: selectedRole, avatar_id: id })
+        .eq("id", user.id)
+        .then(() => {});
     }
+    setStep("done");
+    setTimeout(onClose, 1200);
   }
 
   return (
@@ -197,7 +206,7 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
                 return (
                   <button
                     key={av.id}
-                    onClick={() => setSelectedAvatar(av.id)}
+                    onClick={() => void handleAvatarSelect(av.id)}
                     className="flex flex-col items-center gap-1.5 transition-all"
                   >
                     <span
@@ -215,13 +224,7 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
                 );
               })}
             </div>
-            <button
-              disabled={!selectedRole}
-              onClick={handleConfirm}
-              className="active-pill w-full py-3 rounded-2xl font-semibold text-sm disabled:opacity-30"
-            >
-              Confirmer
-            </button>
+            <p className="text-center text-[11px] text-muted">Appuie sur un avatar pour confirmer</p>
           </>
         )}
 
