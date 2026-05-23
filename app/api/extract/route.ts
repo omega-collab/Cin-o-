@@ -65,7 +65,8 @@ Pour chaque séquence/scène de la journée :
 • label : numéro + titre de scène (ex: "Séq. 815 — L'oncle de Théo parle")
 • location : type + décor + moment (ex: "INT. CABANE PÊCHEUR — JOUR")
 • cast : liste des personnages ou comédiens présents dans cette scène (noms exacts)
-• notes : infos spéciales pour cette séquence (cascades, effets spéciaux, drone, pyrotechnie, confidentialité, etc.)
+• notes : CONTRAINTES TECHNIQUES uniquement — cascades, effets spéciaux, drone, pyrotechnie, confidentialité, matériel requis, contraintes plateau. Ne PAS y mettre le texte narratif.
+• script : TEXTE NARRATIF de la scène depuis le JOUR-À-JOUR — paragraphes complets décrivant l'action de la scène, la mise en scène, les dialogues clés. Plusieurs paragraphes possibles séparés par \n\n. Inclus tout ce qui est dit dans le jour-à-jour pour CETTE séquence (par numéro de scène commun). Si la séquence n'apparaît pas dans le jour-à-jour ou s'il n'y a pas de document jour-à-jour fourni, omets le champ.
 
 ▌CASTING GLOBAL
 • cast[] : comédiens convoqués dans la journée, avec :
@@ -157,7 +158,8 @@ Omets les champs introuvables plutôt que de les inventer.
         "label": "string — ex: Séq. 815 – L'oncle de Théo parle",
         "location": "string — INT./EXT. DÉCOR – MOMENT DE LA JOURNÉE",
         "cast": ["string — nom du personnage ou comédien"],
-        "notes": "string — spécificités techniques, effets, contraintes (optionnel)"
+        "notes": "string — contraintes techniques uniquement (optionnel)",
+        "script": "string — texte narratif extrait du jour-à-jour (optionnel, paragraphes séparés par \\n\\n)"
       }
     ],
     "confidence": "high|medium|low"
@@ -269,7 +271,9 @@ export async function POST(req: NextRequest) {
         },
       ],
       responseFormat: { type: "json_object" },
-      maxTokens: 8192,
+      // Bumped to accommodate the new `script` field which can contain
+      // multi-paragraph narrative text per sequence.
+      maxTokens: 16384,
       temperature: 0,
     });
 
