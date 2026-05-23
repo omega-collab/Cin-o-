@@ -54,6 +54,7 @@ RÈGLES STRICTES :
 - sequences : tableau de chaînes — chaque numéro de scène du jour. "304", "301B", "≠" (changement décor) → inclure les numéros uniquement, exclure les "≠".
 - summary : si des notes supplémentaires existent (H.Supp, remarques), les mettre ici.
 - Inclure TOUS les jours du PDT, même les jours REPOS (effects: "REPOS", sequences: []).
+- CRITIQUE : le PDT est souvent un document de plusieurs pages avec 40 à 60 colonnes-jours. Tu DOIS traiter chaque colonne de chaque page sans en omettre aucune.
 - Ne jamais inventer de données.`;
 
 export async function POST(req: NextRequest) {
@@ -101,6 +102,8 @@ export async function POST(req: NextRequest) {
         { role: "user", content: `Voici le contenu OCR du Plan de Travail à analyser :\n\n${text}` },
       ],
       responseFormat: { type: "json_object" },
+      maxTokens: 16384,
+      temperature: 0,
     });
 
     const raw = (chatResponse.choices?.[0]?.message?.content ?? "").toString().trim();

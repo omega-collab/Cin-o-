@@ -89,15 +89,17 @@ export function Hero() {
   return (
     <div className="space-y-3">
       {/* Dept badge + Live Timecode */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         {dept ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full min-w-0 overflow-hidden"
             style={{ background: "rgba(0,224,208,0.08)", border: "1px solid rgba(0,224,208,0.18)" }}>
-            <DeptIcon slug={dept.slug} className="w-3.5 h-3.5" style={{ color: "#00E0D0" }} />
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#00E0D0" }}>
+            <DeptIcon slug={dept.slug} className="w-3.5 h-3.5 shrink-0" style={{ color: "#00E0D0" }} />
+            <span className="text-[10px] font-bold uppercase tracking-widest shrink-0" style={{ color: "#00E0D0" }}>
               {dept.name}
             </span>
-            {role && <span className="text-[10px]" style={{ color: "#6b7a8d" }}>· {role}</span>}
+            {role && (
+              <span className="text-[10px] truncate" style={{ color: "#6b7a8d" }}>· {role}</span>
+            )}
           </span>
         ) : <div />}
         <LiveTimecode />
