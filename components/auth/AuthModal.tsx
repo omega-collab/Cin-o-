@@ -217,19 +217,31 @@ export function AuthModal() {
         {/* Clap + marque centrés */}
         <div className="relative flex-1 flex flex-col items-center justify-center"
           style={{ paddingBottom: "20vh", paddingTop: "6vh" }}>
+          {/* Cinema spotlight glow */}
+          <div aria-hidden="true" style={{
+            position: "absolute",
+            bottom: "22vh",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 320,
+            height: 160,
+            background: "radial-gradient(ellipse at center, rgba(0,224,208,0.09) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }} />
+
           <div style={{ width: "56%", maxWidth: 210, marginBottom: 30 }}>
             <ClapperSVG />
           </div>
 
           <h1 className="inline-flex items-center justify-center text-white leading-none"
-            style={{ fontSize: 50, fontWeight: 800, letterSpacing: "-0.025em" }}>
-            Ciné<LensO size={62} />
+            style={{ fontSize: 52, fontWeight: 800, letterSpacing: "-0.025em" }}>
+            Ciné<LensO size={64} />
           </h1>
-          <p style={{ color: "#C9D2E3", fontSize: 14, marginTop: 10, textAlign: "center" }}>
+          <p style={{ color: "#C9D2E3", fontSize: 14, marginTop: 12, textAlign: "center" }}>
             Feuille de service collaborative
           </p>
-          <p style={{ color: "#00E0D0", fontSize: 12, fontWeight: 500, marginTop: 5, textAlign: "center" }}>
-            Conçu pour les équipes cinéma &amp; TV
+          <p style={{ color: "#00E0D0", fontSize: 11, fontWeight: 600, marginTop: 6, textAlign: "center", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            Équipes cinéma &amp; TV
           </p>
         </div>
 
@@ -338,11 +350,11 @@ export function AuthModal() {
       {/* Formulaire */}
       <div className="relative flex-1 flex flex-col justify-end px-5 pb-4" style={{ paddingTop: 8 }}>
         <div className="rounded-[28px] p-6" style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          background: "rgba(255,255,255,0.05)",
+          border: "1px solid rgba(255,255,255,0.09)",
           backdropFilter: "blur(32px)",
           WebkitBackdropFilter: "blur(32px)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.55)",
+          boxShadow: "inset 0 1px 0 rgba(0,224,208,0.12), 0 24px 64px rgba(0,0,0,0.60)",
         }}>
           <h2 className="text-white font-bold mb-5" style={{ fontSize: 22 }}>
             {screen === "login" ? "Connexion" : "Créer un compte"}

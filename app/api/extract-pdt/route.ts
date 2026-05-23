@@ -6,39 +6,55 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const PDT_PROMPT = `Tu es un assistant expert en production cinématographique française.
-Tu reçois le contenu OCR d'un Plan de Travail (PDT) ou d'un planning de tournage français.
+Tu reçois le contenu OCR d'un Plan de Travail (PDT) de tournage français.
 
-Ces documents se présentent souvent sous forme de tableau avec des colonnes :
-- Numéro de jour de tournage (JOUR TOURN, J., n°, etc.)
-- Date (JJ/MM/AAAA ou JJ/MM ou LUNDI 10 JUIN…)
-- Lieu(x) / Décor(s)
-- Horaires prévisionnels, Convocation (HH:MM ou HhMM)
-- Heure de repas, Notes
+STRUCTURE DU DOCUMENT :
+Le PDT est un tableau orienté colonnes — chaque COLONNE représente un jour de tournage.
+Les LIGNES (labels en marge gauche) sont des champs fixes pour chaque jour :
+- JOUR TOURN. / J. → numéro du jour de tournage
+- DATE → date du tournage
+- ÉPHÉMÉRIDES → lever/coucher du soleil (optionnel)
+- LIEUX → lieu principal (zone géographique)
+- HORAIRES PRÉVISIONNELLES / HORAIRES → plage horaire "8H00-17H00"
+- REPAS → heure du repas "12H00"
+- EFFETS → ligne 1 : ambiance lumière (JOUR, NUIT, JOUR/SOIR, JOUR/CREP, AUBE/JOUR, JOUR/NUIT)
+- EFFETS → ligne 2 : décor (EXT, INT, INT/EXT, EXT/INT)
+- DÉCORS → description détaillée du décor (souvent texte vertical dans le PDF, OCR peut le donner horizontal)
+- SÉQUENCES → numéros de scènes tournées ce jour (liste de nombres)
 
-Ton objectif : extraire CHAQUE ligne du tableau comme un objet "day".
+EXEMPLE d'extraction pour une colonne "J.1 — 4-juin" :
+{
+  "shootingDay": 1,
+  "date": "2026-06-04",
+  "location": "LA POTERIE",
+  "callTime": "08:00",
+  "wrapTime": "17:00",
+  "mealTime": "12:00",
+  "effects": "JOUR",
+  "interior": "EXT",
+  "sets": "MAISON MIGUEL MAJOR / TERRAIN BOISÉ / FORÊT-CHEMIN",
+  "sequences": ["304", "305", "306", "307", "308", "309"]
+}
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après :
 {
-  "days": [
-    {
-      "date": "YYYY-MM-DD",
-      "shootingDay": 1,
-      "location": "Nom du lieu",
-      "callTime": "08:00",
-      "summary": "Repas 12h30 — INT. BUREAU"
-    }
-  ]
+  "days": [ { ...un objet par colonne jour... } ]
 }
 
-Règles strictes :
-- date : toujours YYYY-MM-DD. "10/06/2024" → "2024-06-10". "LUNDI 10 JUIN" → "2026-06-10". Si année absente, utilise 2026.
-- shootingDay : numéro entier (ex: "J.5", "05", "JOUR 5" → 5). Si non numéroté, déduis-le de l'ordre.
-- location : lieu principal. Plusieurs lieux → séparés par " / ".
-- callTime : heure de début au format HH:MM sur 24h. "8H00"→"08:00", "07h30"→"07:30", "7H"→"07:00". Si absent, omets.
-- summary : heure de repas + notes utiles. Ex: "Repas 12h30 — Décor INT BUREAU — EXT JARDIN".
-- Inclure TOUS les jours, même REPOS ou jours sans tournage (summary: "Repos").
-- Si le document contient plusieurs productions ou semaines, extraire tous les jours.
-- Ne jamais inventer de données absentes du document.`;
+RÈGLES STRICTES :
+- date : YYYY-MM-DD. "4-juin" ou "4 juin" → "2026-06-04". "10/06/2024" → "2024-06-10". Année absente → 2026.
+- shootingDay : entier. "J.5", "05", "JOUR 5" → 5.
+- location : zone géographique principale (LIEUX). Plusieurs zones → "ZONE1 / ZONE2".
+- callTime : première heure dans HORAIRES. "8H00-17H00" → "08:00". "14H00-23H00" → "14:00". Format HH:MM 24h.
+- wrapTime : deuxième heure dans HORAIRES. "8H00-17H00" → "17:00". "14H00-23H00" → "23:00".
+- mealTime : heure de REPAS au format HH:MM. "12H00" → "12:00", "18H00" → "18:00".
+- effects : valeur de la ligne EFFETS ambiance. Exemples : "JOUR", "NUIT", "JOUR/SOIR", "JOUR/CREP", "AUBE/JOUR", "JOUR/NUIT".
+- interior : valeur de la ligne EFFETS décor. Exemples : "EXT", "INT", "INT/EXT", "EXT/INT".
+- sets : texte DÉCORS du jour (peut être long, garder complet). Si le texte est coupé ou mélangé par l'OCR, reconstitue le mieux possible.
+- sequences : tableau de chaînes — chaque numéro de scène du jour. "304", "301B", "≠" (changement décor) → inclure les numéros uniquement, exclure les "≠".
+- summary : si des notes supplémentaires existent (H.Supp, remarques), les mettre ici.
+- Inclure TOUS les jours du PDT, même les jours REPOS (effects: "REPOS", sequences: []).
+- Ne jamais inventer de données.`;
 
 export async function POST(req: NextRequest) {
   try {
