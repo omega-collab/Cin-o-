@@ -36,3 +36,9 @@ next-env.d.ts
 # claude-flow tooling artifacts
 .claude-flow/
 **/.claude-flow/
+
+# Ruflo runtime databases (mémoire locale, non versionnée)
+.swarm/
+ruvector.db
+ruvector.db-shm
+ruvector.db-wal
