@@ -66,6 +66,9 @@ interface ShootStore {
   addDoc: (doc: UploadedDoc) => void;
   removeDoc: (id: string) => void;
   clearDocs: () => void;
+  // Attach OCR text to an existing uploaded doc (after the first OCR pass)
+  // so it can be reused for targeted re-extraction without re-OCR-ing.
+  setDocOcrText: (id: string, ocrText: string) => void;
 
   // Extraction
   setExtractionStatus: (status: FullShoot["extractionStatus"], error?: string) => void;
@@ -75,6 +78,10 @@ interface ShootStore {
   // Manual edits
   updateField: (patch: Partial<Omit<FullShoot, "sequences" | "cast" | "deptNotes" | "places" | "alerts" | "nextDays" | "auditLog" | "uploadedDocs">>) => void;
   setSequences: (seqs: ShootSequence[]) => void;
+  // Merge incoming { id, script } pairs into existing sequences. Used by
+  // the "Re-extraire le texte jour-à-jour" admin button so a partial result
+  // (some sequences matched, others not) updates only what changed.
+  patchSequenceScripts: (scripts: { id: string; script: string }[]) => void;
   setCast: (cast: CastMember[]) => void;
   setDeptNotes: (notes: DeptNote[]) => void;
   setPlaces: (places: PlacePoint[]) => void;
@@ -142,6 +149,16 @@ export const useShootStore = create<ShootStore>()(
           },
         })),
 
+      setDocOcrText: (id, ocrText) =>
+        set((s) => ({
+          shoot: {
+            ...s.shoot,
+            uploadedDocs: s.shoot.uploadedDocs.map((d) =>
+              d.id === id ? { ...d, ocrText } : d
+            ),
+          },
+        })),
+
       clearDocs: () =>
         set((s) => ({
           shoot: { ...s.shoot, uploadedDocs: [], extractionStatus: "idle", extractionError: undefined },
@@ -192,6 +209,25 @@ export const useShootStore = create<ShootStore>()(
             auditLog: [...s.shoot.auditLog, makeAudit("Séquences mises à jour", "manual")],
           },
         })),
+
+      patchSequenceScripts: (scripts) =>
+        set((s) => {
+          if (scripts.length === 0) return s;
+          const byId = new Map(scripts.map((x) => [x.id, x.script]));
+          const updated = s.shoot.sequences.map((seq) =>
+            byId.has(seq.id) ? { ...seq, script: byId.get(seq.id) } : seq
+          );
+          return {
+            shoot: {
+              ...s.shoot,
+              sequences: updated,
+              auditLog: [
+                ...s.shoot.auditLog,
+                makeAudit("Texte jour-à-jour extrait", "upload", `${scripts.length} séquence(s)`),
+              ],
+            },
+          };
+        }),
 
       setCast: (cast) =>
         set((s) => ({
@@ -280,7 +316,16 @@ export const useShootStore = create<ShootStore>()(
         pendingExtraction: null,
         shoot: {
           ...state.shoot,
-          uploadedDocs: [],
+          // Drop heavy base64 payloads but preserve the OCR text so the
+          // admin can re-extract the jour-à-jour script after a refresh.
+          uploadedDocs: state.shoot.uploadedDocs.map((d) => ({
+            id: d.id,
+            filename: d.filename,
+            type: d.type,
+            uploadedAt: d.uploadedAt,
+            size: d.size,
+            ocrText: d.ocrText,
+          })),
           auditLog: state.shoot.auditLog.slice(-100),
         },
       }),

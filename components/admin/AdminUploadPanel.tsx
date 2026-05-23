@@ -187,6 +187,9 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
 
           if (ocrJson.text) {
             texts.push({ text: ocrJson.text, filename: doc.filename, type: doc.type });
+            // Cache OCR text on the doc so we can re-extract specific
+            // pieces (e.g. jour-à-jour script) without paying for OCR again.
+            useShootStore.getState().setDocOcrText(doc.id, ocrJson.text);
           } else {
             skippedFiles.push(`${doc.filename} — texte vide après OCR`);
           }

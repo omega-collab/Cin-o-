@@ -6,7 +6,11 @@ export interface ShootSequence {
   label: string;
   location: string;
   cast?: string[];
+  // Notes techniques / contraintes (cascades, drone, effets…)
   notes?: string;
+  // Texte narratif du jour-à-jour : action de la scène, dialogues clés,
+  // mise en scène. Extrait du document "jour_a_jour" uploadé par l'admin.
+  script?: string;
 }
 
 export interface CastMember {
@@ -68,6 +72,10 @@ export interface UploadedDoc {
   size: number;
   base64?: string;
   mediaType?: string;
+  // Stored once after the first OCR pass so we can re-run targeted
+  // extractions (e.g. /api/extract-script on the jour-à-jour) without
+  // paying for OCR again.
+  ocrText?: string;
 }
 
 export interface FullShoot {

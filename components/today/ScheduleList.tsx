@@ -120,17 +120,27 @@ export function ScheduleList() {
                   {hasCast && (
                     <div className="flex items-start gap-2">
                       <Users size={12} className="text-muted shrink-0 mt-0.5" />
-                      <p className="text-xs text-textSoft leading-relaxed">
+                      <p className="text-xs text-textSoft leading-relaxed break-words">
                         {row.cast!.join(" · ")}
                       </p>
                     </div>
                   )}
 
-                  {/* Jour à Jour / script */}
-                  {hasNotes && (
+                  {/* Texte narratif du jour-à-jour */}
+                  {row.script?.trim() && (
                     <div className="flex items-start gap-2">
                       <FileText size={12} className="text-cyan shrink-0 mt-0.5" />
-                      <p className="text-xs text-textSoft leading-relaxed whitespace-pre-line">
+                      <p className="text-xs text-textSoft leading-relaxed whitespace-pre-line break-words">
+                        {row.script}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Notes techniques */}
+                  {hasNotes && (
+                    <div className="flex items-start gap-2">
+                      <FileText size={12} className="text-warning shrink-0 mt-0.5" />
+                      <p className="text-xs text-textSoft leading-relaxed whitespace-pre-line break-words">
                         {row.notes}
                       </p>
                     </div>

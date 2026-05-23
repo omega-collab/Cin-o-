@@ -88,6 +88,7 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
     applyPendingExtraction,
     updateField,
     setSequences,
+    patchSequenceScripts,
     setCast,
     setDeptNotes,
     setPlaces,
@@ -95,6 +96,8 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
   } = useShootStore();
 
   const [applied, setApplied] = useState(false);
+  const [scriptLoading, setScriptLoading] = useState(false);
+  const [scriptMessage, setScriptMessage] = useState<{ kind: "ok" | "error" | "warn"; text: string } | null>(null);
   const appliedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -119,6 +122,54 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
       setApplied(false);
       onApply();
     }, 1200);
+  }
+
+  // Re-extract the narrative text from the cached jour-à-jour OCR. Useful
+  // when the initial extraction missed scenes, or when the admin edits
+  // the sequence list and wants to fetch matching scripts.
+  async function handleExtractScript() {
+    const jourADoc = shoot.uploadedDocs.find((d) => d.type === "jour_a_jour");
+    if (!jourADoc?.ocrText) {
+      setScriptMessage({
+        kind: "warn",
+        text: "Pas de jour-à-jour disponible — importez-en un d'abord dans l'onglet Import.",
+      });
+      return;
+    }
+    if (shoot.sequences.length === 0) {
+      setScriptMessage({ kind: "warn", text: "Aucune séquence à enrichir." });
+      return;
+    }
+
+    setScriptLoading(true);
+    setScriptMessage(null);
+    try {
+      const res = await fetch("/api/extract-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sequences: shoot.sequences.map((s) => ({ id: s.id, label: s.label, time: s.time })),
+          dayToDayText: jourADoc.ocrText,
+        }),
+      });
+      const json = await res.json() as { scripts?: { id: string; script: string }[]; error?: string };
+      if (!res.ok || json.error) throw new Error(json.error ?? `Erreur ${res.status}`);
+      const scripts = json.scripts ?? [];
+      patchSequenceScripts(scripts);
+      setScriptMessage({
+        kind: scripts.length > 0 ? "ok" : "warn",
+        text: scripts.length > 0
+          ? `Texte extrait pour ${scripts.length}/${shoot.sequences.length} séquence(s).`
+          : "Aucune séquence n'a pu être matchée dans le jour-à-jour.",
+      });
+    } catch (err) {
+      setScriptMessage({
+        kind: "error",
+        text: err instanceof Error ? err.message : "Erreur d'extraction",
+      });
+    } finally {
+      setScriptLoading(false);
+    }
   }
 
   function addSeq() {
@@ -305,6 +356,27 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
 
       {/* Sequences — E3: cast[] per sequence editable */}
       <Section title="Déroulé" count={seqs.length}>
+        {/* Re-extract the narrative text from the jour-à-jour for every
+            sequence at once. Available when an OCR'd jour-à-jour exists. */}
+        <div className="space-y-1.5">
+          <button
+            onClick={() => void handleExtractScript()}
+            disabled={scriptLoading}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold bg-cyanSoft text-cyan disabled:opacity-50"
+          >
+            {scriptLoading ? "Extraction en cours…" : "Extraire le texte du jour-à-jour pour toutes les séquences"}
+          </button>
+          {scriptMessage && (
+            <p className={`text-[11px] ${
+              scriptMessage.kind === "ok" ? "text-cyan"
+              : scriptMessage.kind === "error" ? "text-danger"
+              : "text-warning"
+            }`}>
+              {scriptMessage.text}
+            </p>
+          )}
+        </div>
+
         {seqs.map((seq) => (
           <div key={seq.id} className="space-y-2 p-3 bg-white/3 rounded-xl relative">
             <button onClick={() => rmSeq(seq.id)} className="absolute top-2 right-2 text-muted hover:text-danger">
@@ -338,8 +410,21 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
               />
             </div>
             <div>
-              <label className="text-xs text-muted block mb-1">Notes</label>
-              <input value={seq.notes ?? ""} onChange={(e) => patchSeq(seq.id, "notes", e.target.value)} placeholder="Notes de tournage…" className={INPUT} />
+              <label className="text-xs text-muted block mb-1">Notes techniques</label>
+              <input value={seq.notes ?? ""} onChange={(e) => patchSeq(seq.id, "notes", e.target.value)} placeholder="Cascades, drone, effets…" className={INPUT} />
+            </div>
+            <div>
+              <label className="text-xs text-muted block mb-1">
+                Texte du jour-à-jour
+                <span className="ml-1 text-[10px] text-muted/70">— action, dialogues, mise en scène</span>
+              </label>
+              <textarea
+                value={seq.script ?? ""}
+                onChange={(e) => patchSeq(seq.id, "script", e.target.value)}
+                placeholder="Texte narratif de la séquence (extrait du jour-à-jour ou saisi manuellement)…"
+                rows={4}
+                className={INPUT + " resize-y leading-relaxed"}
+              />
             </div>
           </div>
         ))}
