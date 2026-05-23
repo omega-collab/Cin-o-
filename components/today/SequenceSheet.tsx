@@ -170,12 +170,13 @@ export function SequenceSheet({ seq, onClose }: Props) {
               </p>
             </div>
             {myPrivateNotes.map((n) => (
-              <div key={n.id} className="flex items-start gap-1.5 group">
+              <div key={n.id} className="flex items-start gap-1.5">
                 <PriorityIcon p={n.priority} />
                 <p className="text-xs text-textSoft flex-1">{n.content}</p>
                 <button
                   onClick={() => deleteNote(n.id)}
-                  className="opacity-0 group-hover:opacity-100 text-muted hover:text-danger transition-opacity"
+                  className="text-muted hover:text-danger transition-colors p-1 -m-1 shrink-0"
+                  aria-label="Supprimer la note"
                 >
                   <Trash2 size={11} />
                 </button>

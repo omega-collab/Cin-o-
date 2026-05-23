@@ -117,7 +117,7 @@ export function ExpenseBot() {
       )}
 
       {entries.length === 0 && (
-        <p className="text-center text-muted text-sm py-6">Ajoute des dépenses pour que le bot les vérifie.</p>
+        <p className="text-center text-muted text-sm py-6">Ajoutez des dépenses pour que le bot les vérifie.</p>
       )}
     </div>
   );

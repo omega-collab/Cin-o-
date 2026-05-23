@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { X, Pencil, Trash2 } from "lucide-react";
 import type { FraisEntry, FraisEntryInsert } from "@/lib/supabase/types";
 
@@ -19,6 +20,8 @@ export interface EntryCardProps {
 }
 
 export function MatriceEntryCard({ num, entry, isEditing, editPatch, onEditStart, onEditChange, onEditSave, onEditCancel, onDelete }: EntryCardProps) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
   if (isEditing) {
     return (
       <div className="glass-card rounded-2xl p-3 space-y-2 ring-1 ring-cyan/30">
@@ -76,12 +79,29 @@ export function MatriceEntryCard({ num, entry, isEditing, editPatch, onEditStart
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <span className="text-sm font-bold text-white font-mono">{(entry.montant_ttc ?? 0).toFixed(2)} €</span>
-          <button onClick={onEditStart} className="text-muted hover:text-textSoft p-1 transition-colors">
+          <button onClick={onEditStart} className="text-muted hover:text-textSoft p-1 transition-colors" aria-label="Modifier">
             <Pencil className="w-3.5 h-3.5" />
           </button>
-          <button onClick={onDelete} className="text-muted hover:text-danger p-1 transition-colors">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          {confirmDelete ? (
+            <button
+              onClick={onDelete}
+              className="text-[10px] font-semibold text-danger px-1.5 py-0.5 rounded bg-danger/15 border border-danger/30"
+              aria-label="Confirmer la suppression"
+            >
+              Confirmer ?
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setConfirmDelete(true);
+                setTimeout(() => setConfirmDelete(false), 3000);
+              }}
+              className="text-muted hover:text-danger p-1 transition-colors"
+              aria-label="Supprimer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </div>

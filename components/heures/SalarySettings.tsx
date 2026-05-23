@@ -190,7 +190,7 @@ export function SalarySettings() {
                 <div key={row.label} className="flex justify-between">
                   <span className={row.label === role ? "text-cyan font-medium" : "text-muted"}>
                     {row.label}
-                    {row.label === role && <span className="ml-1 text-[9px] uppercase tracking-widest opacity-70">· toi</span>}
+                    {row.label === role && <span className="ml-1 text-[9px] uppercase tracking-widest opacity-70">· vous</span>}
                   </span>
                   <span className={`font-mono ${row.label === role ? "text-cyan" : "text-white"}`}>
                     {row.range}

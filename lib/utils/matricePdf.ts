@@ -1,9 +1,6 @@
 import type { FraisEntry } from "@/lib/supabase/types";
 import type { MatriceData } from "@/lib/types/matrice";
-
-function escHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
+import { escHtml } from "@/lib/utils";
 
 export function printReleve(
   entries: FraisEntry[],

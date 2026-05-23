@@ -23,6 +23,7 @@ function FlagBadge({ flag }: { flag: ExpenseFlag }) {
 
 export function ExpenseCard({ entry }: { entry: ExpenseEntry }) {
   const [expanded, setExpanded] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const deleteEntry = useExpenseStore((s) => s.deleteEntry);
   const cat = getCategoryDef(entry.category);
   const paymentLabel = PAYMENT_METHODS.find((p) => p.value === entry.paymentMethod)?.label ?? entry.paymentMethod;
@@ -86,13 +87,33 @@ export function ExpenseCard({ entry }: { entry: ExpenseEntry }) {
             </div>
           )}
 
-          {/* Delete */}
-          <button
-            onClick={() => deleteEntry(entry.id)}
-            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs text-danger bg-red-500/8 border border-red-500/20"
-          >
-            <Trash2 className="w-3.5 h-3.5" /> Supprimer cette dépense
-          </button>
+          {/* Delete — two-step confirmation */}
+          {confirmDelete ? (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="flex-1 py-2 rounded-xl text-xs text-muted glass-card"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => deleteEntry(entry.id)}
+                className="flex-1 py-2 rounded-xl text-xs font-semibold text-white bg-danger"
+              >
+                Confirmer la suppression
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setConfirmDelete(true);
+                setTimeout(() => setConfirmDelete(false), 5000);
+              }}
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs text-danger bg-red-500/8 border border-red-500/20"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Supprimer cette dépense
+            </button>
+          )}
         </div>
       )}
     </div>

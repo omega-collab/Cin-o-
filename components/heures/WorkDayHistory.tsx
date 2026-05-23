@@ -27,6 +27,7 @@ function DayRow({ day, onDelete, onUpdate, showSalary, tauxHoraire }: {
   const salary = showSalary ? estimateSalary(computed, tauxHoraire, day.convention) : 0;
 
   const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [startTime, setStartTime]   = useState(day.startTime);
   const [endTime, setEndTime]       = useState(day.endTime);
   const [lunchStart, setLunchStart] = useState(day.lunchStart ?? "12:00");
@@ -108,13 +109,26 @@ function DayRow({ day, onDelete, onUpdate, showSalary, tauxHoraire }: {
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
-            <button
-              onClick={() => onDelete(day.id)}
-              className="text-muted hover:text-danger transition-colors"
-              aria-label="Supprimer"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            {confirmDelete ? (
+              <button
+                onClick={() => onDelete(day.id)}
+                className="text-[10px] font-semibold text-danger px-1.5 py-0.5 rounded bg-danger/15 border border-danger/30"
+                aria-label="Confirmer la suppression"
+              >
+                Confirmer ?
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setConfirmDelete(true);
+                  setTimeout(() => setConfirmDelete(false), 3000);
+                }}
+                className="text-muted hover:text-danger transition-colors"
+                aria-label="Supprimer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </div>

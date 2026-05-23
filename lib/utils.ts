@@ -36,3 +36,14 @@ export function extractMsg(err: unknown, fallback = "Erreur inconnue"): string {
   }
   return fallback;
 }
+
+// Escape user input before injecting into HTML (used for printable views / PDFs).
+export function escHtml(s: string | undefined | null): string {
+  if (!s) return "";
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}

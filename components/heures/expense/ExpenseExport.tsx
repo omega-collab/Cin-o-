@@ -7,6 +7,7 @@ import { useMatriceStore } from "@/lib/store/useMatriceStore";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { getCategoryDef, PAYMENT_METHODS } from "@/lib/data/expenseCategories";
 import { MATRICE_DEPTS } from "@/lib/types/matrice";
+import { escHtml } from "@/lib/utils";
 import type { ExpenseEntry } from "@/lib/types/expense";
 import type { DepartmentSlug } from "@/lib/types";
 
@@ -222,9 +223,9 @@ export function ExpenseExport() {
     const rows = filtered.map((e) => {
       const cat = getCategoryDef(e.category).label;
       return `<tr>
-        <td>${e.date}</td>
-        <td>${cat}</td>
-        <td>${e.description.replace(/</g, "&lt;")}</td>
+        <td>${escHtml(e.date)}</td>
+        <td>${escHtml(cat)}</td>
+        <td>${escHtml(e.description)}</td>
         <td style="text-align:right">${e.amountHT.toFixed(2)} €</td>
         <td style="text-align:right">${e.vatRate} %</td>
         <td style="text-align:right;font-weight:bold">${e.amountTTC.toFixed(2)} €</td>
@@ -236,8 +237,8 @@ export function ExpenseExport() {
       ? `<div style="margin-top:32px;padding-top:16px;border-top:1px solid #ddd;display:flex;align-items:flex-end;justify-content:flex-end;gap:24px">
            <div>
              <p style="font-size:10px;color:#888;margin:0 0 4px">Signature du bénéficiaire</p>
-             <img src="${signatureUrl}" style="height:60px;border-bottom:1px solid #333" />
-             <p style="font-size:10px;color:#555;margin:4px 0 0">Signé le ${signedAt}</p>
+             <img src="${escHtml(signatureUrl)}" style="height:60px;border-bottom:1px solid #333" />
+             <p style="font-size:10px;color:#555;margin:4px 0 0">Signé le ${escHtml(signedAt)}</p>
            </div>
          </div>`
       : `<div style="margin-top:32px;padding-top:16px;border-top:1px solid #ddd;text-align:right">
@@ -247,7 +248,7 @@ export function ExpenseExport() {
          </div>`;
 
     printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-      <title>Notes de frais — ${data.nom || "NOM"}</title>
+      <title>Notes de frais — ${escHtml(data.nom || "NOM")}</title>
       <style>
         body{font-family:Arial,sans-serif;font-size:12px;padding:24px;color:#111}
         h1{font-size:16px;margin:0 0 2px}
@@ -262,14 +263,14 @@ export function ExpenseExport() {
       </style></head>
       <body>
         <h1>Note de frais</h1>
-        <p class="meta">Période : ${from} → ${to}</p>
+        <p class="meta">Période : ${escHtml(from)} → ${escHtml(to)}</p>
         <div class="id-grid">
-          <div><div class="lbl">N° du relevé</div><strong>${data.numero || "—"}</strong></div>
-          <div><div class="lbl">Date du relevé</div><strong>${data.dateReleve || "—"}</strong></div>
-          <div><div class="lbl">NOM & Prénom</div><strong>${(data.nom || "").replace(/</g, "&lt;")}</strong></div>
-          <div><div class="lbl">Département</div><strong>${effectiveDept}</strong></div>
-          <div><div class="lbl">Emploi</div><strong>${(effectiveEmploi || "").replace(/</g, "&lt;")}</strong></div>
-          <div><div class="lbl">Région</div><strong>${(data.regionGlobale || "").replace(/</g, "&lt;")}</strong></div>
+          <div><div class="lbl">N° du relevé</div><strong>${escHtml(data.numero) || "—"}</strong></div>
+          <div><div class="lbl">Date du relevé</div><strong>${escHtml(data.dateReleve) || "—"}</strong></div>
+          <div><div class="lbl">NOM &amp; Prénom</div><strong>${escHtml(data.nom)}</strong></div>
+          <div><div class="lbl">Département</div><strong>${escHtml(effectiveDept)}</strong></div>
+          <div><div class="lbl">Emploi</div><strong>${escHtml(effectiveEmploi)}</strong></div>
+          <div><div class="lbl">Région</div><strong>${escHtml(data.regionGlobale)}</strong></div>
         </div>
         <table>
           <thead><tr><th>Date</th><th>Catégorie</th><th>Description</th><th>HT</th><th>TVA</th><th>TTC</th><th>Just.</th></tr></thead>
