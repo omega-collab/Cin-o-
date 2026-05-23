@@ -409,7 +409,7 @@ export function AdminUploadPanel({ onNext }: { onNext: () => void }) {
             <span className="truncate">{extractStep ?? "Extraction en cours…"}</span>
           </>
         ) : (
-          "Extraire avec Claude AI"
+          "Extraire avec l'IA"
         )}
       </button>
 

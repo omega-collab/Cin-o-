@@ -41,6 +41,6 @@ export const useSettingsStore = create<SettingsStore>()(
       setLang: (lang) => set({ lang }),
       setLoginBg: (loginBg) => set({ loginBg }),
     }),
-    { name: "cin-o-settings" }
+    { name: "cin-o-settings", version: 1 }
   )
 );

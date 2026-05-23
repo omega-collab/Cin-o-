@@ -67,8 +67,10 @@ export function OnboardingScreen() {
       if (user) {
         const { error } = await supabase
           .from("profiles")
-          .update({ department: selectedDept, role: selectedRole, avatar_id: selectedAvatar })
-          .eq("id", user.id);
+          .upsert(
+            { id: user.id, department: selectedDept, role: selectedRole, avatar_id: selectedAvatar },
+            { onConflict: "id" }
+          );
         if (error) throw new Error(error.message);
       }
       if (selectedAvatar) setAvatar(selectedAvatar);

@@ -33,6 +33,6 @@ export const useDeptNotesStore = create<DeptNotesState>()(
         set((s) => ({ notes: s.notes.filter((n) => n.id !== id) })),
       reset: () => set({ notes: [] }),
     }),
-    { name: "cin-o-dept-notes-v1" }
+    { name: "cin-o-dept-notes-v1", version: 1 }
   )
 );

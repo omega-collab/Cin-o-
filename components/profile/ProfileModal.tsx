@@ -47,8 +47,10 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
     if (user) {
       await supabase
         .from("profiles")
-        .update({ department: selectedDept, role: selectedRole, avatar_id: selectedAvatar })
-        .eq("id", user.id);
+        .upsert(
+          { id: user.id, department: selectedDept, role: selectedRole, avatar_id: selectedAvatar },
+          { onConflict: "id" }
+        );
     }
     setStep("done");
     setTimeout(onClose, 1200);
@@ -62,8 +64,10 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
     if (user) {
       supabase
         .from("profiles")
-        .update({ department: selectedDept, role: selectedRole, avatar_id: id })
-        .eq("id", user.id)
+        .upsert(
+          { id: user.id, department: selectedDept, role: selectedRole, avatar_id: id },
+          { onConflict: "id" }
+        )
         .then(() => {});
     }
     setStep("done");

@@ -27,6 +27,6 @@ export const useHistoryStore = create<HistoryState>()(
         })),
       clearHistory: () => set({ entries: [] }),
     }),
-    { name: "cin-o-history" }
+    { name: "cin-o-history", version: 1 }
   )
 );

@@ -214,7 +214,7 @@ type PdtStatus = "idle" | "loading" | "success" | "error";
 // ── main component ────────────────────────────────────────────────────────────
 
 export function CalendarView() {
-  const { shoot, setNextDays } = useShootStore();
+  const { shoot, mergeNextDays } = useShootStore();
   const department = useUserStore((s) => s.department);
   const isAdmin = department === "production";
   const today = useMemo(() => toISODate(new Date()), []);
@@ -256,7 +256,7 @@ export function CalendarView() {
       }
 
       const days = data.days ?? [];
-      setNextDays(days as Parameters<typeof setNextDays>[0]);
+      mergeNextDays(days as Parameters<typeof mergeNextDays>[0]);
       setPdtStatus("success");
       setPdtMessage(`${days.length} jour(s) importé(s)`);
     } catch (err) {

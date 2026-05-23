@@ -45,8 +45,14 @@ export async function POST(req: NextRequest) {
     };
     const { ticketBase64, ticketMime, factureBase64, factureMime } = body;
 
-    if (!ticketBase64) {
+    if (!ticketBase64 || typeof ticketBase64 !== "string") {
       return NextResponse.json({ error: "Photo du ticket requise" }, { status: 400 });
+    }
+    if (ticketBase64.length > 27_000_000) {
+      return NextResponse.json({ error: "Photo trop volumineuse (max 20 Mo)" }, { status: 413 });
+    }
+    if (factureBase64 && factureBase64.length > 27_000_000) {
+      return NextResponse.json({ error: "Facture trop volumineuse (max 20 Mo)" }, { status: 413 });
     }
 
     if (!process.env.MISTRAL_API_KEY) {

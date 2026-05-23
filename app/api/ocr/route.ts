@@ -21,6 +21,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json() as { base64: string; mediaType: string; filename: string };
     const { base64, mediaType: rawMime, filename } = body;
 
+    if (!base64 || typeof base64 !== "string") {
+      return NextResponse.json({ error: "Aucun document fourni" }, { status: 400 });
+    }
+    if (base64.length > 27_000_000) {
+      return NextResponse.json({ error: "Document trop volumineux (max 20 Mo)" }, { status: 413 });
+    }
+    if (typeof filename === "string" && !/^[\w\-. ]{1,200}$/.test(filename)) {
+      return NextResponse.json({ error: "Nom de fichier invalide" }, { status: 400 });
+    }
+
     if (!process.env.MISTRAL_API_KEY) {
       return NextResponse.json(
         { error: "Clé API manquante — configurez MISTRAL_API_KEY dans les variables d'environnement Netlify" },

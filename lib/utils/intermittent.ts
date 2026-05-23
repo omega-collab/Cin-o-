@@ -37,11 +37,12 @@ export function computeDay(day: WorkDay): ComputedDay {
   let end = toMinutes(day.endTime);
   if (end <= start) end += 24 * 60;
 
-  // Lunch pause
+  // Lunch pause (handle midnight crossover same way as the day)
   let lunchMinutes = 0;
   if (day.lunchStart && day.lunchEnd) {
     const ls = toMinutes(day.lunchStart);
-    const le = toMinutes(day.lunchEnd);
+    let le = toMinutes(day.lunchEnd);
+    if (le <= ls) le += 24 * 60;
     lunchMinutes = Math.max(0, le - ls);
   }
   const isJourneeContinue = lunchMinutes < 30;
