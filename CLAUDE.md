@@ -1,5 +1,12 @@
 # CinéO — Claude Code Configuration
 
+## RÈGLE ABSOLUE — LANGUE
+
+**PARLER EXCLUSIVEMENT EN FRANÇAIS.** Toujours, sans exception, dans chaque réponse, chaque explication, chaque question. Zéro mot en anglais dans les messages adressés à l'utilisateur.
+L'UI de l'application doit également être entièrement en français.
+
+---
+
 ## Projet
 
 **CinéO** est une application mobile-first de gestion de tournage cinéma/TV (équipes intermittentes).

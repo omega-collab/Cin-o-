@@ -146,15 +146,15 @@ export function MealAlarmBlock({ mealTime }: { mealTime: string }) {
           </button>
         </div>
       ) : (
-        <div className="flex items-center gap-2 pt-0.5">
-          <div className="flex items-center gap-1 shrink-0">
+        <div className="space-y-2 pt-0.5">
+          <div className="flex items-center justify-center gap-2">
             <button
               onClick={() => setDuration((d) => Math.max(10, d - 5))}
               className="w-6 h-6 rounded-lg bg-white/5 text-muted flex items-center justify-center"
             >
               <Minus className="w-2.5 h-2.5" />
             </button>
-            <span className="font-mono text-xs text-textSoft w-7 text-center tabular-nums">
+            <span className="font-mono text-xs text-textSoft w-8 text-center tabular-nums">
               {duration}m
             </span>
             <button
@@ -166,7 +166,7 @@ export function MealAlarmBlock({ mealTime }: { mealTime: string }) {
           </div>
           <button
             onClick={start}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-cyanSoft text-cyan text-[11px] font-semibold"
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-cyanSoft text-cyan text-[11px] font-semibold"
           >
             <Bell className="w-3 h-3" /> Alarme repas
           </button>
