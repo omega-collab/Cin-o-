@@ -91,13 +91,14 @@ export function Hero() {
       {/* Dept badge + Live Timecode */}
       <div className="flex items-center justify-between">
         {dept ? (
-          <div className="flex items-center gap-2">
-            <span className="text-cyan"><DeptIcon slug={dept.slug} className="w-4 h-4" /></span>
-            <span className="text-xs font-semibold text-cyan uppercase tracking-widest">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+            style={{ background: "rgba(0,224,208,0.08)", border: "1px solid rgba(0,224,208,0.18)" }}>
+            <DeptIcon slug={dept.slug} className="w-3.5 h-3.5" style={{ color: "#00E0D0" }} />
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#00E0D0" }}>
               {dept.name}
             </span>
-            {role && <span className="text-xs text-muted">· {role}</span>}
-          </div>
+            {role && <span className="text-[10px]" style={{ color: "#6b7a8d" }}>· {role}</span>}
+          </span>
         ) : <div />}
         <LiveTimecode />
       </div>
@@ -238,7 +239,14 @@ export function Hero() {
             <div className="space-y-2">
               <button
                 onClick={() => setSeqOpen((o) => !o)}
-                className="w-full text-left glass-card-strong rounded-app p-4 space-y-3 active:opacity-80 transition-opacity"
+                className="w-full text-left rounded-app p-4 space-y-3 active:opacity-80 transition-opacity"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.09)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  boxShadow: "inset 0 1px 0 rgba(0,224,208,0.10), 0 8px 32px rgba(0,0,0,0.3)",
+                }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -270,14 +278,29 @@ export function Hero() {
         </>
       ) : (
         /* État vide — aucune feuille publiée */
-        <div className="glass-card-strong rounded-app p-6 text-center space-y-3">
-          <Film className="w-10 h-10 text-muted mx-auto" />
-          <div>
-            <h1 className="text-xl font-bold text-white">Aucune feuille publiée</h1>
-            <p className="text-sm text-muted mt-1">
-              L'admin n'a pas encore chargé la feuille du jour.
-            </p>
+        <div className="rounded-app p-8 text-center"
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.06)",
+          }}>
+          <div className="relative flex justify-center mb-5">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <Film className="w-8 h-8" style={{ color: "#3a4a5c" }} />
+            </div>
           </div>
+          <p className="text-[9px] font-semibold uppercase tracking-widest mb-2" style={{ color: "#3a4a5c" }}>
+            {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long" })}
+          </p>
+          <h1 className="text-lg font-bold text-white">Aucune feuille publiée</h1>
+          <p className="text-sm mt-1.5" style={{ color: "#6b7a8d" }}>
+            La feuille de service n&apos;est pas encore disponible.
+          </p>
+          {dept && (
+            <p className="text-[11px] mt-3" style={{ color: "#3a4a5c" }}>
+              En attente pour <span style={{ color: "#00E0D0" }}>{dept.name}</span>
+            </p>
+          )}
         </div>
       )}
     </div>
