@@ -71,7 +71,7 @@ export function MatriceEntryCard({ num, entry, isEditing, editPatch, onEditStart
           </span>
         </div>
         <div className="flex-1 min-w-0 space-y-0.5">
-          <p className="text-xs font-semibold text-white truncate">{entry.fournisseur}</p>
+          <p className="text-xs font-semibold text-white break-words">{entry.fournisseur}</p>
           <p className="text-[10px] text-muted">{entry.date} · {entry.nature}</p>
           {entry.plaque_immat && (
             <p className="text-[10px] text-cyan font-mono">{entry.plaque_immat}</p>

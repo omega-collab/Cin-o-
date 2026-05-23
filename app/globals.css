@@ -23,9 +23,14 @@ body {
   overflow-x: hidden;
 }
 
-/* Prevent iOS Safari auto-zoom on input focus (triggered when font-size < 16px) */
+/* Prevent iOS Safari auto-zoom on input focus.
+ * iOS triggers auto-zoom when an input's COMPUTED font-size is < 16px.
+ * Tailwind utilities (text-xs = 12px, text-sm = 14px) win on specificity
+ * over a plain element selector, so we need !important to override them
+ * just for form controls. Visual difference is minimal (~2px) and the
+ * UX win is significant on iPhone. */
 input, textarea, select {
-  font-size: max(16px, 1em);
+  font-size: 16px !important;
 }
 
 body {

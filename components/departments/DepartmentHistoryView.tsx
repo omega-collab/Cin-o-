@@ -147,7 +147,7 @@ export function DepartmentHistoryView({ slug }: Props) {
                   {(() => { const I = MOV_ICON[mov.type] ?? FileText; return <I className="w-4 h-4 shrink-0 mt-0.5 text-muted" />; })()}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2">
-                      <p className="text-sm font-semibold text-white truncate">{mov.itemName}</p>
+                      <p className="text-sm font-semibold text-white break-words flex-1 min-w-0">{mov.itemName}</p>
                       <span className="text-xs text-muted shrink-0">{frDateTime(mov.timestamp)}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">

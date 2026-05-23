@@ -65,11 +65,14 @@ export function ExpenseCard({ entry }: { entry: ExpenseEntry }) {
       {/* Expanded details */}
       {expanded && (
         <div className="px-3 pb-3 space-y-3 border-t border-stroke/50">
-          <div className="pt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+          {/* Full description (the header truncates it for compactness) */}
+          <p className="pt-2 text-xs text-textSoft break-words">{entry.description}</p>
+
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
             <div><span className="text-muted">Règlement</span><p className="text-textSoft">{paymentLabel}</p></div>
           </div>
 
-          {entry.notes && <p className="text-xs text-muted italic">{entry.notes}</p>}
+          {entry.notes && <p className="text-xs text-muted italic break-words">{entry.notes}</p>}
 
           {/* Receipt */}
           {entry.receiptUri ? (

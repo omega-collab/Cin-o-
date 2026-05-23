@@ -36,6 +36,7 @@ export function CanteenStaffInterface() {
     shootingLocation: menu.shootingLocation ?? "",
     canteenLocation: menu.canteenLocation ?? "",
     mealTime: menu.mealTime ?? "12:30",
+    mealEndTime: menu.mealEndTime ?? "13:30",
     starter: menu.starter,
     main: menu.main,
     dessert: menu.dessert,
@@ -56,6 +57,7 @@ export function CanteenStaffInterface() {
       shootingLocation: form.shootingLocation,
       canteenLocation: form.canteenLocation,
       mealTime: form.mealTime,
+      mealEndTime: form.mealEndTime || undefined,
       starter: form.starter,
       main: form.main,
       dessert: form.dessert,
@@ -98,9 +100,21 @@ export function CanteenStaffInterface() {
             <Field label="Lieu cantine">
               <input className={INPUT_CLS} value={form.canteenLocation} onChange={patch("canteenLocation")} placeholder="Adresse ou salle" />
             </Field>
-            <Field label="Heure du repas">
-              <input type="time" className={INPUT_CLS + " font-mono"} value={form.mealTime} onChange={patch("mealTime")} />
-            </Field>
+            <div>
+              <label className="text-xs text-muted uppercase tracking-widest block mb-1.5">
+                Heure du repas
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-muted block mb-1">Début</label>
+                  <input type="time" className={INPUT_CLS + " font-mono"} value={form.mealTime} onChange={patch("mealTime")} />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted block mb-1">Fin</label>
+                  <input type="time" className={INPUT_CLS + " font-mono"} value={form.mealEndTime} onChange={patch("mealEndTime")} />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Menu */}

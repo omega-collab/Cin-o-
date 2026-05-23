@@ -81,7 +81,6 @@ export function ScheduleList() {
           const isExpanded = expandedId === row.id;
           const hasCast = (row.cast?.length ?? 0) > 0;
           const hasNotes = (row.notes?.trim().length ?? 0) > 0;
-          const hasDetail = hasCast || hasNotes || myDeptNotes.length > 0;
 
           return (
             <div
@@ -89,9 +88,10 @@ export function ScheduleList() {
               className={idx < rows.length - 1 ? "border-b border-stroke" : ""}
             >
               <button
-                onClick={() => hasDetail ? setExpandedId(isExpanded ? null : row.id) : undefined}
-                className={`w-full grid items-center py-2.5 gap-2 text-left ${hasDetail ? "cursor-pointer" : "cursor-default"}`}
+                onClick={() => setExpandedId(isExpanded ? null : row.id)}
+                className="w-full grid items-center py-2.5 gap-2 text-left cursor-pointer"
                 style={{ gridTemplateColumns: "50px 1fr 72px 16px" }}
+                aria-expanded={isExpanded}
               >
                 <span className={`font-mono text-xs tabular-nums ${isActive ? "text-cyan font-semibold" : "text-muted"}`}>
                   {row.time}
@@ -102,16 +102,20 @@ export function ScheduleList() {
                 <span className="text-xs text-muted text-right truncate">
                   {row.location}
                 </span>
-                {hasDetail ? (
-                  <ChevronDown
-                    size={14}
-                    className={`text-muted shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                  />
-                ) : <span />}
+                <ChevronDown
+                  size={14}
+                  className={`text-muted shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                />
               </button>
 
               {isExpanded && (
                 <div className="pb-3 space-y-3 pl-1">
+                  {/* Full label + location (truncated in the header for layout) */}
+                  <div className="pt-0.5">
+                    <p className="text-sm font-medium text-textSoft break-words">{row.label}</p>
+                    <p className="text-xs text-muted break-words">{row.location}</p>
+                  </div>
+
                   {/* Cast */}
                   {hasCast && (
                     <div className="flex items-start gap-2">

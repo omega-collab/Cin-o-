@@ -55,7 +55,7 @@ export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
             </div>
             <div className="glass-card rounded-xl p-2.5 col-span-2">
               <p className="text-muted mb-0.5">Lieu</p>
-              <p className="text-white font-medium truncate">{shoot.location}</p>
+              <p className="text-white font-medium break-words">{shoot.location}</p>
             </div>
           </div>
         ) : (
