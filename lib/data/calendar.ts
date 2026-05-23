@@ -8,6 +8,10 @@ export interface ProductionDay {
   endTime: string;
   period: "day" | "night";
   status: "confirmed" | "pending" | "cancelled";
+  mealTime?: string;
+  effects?: string;
+  interior?: string;
+  sets?: string;
 }
 
 export const PRODUCTION_DAYS: ProductionDay[] = [];

@@ -111,10 +111,15 @@ function DayColumn({
   );
 }
 
-function ProductionDayCard({ day }: { day: ProductionDay }) {
+function ProductionDayCard({ day, department }: { day: ProductionDay; department: string | null }) {
   const s = STATUS_CONFIG[day.status];
   const p = PERIOD_CONFIG[day.period];
-  const endDisplay = day.endTime && day.endTime !== "00:00" ? day.endTime : "?";
+  const endDisplay = day.endTime && day.endTime !== "00:00" ? day.endTime : null;
+
+  const showScenes = !department || ["camera", "machino", "son", "regie", "direction", "production"].includes(department);
+  const showSets   = !department || ["camera", "machino", "deco", "electro", "regie", "production"].includes(department);
+  const showMeal   = true;
+
   return (
     <div className="glass-card rounded-app overflow-hidden border border-stroke/50">
       <div className="p-4 space-y-3">
@@ -132,28 +137,64 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
         {/* Row 2: location */}
         <div className="flex items-center gap-1.5">
           <MapPin size={13} className="text-muted shrink-0" />
-          <span className="text-xs text-muted truncate">{day.location}</span>
+          <span className="text-xs text-textSoft">{day.location}</span>
         </div>
 
-        {/* Row 3: scenes */}
-        {day.scenes.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {day.scenes.map((scene) => (
-              <span key={scene} className="text-xs px-2 py-0.5 rounded bg-white/5 text-muted">
-                {scene}
-              </span>
-            ))}
+        {/* Row 3: sets (décors détaillés) */}
+        {showSets && day.sets && (
+          <div className="text-xs text-muted leading-snug line-clamp-2">
+            {day.sets}
           </div>
         )}
 
-        {/* Row 4: times + period badge */}
-        <div className="flex items-center justify-between pt-1">
+        {/* Row 4: effects badges */}
+        {(day.effects || day.interior) && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {day.effects && (
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wide ${p.bg} ${p.color}`}>
+                {day.effects}
+              </span>
+            )}
+            {day.interior && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-muted tracking-wide">
+                {day.interior}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Row 5: scenes (numéros de séquences) */}
+        {showScenes && day.scenes.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            <Film size={11} className="text-muted shrink-0" />
+            {day.scenes.slice(0, 12).map((scene) => (
+              <span key={scene} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-muted font-mono">
+                {scene}
+              </span>
+            ))}
+            {day.scenes.length > 12 && (
+              <span className="text-[10px] text-muted">+{day.scenes.length - 12}</span>
+            )}
+          </div>
+        )}
+
+        {/* Row 6: times + meal */}
+        <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
           <span className="text-xs font-mono font-semibold text-textSoft">
-            {day.startTime} — {endDisplay}
+            {day.startTime}{endDisplay ? ` — ${endDisplay}` : ""}
           </span>
-          <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wide ${p.bg} ${p.color}`}>
-            {p.label}
-          </span>
+          <div className="flex items-center gap-2">
+            {showMeal && day.mealTime && (
+              <span className="text-[10px] text-muted font-medium">
+                Repas {day.mealTime}
+              </span>
+            )}
+            {!day.effects && (
+              <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wide ${p.bg} ${p.color}`}>
+                {p.label}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -238,16 +279,23 @@ export function CalendarView() {
 
     for (const nd of shoot.nextDays) {
       const callT = nd.callTime || "08:00";
+      const isNight = nd.effects
+        ? /nuit/i.test(nd.effects)
+        : calcPeriod(callT) === "night";
       days.push({
         id: `j${nd.shootingDay}`,
         label: `J${nd.shootingDay}`,
         date: nd.date,
         location: nd.location || "—",
-        scenes: nd.summary ? [nd.summary] : [],
+        scenes: nd.sequences ?? (nd.summary ? [nd.summary] : []),
         startTime: callT,
-        endTime: "",
-        period: calcPeriod(callT),
+        endTime: nd.wrapTime || "",
+        period: isNight ? "night" : "day",
         status: "confirmed",
+        mealTime: nd.mealTime,
+        effects: nd.effects,
+        interior: nd.interior,
+        sets: nd.sets,
       });
     }
 
@@ -368,7 +416,7 @@ export function CalendarView() {
             </p>
           </div>
         ) : (
-          visibleDays.map((day) => <ProductionDayCard key={day.id} day={day} />)
+          visibleDays.map((day) => <ProductionDayCard key={day.id} day={day} department={department} />)
         )}
       </div>
     </div>

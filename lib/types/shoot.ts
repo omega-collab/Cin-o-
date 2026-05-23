@@ -43,6 +43,12 @@ export interface NextDayInfo {
   shootingDay: number;
   location?: string;
   callTime?: string;
+  wrapTime?: string;
+  mealTime?: string;
+  effects?: string;    // ex: "JOUR", "NUIT", "JOUR/SOIR", "JOUR/CREP", "AUBE/JOUR"
+  interior?: string;   // ex: "EXT", "INT", "INT/EXT", "EXT/INT"
+  sequences?: string[]; // numéros de séquences: ["304", "305", "306"]
+  sets?: string;       // description DÉCORS (lieu détaillé)
   summary?: string;
 }
 
