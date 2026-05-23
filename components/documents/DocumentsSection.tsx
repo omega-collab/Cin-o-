@@ -6,6 +6,7 @@ import {
   DOCUMENTS, DOC_CATEGORIES, catLabel, catColor,
   ADMIN_CODE, getCustomDocs, upsertCustomDoc, deleteCustomDoc,
 } from "@/lib/data/documents";
+import { PRODUCTION } from "@/lib/data/production";
 import { DocImportModal } from "./DocImportModal";
 import type { DocCategory, DocEntry } from "@/lib/data/documents";
 
@@ -133,7 +134,7 @@ export function DocumentsSection() {
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-xl font-bold text-white">Documents</h2>
-          <p className="text-xs text-muted mt-0.5">Films « Tropiques Criminels » Saison 8</p>
+          <p className="text-xs text-muted mt-0.5">{PRODUCTION.title}</p>
         </div>
         {adminMode ? (
           <button

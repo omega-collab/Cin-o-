@@ -103,9 +103,9 @@ export function OnboardingScreen() {
           <StepDots current={1} />
 
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-white mb-1.5">Ton département</h1>
+            <h1 className="text-2xl font-bold text-white mb-1.5">Votre département</h1>
             <p className="text-sm" style={{ color: "#9FB3C8" }}>
-              Personnalise l&apos;app selon ton métier
+              Personnalisez l&apos;app selon votre métier
             </p>
           </div>
 
@@ -186,7 +186,7 @@ export function OnboardingScreen() {
               </div>
             )}
             <h1 className="text-2xl font-bold text-white mb-0.5">{dept?.name}</h1>
-            <p className="text-sm" style={{ color: "#9FB3C8" }}>Quel est ton poste ?</p>
+            <p className="text-sm" style={{ color: "#9FB3C8" }}>Quel est votre poste ?</p>
           </div>
 
           <div className="flex flex-wrap gap-2 justify-center mb-7">
@@ -247,9 +247,9 @@ export function OnboardingScreen() {
               <AvatarDisplay avatarId={selectedAvatar} size={56} />
             </div>
           )}
-          <h1 className="text-2xl font-bold text-white mb-1.5">Ton avatar</h1>
+          <h1 className="text-2xl font-bold text-white mb-1.5">Votre avatar</h1>
           <p className="text-sm" style={{ color: "#9FB3C8" }}>
-            Choisis une icône — tu pourras la changer plus tard
+            Choisissez une icône — vous pourrez la changer plus tard
           </p>
         </div>
 

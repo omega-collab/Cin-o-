@@ -48,7 +48,12 @@ export function CanteenCard() {
               <Utensils className="w-3.5 h-3.5 text-cyan shrink-0 mt-0.5" />
               <div>
                 <p className="text-[10px] text-muted uppercase tracking-widest">Cantine</p>
-                <p className="text-xs text-cyan font-medium">{canteenLocation}</p>
+                <p className="text-xs text-cyan font-medium break-words">{canteenLocation}</p>
+                {menu.mealTime && (
+                  <p className="text-[10px] text-muted font-mono mt-0.5">
+                    {menu.mealTime}{menu.mealEndTime ? ` — ${menu.mealEndTime}` : ""}
+                  </p>
+                )}
               </div>
             </div>
           )}

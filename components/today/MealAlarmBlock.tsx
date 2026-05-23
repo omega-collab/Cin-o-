@@ -102,15 +102,15 @@ export function MealAlarmBlock({ mealTime }: { mealTime: string }) {
 
   return (
     <div className="glass-card rounded-app px-3 py-2.5 space-y-1.5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <Utensils className="w-3.5 h-3.5 text-muted shrink-0" />
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted">
-            Repas
-          </span>
-        </div>
-        <span className="font-mono text-sm font-bold text-cyan">{mealTime}</span>
+      {/* Label on its own line so a meal-time range (e.g. "12:30 — 13:30")
+          stays on a single horizontal line below it instead of wrapping. */}
+      <div className="flex items-center gap-1.5">
+        <Utensils className="w-3.5 h-3.5 text-muted shrink-0" />
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted">
+          Repas
+        </span>
       </div>
+      <p className="font-mono text-sm font-bold text-cyan whitespace-nowrap">{mealTime}</p>
 
       {toMeal > 0 && nowMin > 0 && (
         <p className="text-[10px] text-textSoft">

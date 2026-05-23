@@ -5,7 +5,6 @@ import { useDepartmentStore } from "./useDepartmentStore";
 import { useDeptNotesStore } from "./useDeptNotesStore";
 import { useCanteenStore } from "./useCanteenStore";
 import { useAccessStore } from "./useAccessStore";
-import { useDailyStore } from "./useDailyStore";
 
 /**
  * Reset all project-scoped stores to their initial empty state.
@@ -14,7 +13,6 @@ import { useDailyStore } from "./useDailyStore";
  * Stores reset (data tied to the active project / current shoot):
  * - shoot (feuille de service, sequences, cast, dept codes…)
  * - department (stock, movements)
- * - daily (lightweight DailyShoot — also tied to a project)
  * - deptNotes (private dept notes)
  * - canteen (menu)
  * - access (unlocked departments)
@@ -31,7 +29,6 @@ import { useDailyStore } from "./useDailyStore";
 export function resetProjectScopedStores(): void {
   useShootStore.getState().resetFull();
   useDepartmentStore.getState().resetStock();
-  useDailyStore.getState().reset();
   useDeptNotesStore.getState().reset();
   useCanteenStore.getState().resetMenu();
   useAccessStore.getState().lockAll();

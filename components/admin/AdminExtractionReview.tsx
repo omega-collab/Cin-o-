@@ -189,24 +189,26 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
         <div className="flex items-center gap-2 p-3 bg-cyanSoft rounded-2xl">
           <CheckCircle2 className="w-4 h-4 text-cyan shrink-0" />
           <p className="text-xs text-cyan font-medium">
-            Données extraites — vérifiez et corrigez avant d'appliquer.
+            Données extraites appliquées — vérifiez et corrigez si nécessaire.
           </p>
         </div>
       )}
 
-      {/* General info */}
+      {/* General info — inputs read from `shoot` (the canonical state after
+          extraction has been applied). `pe` is only used to surface the
+          extraction confidence badge next to each field. */}
       <Section title="Informations générales" defaultOpen>
         <div className="grid grid-cols-2 gap-3">
           <Row label="Titre du projet" confidence={pe?.projectTitle?.confidence}>
             <input
-              value={pe?.projectTitle?.value ?? shoot.projectTitle}
+              value={shoot.projectTitle}
               onChange={(e) => updateField({ projectTitle: e.target.value })}
               className={INPUT}
             />
           </Row>
           <Row label="Saison / Bloc" confidence={pe?.series?.confidence}>
             <input
-              value={pe?.series?.value ?? shoot.series ?? ""}
+              value={shoot.series ?? ""}
               onChange={(e) => updateField({ series: e.target.value })}
               className={INPUT}
             />
@@ -214,7 +216,7 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
           <Row label="Jour J" confidence={pe?.shootingDay?.confidence}>
             <input
               type="number"
-              value={pe?.shootingDay?.value ?? shoot.shootingDay}
+              value={shoot.shootingDay}
               onChange={(e) => updateField({ shootingDay: Number(e.target.value) })}
               className={INPUT}
             />
@@ -222,7 +224,7 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
           <Row label="Total jours" confidence={pe?.totalDays?.confidence}>
             <input
               type="number"
-              value={pe?.totalDays?.value ?? shoot.totalDays ?? ""}
+              value={shoot.totalDays ?? ""}
               onChange={(e) => updateField({ totalDays: Number(e.target.value) })}
               className={INPUT}
             />
@@ -230,14 +232,14 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
           <Row label="Date" confidence={pe?.date?.confidence}>
             <input
               type="date"
-              value={pe?.date?.value ?? shoot.date}
+              value={shoot.date}
               onChange={(e) => updateField({ date: e.target.value })}
               className={INPUT}
             />
           </Row>
           <Row label="Météo" confidence={pe?.weather?.confidence}>
             <input
-              value={pe?.weather?.value ?? shoot.weather ?? ""}
+              value={shoot.weather ?? ""}
               onChange={(e) => updateField({ weather: e.target.value })}
               className={INPUT}
             />
@@ -245,28 +247,28 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
         </div>
         <Row label="Lieu du tournage" confidence={pe?.location?.confidence}>
           <input
-            value={pe?.location?.value ?? shoot.location}
+            value={shoot.location}
             onChange={(e) => updateField({ location: e.target.value })}
             className={INPUT}
           />
         </Row>
         <div className="grid grid-cols-3 gap-2">
           <Row label="Call Time" confidence={pe?.callTime?.confidence}>
-            <input type="time" value={pe?.callTime?.value ?? shoot.callTime} onChange={(e) => updateField({ callTime: e.target.value })} className={INPUT} />
+            <input type="time" value={shoot.callTime} onChange={(e) => updateField({ callTime: e.target.value })} className={INPUT} />
           </Row>
           <Row label="Repas" confidence={pe?.mealTime?.confidence}>
-            <input type="time" value={pe?.mealTime?.value ?? shoot.mealTime} onChange={(e) => updateField({ mealTime: e.target.value })} className={INPUT} />
+            <input type="time" value={shoot.mealTime} onChange={(e) => updateField({ mealTime: e.target.value })} className={INPUT} />
           </Row>
           <Row label="Fin" confidence={pe?.wrapTime?.confidence}>
-            <input type="time" value={pe?.wrapTime?.value ?? shoot.wrapTime ?? ""} onChange={(e) => updateField({ wrapTime: e.target.value })} className={INPUT} />
+            <input type="time" value={shoot.wrapTime ?? ""} onChange={(e) => updateField({ wrapTime: e.target.value })} className={INPUT} />
           </Row>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Row label="Loges / HMC" confidence={pe?.logeLocation?.confidence}>
-            <input value={pe?.logeLocation?.value ?? shoot.logeLocation ?? ""} onChange={(e) => updateField({ logeLocation: e.target.value })} className={INPUT} />
+            <input value={shoot.logeLocation ?? ""} onChange={(e) => updateField({ logeLocation: e.target.value })} className={INPUT} />
           </Row>
           <Row label="Cantine" confidence={pe?.canteenLocation?.confidence}>
-            <input value={pe?.canteenLocation?.value ?? shoot.canteenLocation ?? ""} onChange={(e) => updateField({ canteenLocation: e.target.value })} className={INPUT} />
+            <input value={shoot.canteenLocation ?? ""} onChange={(e) => updateField({ canteenLocation: e.target.value })} className={INPUT} />
           </Row>
         </div>
         {/* PAT time */}
@@ -432,12 +434,14 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
         </button>
       </Section>
 
-      {/* Apply */}
+      {/* Apply — extraction is auto-applied on mount so the data is already
+          merged into the shoot. This button only validates the review and
+          moves the user to the publish step. */}
       <button
         onClick={handleApply}
         className={`active-pill w-full py-3 rounded-2xl font-semibold text-sm transition-opacity ${applied ? "opacity-60" : ""}`}
       >
-        {applied ? "Appliqué ✓" : pe ? "Appliquer l'extraction" : "Valider et continuer"}
+        {applied ? "Validé ✓" : "Valider et continuer"}
       </button>
     </div>
   );

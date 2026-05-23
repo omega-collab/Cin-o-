@@ -253,10 +253,10 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
               <p className="text-sm text-muted text-center py-4">Aucun article trouvé.</p>
             ) : (
               filteredStock.map((item) => (
-                <div key={item.id} className="glass-card flex items-center justify-between gap-3 p-4 rounded-2xl">
+                <div key={item.id} className="glass-card flex items-start justify-between gap-3 p-4 rounded-2xl">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                    <p className="text-xs mt-0.5 text-muted">
+                    <p className="text-sm font-medium text-white break-words">{item.name}</p>
+                    <p className="text-xs mt-0.5 text-muted break-words">
                       {item.quantity} {item.unit}
                       {item.notes ? ` · ${item.notes}` : ""}
                     </p>
@@ -297,15 +297,15 @@ export function DepartmentDetail({ slug }: DepartmentDetailProps) {
           <div className="space-y-2">
             {recentMovements.map((mov) => (
               <div key={mov.id} className="glass-card rounded-2xl overflow-hidden">
-                <div className="flex items-center gap-3 px-4 py-2.5">
-                  {(() => { const I = MOV_ICON[mov.type] ?? FileText; return <I className="w-4 h-4 shrink-0 text-muted" />; })()}
+                <div className="flex items-start gap-3 px-4 py-2.5">
+                  {(() => { const I = MOV_ICON[mov.type] ?? FileText; return <I className="w-4 h-4 shrink-0 text-muted mt-0.5" />; })()}
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm text-textSoft">{mov.itemName}</span>
+                    <span className="text-sm text-textSoft break-words">{mov.itemName}</span>
                     {mov.notes && (
-                      <p className="text-xs text-muted truncate mt-0.5">{mov.notes}</p>
+                      <p className="text-xs text-muted break-words mt-0.5">{mov.notes}</p>
                     )}
                   </div>
-                  <span className="text-xs text-muted shrink-0">{mov.operator}</span>
+                  <span className="text-xs text-muted shrink-0 mt-0.5">{mov.operator}</span>
                 </div>
                 {mov.photo && (
                   <img

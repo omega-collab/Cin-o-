@@ -23,6 +23,7 @@ function FlagBadge({ flag }: { flag: ExpenseFlag }) {
 
 export function ExpenseCard({ entry }: { entry: ExpenseEntry }) {
   const [expanded, setExpanded] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const deleteEntry = useExpenseStore((s) => s.deleteEntry);
   const cat = getCategoryDef(entry.category);
   const paymentLabel = PAYMENT_METHODS.find((p) => p.value === entry.paymentMethod)?.label ?? entry.paymentMethod;
@@ -64,11 +65,14 @@ export function ExpenseCard({ entry }: { entry: ExpenseEntry }) {
       {/* Expanded details */}
       {expanded && (
         <div className="px-3 pb-3 space-y-3 border-t border-stroke/50">
-          <div className="pt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+          {/* Full description (the header truncates it for compactness) */}
+          <p className="pt-2 text-xs text-textSoft break-words">{entry.description}</p>
+
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
             <div><span className="text-muted">Règlement</span><p className="text-textSoft">{paymentLabel}</p></div>
           </div>
 
-          {entry.notes && <p className="text-xs text-muted italic">{entry.notes}</p>}
+          {entry.notes && <p className="text-xs text-muted italic break-words">{entry.notes}</p>}
 
           {/* Receipt */}
           {entry.receiptUri ? (
@@ -86,13 +90,33 @@ export function ExpenseCard({ entry }: { entry: ExpenseEntry }) {
             </div>
           )}
 
-          {/* Delete */}
-          <button
-            onClick={() => deleteEntry(entry.id)}
-            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs text-danger bg-red-500/8 border border-red-500/20"
-          >
-            <Trash2 className="w-3.5 h-3.5" /> Supprimer cette dépense
-          </button>
+          {/* Delete — two-step confirmation */}
+          {confirmDelete ? (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="flex-1 py-2 rounded-xl text-xs text-muted glass-card"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => deleteEntry(entry.id)}
+                className="flex-1 py-2 rounded-xl text-xs font-semibold text-white bg-danger"
+              >
+                Confirmer la suppression
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setConfirmDelete(true);
+                setTimeout(() => setConfirmDelete(false), 5000);
+              }}
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs text-danger bg-red-500/8 border border-red-500/20"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Supprimer cette dépense
+            </button>
+          )}
         </div>
       )}
     </div>

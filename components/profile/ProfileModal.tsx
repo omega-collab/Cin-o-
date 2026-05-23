@@ -8,6 +8,7 @@ import { AVATARS } from "@/lib/data/avatars";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import { supabase } from "@/lib/supabase/client";
+import { useEscapeClose } from "@/lib/hooks/useEscapeClose";
 import { DeptIcon } from "@/components/ui/DeptIcon";
 import { AvatarDisplay } from "@/components/ui/AvatarDisplay";
 import type { DepartmentSlug } from "@/lib/types";
@@ -19,6 +20,7 @@ type Step = "code" | "dept" | "role" | "avatar" | "done";
 export function ProfileModal({ onClose }: { onClose: () => void }) {
   const { department: currentDept, role: currentRole, avatarId, setProfile, setAvatar } = useUserStore();
   const user = useProjectStore((s) => s.user);
+  useEscapeClose(onClose);
 
   const [step, setStep] = useState<Step>("code");
   const [code, setCode] = useState("");
@@ -92,7 +94,7 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
               </div>
               <h2 className="text-lg font-bold text-white">Modifier le profil</h2>
               <p className="text-muted text-sm mt-1">
-                Entre le code de ton département pour confirmer
+                Entrez le code de votre département pour confirmer
               </p>
             </div>
             <input
@@ -122,7 +124,7 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
           <>
             <div className="text-center">
               <h2 className="text-lg font-bold text-white">Département</h2>
-              <p className="text-muted text-sm mt-1">Choisis ton département</p>
+              <p className="text-muted text-sm mt-1">Choisissez votre département</p>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {DEPARTMENTS.map((d) => {
@@ -166,7 +168,7 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
                 {dept && <DeptIcon slug={dept.slug} className="w-8 h-8" />}
               </span>
               <h2 className="text-lg font-bold text-white mt-1">{dept?.name}</h2>
-              <p className="text-muted text-sm">Quel est ton poste ?</p>
+              <p className="text-muted text-sm">Quel est votre poste ?</p>
             </div>
             <div className="flex flex-wrap gap-2 justify-center">
               {roles.map((r) => {
@@ -201,8 +203,8 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
               <ArrowLeft className="w-4 h-4" /> Retour
             </button>
             <div className="text-center">
-              <h2 className="text-lg font-bold text-white">Ton avatar</h2>
-              <p className="text-muted text-sm mt-1">Choisis une icône pour te représenter</p>
+              <h2 className="text-lg font-bold text-white">Votre avatar</h2>
+              <p className="text-muted text-sm mt-1">Choisissez une icône pour vous représenter</p>
             </div>
             <div className="grid grid-cols-4 gap-3">
               {AVATARS.map((av) => {

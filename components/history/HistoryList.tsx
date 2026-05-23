@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, SlidersHorizontal, CheckCircle2, FileText, TriangleAlert, Clock3, Pin } from "lucide-react";
+import { Search, CheckCircle2, FileText, TriangleAlert, Clock3, Pin } from "lucide-react";
 import { useHistoryStore } from "@/lib/store/useHistoryStore";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { formatTime } from "@/lib/utils";
@@ -89,17 +89,13 @@ export function HistoryList() {
           placeholder="Rechercher une action…"
           className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted text-textSoft"
         />
-        {search ? (
+        {search && (
           <button
             onClick={() => setSearch("")}
             className="text-muted text-xs px-2 py-1"
-            aria-label="Effacer"
+            aria-label="Effacer la recherche"
           >
             ✕
-          </button>
-        ) : (
-          <button className="bg-cyanSoft text-cyan rounded-xl p-1.5">
-            <SlidersHorizontal size={14} />
           </button>
         )}
       </div>
