@@ -62,8 +62,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json() as { pdfBase64: string; pdfMime?: string };
     const { pdfBase64, pdfMime = "application/pdf" } = body;
 
-    if (!pdfBase64) {
+    if (!pdfBase64 || typeof pdfBase64 !== "string") {
       return NextResponse.json({ error: "Fichier PDF requis" }, { status: 400 });
+    }
+    if (pdfBase64.length > 27_000_000) {
+      return NextResponse.json({ error: "Fichier trop volumineux (max 20 Mo)" }, { status: 413 });
     }
 
     if (!process.env.MISTRAL_API_KEY) {

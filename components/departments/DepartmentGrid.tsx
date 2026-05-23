@@ -19,13 +19,14 @@ const DEPT_ROLES: Record<string, string> = {
 };
 
 export function DepartmentGrid() {
-  const isUnlocked = useAccessStore((s) => s.isUnlocked);
+  // Subscribe to the actual Set so the UI reacts to unlock/lock changes.
+  const unlockedDepartments = useAccessStore((s) => s.unlockedDepartments);
 
   return (
     <div className="min-h-screen px-4 pt-6 pb-10">
       <div className="grid grid-cols-2 gap-3">
         {DEPARTMENTS.map((dept) => {
-          const unlocked = isUnlocked(dept.slug);
+          const unlocked = unlockedDepartments.has(dept.slug);
           return (
             <Link
               key={dept.slug}

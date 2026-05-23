@@ -42,6 +42,6 @@ export const useAccessStore = create<AccessState>()(
       isUnlocked: (slug) => get().unlockedDepartments.has(slug),
       lockAll: () => set({ unlockedDepartments: new Set<DepartmentSlug>() }),
     }),
-    { name: "cin-o-access", storage: setStorage }
+    { name: "cin-o-access", version: 1, storage: setStorage }
   )
 );

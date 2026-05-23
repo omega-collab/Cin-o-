@@ -269,6 +269,8 @@ export async function POST(req: NextRequest) {
         },
       ],
       responseFormat: { type: "json_object" },
+      maxTokens: 8192,
+      temperature: 0,
     });
 
     const raw = (chatResponse.choices?.[0]?.message?.content ?? "").toString().trim();

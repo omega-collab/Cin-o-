@@ -27,6 +27,6 @@ export const useUserStore = create<UserProfile>()(
       resetProfile: () =>
         set({ department: null, role: null, avatarId: null, onboardingDone: false }),
     }),
-    { name: "cin-o-user" }
+    { name: "cin-o-user", version: 1 }
   )
 );

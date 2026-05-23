@@ -16,6 +16,7 @@ export function useProjectSync(projectId: string | null) {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRemoteAt = useRef<string | null>(null);
   const isSavingRef = useRef(false);
+  const isHydratingRef = useRef(false);
 
   // ── Load project data ────────────────────────────────────────────────────────
   const loadData = useCallback(async (pid: string) => {
@@ -36,6 +37,11 @@ export function useProjectSync(projectId: string | null) {
     if (!data) return;
 
     lastRemoteAt.current = data.updated_at;
+
+    // Suppress the scheduleSave that would otherwise fire from the store
+    // subscribers when we hydrate from Supabase (avoids an immediate
+    // round-trip rewriting the data we just fetched).
+    isHydratingRef.current = true;
 
     // Hydrate shoot store only when the snapshot actually has shoot data.
     // If the key is absent or empty, trust the local store (avoid wiping a
@@ -60,6 +66,10 @@ export function useProjectSync(projectId: string | null) {
         });
       }
     }
+
+    // Re-enable saves after the current microtask so any pending subscribe
+    // callbacks (which run synchronously after setState) see the flag set.
+    queueMicrotask(() => { isHydratingRef.current = false; });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -101,6 +111,8 @@ export function useProjectSync(projectId: string | null) {
   // ── Debounced save on store changes ──────────────────────────────────────────
   const scheduleSave = useCallback(() => {
     if (!projectId) return;
+    // Skip the save triggered by our own hydration from Supabase
+    if (isHydratingRef.current) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => void saveData(projectId), DEBOUNCE_MS);
   }, [projectId, saveData]);

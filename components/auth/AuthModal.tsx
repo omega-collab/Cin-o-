@@ -173,7 +173,7 @@ export function AuthModal() {
         setSuccess("Compte créé ! Vérifiez votre email pour confirmer.");
       } else if (screen === "resetPassword") {
         const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined,
+          redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
         });
         if (err) throw err;
         setSuccess("Email envoyé ! Consultez votre boîte mail pour réinitialiser votre mot de passe.");
@@ -197,7 +197,7 @@ export function AuthModal() {
     setError(""); setSuccess(""); setLoading(true);
     try {
       const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined,
+        redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
       });
       if (err) throw err;
       setSuccess("Email envoyé ! Consultez votre boîte mail pour réinitialiser votre mot de passe.");

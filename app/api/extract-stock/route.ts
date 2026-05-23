@@ -6,22 +6,21 @@ export const maxDuration = 60;
 const STOCK_PROMPT = `Tu es un assistant expert en gestion de matériel technique pour la production cinématographique.
 Analyse ce document (feuille de stock / inventaire matériel) et extrais la liste complète des équipements.
 
-Réponds UNIQUEMENT avec un tableau JSON valide. Chaque article doit avoir cette structure :
-[
-  {
-    "name": "Nom complet de l'équipement",
-    "quantity": 1,
-    "unit": "unité | set | câbles | cartes | rouleaux | packs | kg | etc.",
-    "status": "ok | low | out",
-    "notes": "informations complémentaires (optionnel)"
-  }
-]
+Réponds UNIQUEMENT avec un objet JSON valide ayant la forme { "items": [ ... ] }.
+Chaque article du tableau "items" doit avoir cette structure :
+{
+  "name": "Nom complet de l'équipement",
+  "quantity": 1,
+  "unit": "unité | set | câbles | cartes | rouleaux | packs | kg | etc.",
+  "status": "ok | low | out",
+  "notes": "informations complémentaires (optionnel)"
+}
 
 Règles :
 - "status": "ok" = en bon état / disponible, "low" = stock faible / état dégradé, "out" = épuisé / hors service
 - "unit" au singulier si quantity = 1, au pluriel sinon
 - Inclure TOUS les équipements listés, même s'ils semblent en mauvais état
-- Si le document n'est pas une feuille de stock, retourne []`;
+- Si le document n'est pas une feuille de stock, retourne { "items": [] }`;
 
 function normalizeMediaType(raw: string): "application/pdf" | "image/jpeg" | "image/png" | "image/gif" | "image/webp" | null {
   const t = raw.trim().toLowerCase();
@@ -72,13 +71,16 @@ export async function POST(req: NextRequest) {
       model: "mistral-small-latest",
       messages: [{ role: "user", content: `=== ${filename} ===\n${docText}\n\n${STOCK_PROMPT}` }],
       responseFormat: { type: "json_object" },
+      maxTokens: 4096,
+      temperature: 0,
     });
 
     const raw = (chatResponse.choices?.[0]?.message?.content ?? "").toString().trim();
-    const jsonMatch = raw.match(/\[[\s\S]*\]/);
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch?.[0]) return NextResponse.json({ items: [] });
 
-    const items = JSON.parse(jsonMatch[0]) as unknown[];
+    const parsed = JSON.parse(jsonMatch[0]) as { items?: unknown };
+    const items = Array.isArray(parsed.items) ? parsed.items : [];
     return NextResponse.json({ items });
   } catch (err) {
     console.error("[extract-stock] error:", err instanceof Error ? err.message : String(err));

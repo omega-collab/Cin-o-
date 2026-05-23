@@ -80,6 +80,10 @@ interface ShootStore {
   setPlaces: (places: PlacePoint[]) => void;
   setAlerts: (alerts: ShootAlert[]) => void;
   setNextDays: (days: NextDayInfo[]) => void;
+  // Merge incoming PDT days with existing nextDays (preserves unknown dates,
+  // excludes the current shoot.date). Use this when importing a PDT so earlier
+  // imports of further-out days aren't wiped.
+  mergeNextDays: (days: NextDayInfo[]) => void;
 
   // Publish
   publish: () => void;
@@ -213,6 +217,25 @@ export const useShootStore = create<ShootStore>()(
             auditLog: [...s.shoot.auditLog, makeAudit("PDT importé", "upload", `${days.length} jour(s)`)],
           },
         })),
+
+      mergeNextDays: (incoming) =>
+        set((s) => {
+          const currentDate = s.shoot.date;
+          const incomingDates = new Set<string>(incoming.map((d) => d.date));
+          const merged = [
+            ...s.shoot.nextDays.filter(
+              (d) => !incomingDates.has(d.date) && d.date !== currentDate
+            ),
+            ...incoming.filter((d) => d.date !== currentDate),
+          ].sort((a, b) => a.date.localeCompare(b.date));
+          return {
+            shoot: {
+              ...s.shoot,
+              nextDays: merged,
+              auditLog: [...s.shoot.auditLog, makeAudit("PDT fusionné", "upload", `${incoming.length} jour(s)`)],
+            },
+          };
+        }),
 
       publish: () =>
         set((s) => ({

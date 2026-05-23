@@ -38,6 +38,6 @@ export const useDailyStore = create<DailyStore>()(
         set((s) => ({ shoot: { ...s.shoot, isPublished: false } })),
       reset: () => set({ shoot: DEFAULT_SHOOT }),
     }),
-    { name: "cin-o-daily" }
+    { name: "cin-o-daily", version: 1 }
   )
 );

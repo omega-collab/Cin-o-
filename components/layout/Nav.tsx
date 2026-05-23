@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,8 @@ const NAV_ITEMS = [
 export function Nav() {
   const pathname = usePathname();
   const router = useRouter();
+  // Suppress the synthetic click iOS fires ~300ms after touchend on any item
+  const touchedHrefs = useRef(new Set<string>());
 
   return (
     <>
@@ -42,6 +45,7 @@ export function Nav() {
               <Link
                 key={href}
                 href={href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
                   active
@@ -65,6 +69,7 @@ export function Nav() {
       <nav
         className="fixed bottom-0 left-0 right-0 md:hidden z-50 glass-card rounded-none border-t border-stroke/50"
         style={{ backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}
+        aria-label="Navigation principale"
       >
         <div className="grid grid-cols-6 h-[60px]">
           {NAV_ITEMS.map(({ href, label, Icon }) => {
@@ -72,7 +77,19 @@ export function Nav() {
             return (
               <button
                 key={href}
-                onTouchEnd={(e) => { e.preventDefault(); router.push(href); }}
+                type="button"
+                aria-label={label}
+                aria-current={active ? "page" : undefined}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  touchedHrefs.current.add(href);
+                  setTimeout(() => touchedHrefs.current.delete(href), 400);
+                  router.push(href);
+                }}
+                onClick={() => {
+                  if (touchedHrefs.current.has(href)) return;
+                  router.push(href);
+                }}
                 className="flex flex-col items-center justify-center gap-1 w-full h-full"
                 style={{
                   color: active ? "#00E0D0" : "#8E9AAF",
