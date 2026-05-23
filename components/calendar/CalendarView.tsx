@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, MapPin, Film, Upload, CheckCircle, AlertCirc
 import type { ProductionDay } from "@/lib/data/calendar";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useUserStore } from "@/lib/store/useUserStore";
+import { DEPARTMENTS } from "@/lib/data/departments";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -216,7 +217,10 @@ export function CalendarView() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [pdtStatus, setPdtStatus] = useState<PdtStatus>("idle");
   const [pdtMessage, setPdtMessage] = useState("");
+  const [deptFilter, setDeptFilter] = useState<string>("mine");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const effectiveDept = deptFilter === "mine" ? department : deptFilter;
 
   async function handlePdtFile(file: File) {
     if (!file) return;
@@ -402,9 +406,38 @@ export function CalendarView() {
 
       {/* Upcoming days */}
       <div className="space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted">
-          {selectedDate === today ? "Jours à venir" : `Tournage · ${frDayMonth(selectedDate)}`}
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted">
+            {selectedDate === today ? "Jours à venir" : `Tournage · ${frDayMonth(selectedDate)}`}
+          </h2>
+        </div>
+
+        {/* Department filter chips — shown only when there are days */}
+        {productionDays.length > 0 && (
+          <div className="overflow-x-auto -mx-4 px-4">
+            <div className="flex gap-1.5 flex-nowrap pb-1">
+              <button
+                onClick={() => setDeptFilter("mine")}
+                className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors ${
+                  deptFilter === "mine" ? "bg-cyanSoft text-cyan" : "bg-white/5 text-muted"
+                }`}
+              >
+                Ma section
+              </button>
+              {DEPARTMENTS.map((d) => (
+                <button
+                  key={d.slug}
+                  onClick={() => setDeptFilter(d.slug)}
+                  className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors ${
+                    deptFilter === d.slug ? "bg-cyanSoft text-cyan" : "bg-white/5 text-muted"
+                  }`}
+                >
+                  {d.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {visibleDays.length === 0 ? (
           <div className="glass-card rounded-app p-6 text-center space-y-2">
@@ -416,7 +449,7 @@ export function CalendarView() {
             </p>
           </div>
         ) : (
-          visibleDays.map((day) => <ProductionDayCard key={day.id} day={day} department={department} />)
+          visibleDays.map((day) => <ProductionDayCard key={day.id} day={day} department={effectiveDept} />)
         )}
       </div>
     </div>
