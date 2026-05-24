@@ -6,6 +6,19 @@ export const maxDuration = 60;
 const STOCK_PROMPT = `Tu es un assistant expert en gestion de matériel technique pour la production cinématographique.
 Analyse ce document (feuille de stock / inventaire matériel) et extrais la liste complète des équipements.
 
+LE DOCUMENT PEUT ÊTRE :
+- Imprimé (Excel, Word, PDF tableur — listes structurées, plus facile à lire)
+- Manuscrit (notes sur cahier, fiche d'inventaire remplie à la main, post-it photographiés)
+- Mixte (formulaire imprimé avec ajouts manuscrits dans les marges ou entre les lignes)
+
+GESTION DE L'ÉCRITURE MANUSCRITE :
+- Lis ATTENTIVEMENT les annotations manuscrites — listes au stylo, ratures, ajouts en marge, encadrés
+- Les ratures qui barrent un article = article supprimé (n'inclus pas)
+- Les ajouts en marge / interlignes = nouveaux articles à inclure
+- Les chiffres manuscrits côté quantité priment sur les chiffres imprimés rayés
+- Une coche ou croix manuscrite peut indiquer un statut : ✓ = "ok", X / barré = "out", ? / "à vérif" = "low"
+- En cas de doute sur la lecture manuscrite, choisis la lecture la plus probable et signale-le dans "notes"
+
 Réponds UNIQUEMENT avec un objet JSON valide ayant la forme { "items": [ ... ] }.
 Chaque article du tableau "items" doit avoir cette structure :
 {
@@ -13,13 +26,14 @@ Chaque article du tableau "items" doit avoir cette structure :
   "quantity": 1,
   "unit": "unité | set | câbles | cartes | rouleaux | packs | kg | etc.",
   "status": "ok | low | out",
-  "notes": "informations complémentaires (optionnel)"
+  "notes": "informations complémentaires (optionnel — utile pour signaler 'lecture manuscrite incertaine')"
 }
 
 Règles :
 - "status": "ok" = en bon état / disponible, "low" = stock faible / état dégradé, "out" = épuisé / hors service
 - "unit" au singulier si quantity = 1, au pluriel sinon
-- Inclure TOUS les équipements listés, même s'ils semblent en mauvais état
+- Inclure TOUS les équipements listés (imprimés + manuscrits), même s'ils semblent en mauvais état
+- Ne JAMAIS inventer un article qui n'est pas dans le document
 - Si le document n'est pas une feuille de stock, retourne { "items": [] }`;
 
 function normalizeMediaType(raw: string): "application/pdf" | "image/jpeg" | "image/png" | "image/gif" | "image/webp" | null {

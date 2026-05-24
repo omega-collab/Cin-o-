@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, Loader2, AlertCircle, Check, Trash2, Plus } from "lucide-react";
+import { Upload, Loader2, AlertCircle, Check, Trash2, Plus, FileText } from "lucide-react";
 import type { DepartmentSlug, StockItem } from "@/lib/types";
 import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
 
@@ -35,6 +35,13 @@ const STATUS_OPTIONS: { value: StockItem["status"]; label: string }[] = [
   { value: "out", label: "Épuisé" },
 ];
 
+interface ProcessedFile {
+  name: string;
+  count: number;
+  status: "done" | "error";
+  error?: string;
+}
+
 interface Props {
   slug: DepartmentSlug;
   onClose: () => void;
@@ -42,19 +49,21 @@ interface Props {
 
 export function StockImportPanel({ slug, onClose }: Props) {
   const setStock = useDepartmentStore((s) => s.setStock);
+  const mergeStock = useDepartmentStore((s) => s.mergeStock);
+  const existingCount = useDepartmentStore((s) => (s.stock[slug] ?? []).length);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [items, setItems] = useState<StockItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filename, setFilename] = useState<string | null>(null);
+  const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
+  // Default to "merge" — user's request: add to stock progressively
+  const [mergeMode, setMergeMode] = useState<"merge" | "replace">("merge");
 
-  async function handleFile(file: File) {
-    if (file.size > 20 * 1024 * 1024) { setError("Fichier trop grand (max 20 Mo)"); return; }
-    setLoading(true);
-    setError(null);
-    setFilename(file.name);
-
+  async function processOne(file: File): Promise<{ items: StockItem[]; error?: string }> {
+    if (file.size > 20 * 1024 * 1024) {
+      return { items: [], error: "Fichier trop grand (max 20 Mo)" };
+    }
     try {
       const base64 = await fileToBase64(file);
       const res = await fetch("/api/extract-stock", {
@@ -63,18 +72,47 @@ export function StockImportPanel({ slug, onClose }: Props) {
         body: JSON.stringify({ base64, mediaType: detectMime(file), filename: file.name }),
       });
       const json = await res.json() as { items?: StockItem[]; error?: string };
-      if (!res.ok || json.error) throw new Error(json.error ?? "Erreur extraction");
-      const extracted = (json.items ?? []).map((item, i) => ({
+      if (!res.ok || json.error) {
+        return { items: [], error: json.error ?? `Erreur ${res.status}` };
+      }
+      const extracted = (json.items ?? []).map((item) => ({
         ...item,
         id: crypto.randomUUID(),
         status: (item.status === "ok" || item.status === "low" || item.status === "out") ? item.status : "ok",
       } as StockItem));
-      setItems(extracted);
-      if (extracted.length === 0) setError("Aucun article détecté dans ce document.");
+      return { items: extracted };
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inconnue");
-    } finally {
-      setLoading(false);
+      return { items: [], error: err instanceof Error ? err.message : "Erreur inconnue" };
+    }
+  }
+
+  async function handleFiles(files: FileList | File[]) {
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    setLoading(true);
+    setError(null);
+
+    const processed: ProcessedFile[] = [];
+    let allItems: StockItem[] = [...items];
+
+    for (const file of list) {
+      const { items: newItems, error: fileError } = await processOne(file);
+      if (fileError) {
+        processed.push({ name: file.name, count: 0, status: "error", error: fileError });
+      } else {
+        processed.push({ name: file.name, count: newItems.length, status: "done" });
+        allItems = [...allItems, ...newItems];
+      }
+    }
+
+    setProcessedFiles((prev) => [...prev, ...processed]);
+    setItems(allItems);
+    setLoading(false);
+
+    if (processed.every((p) => p.status === "error")) {
+      setError("Aucun fichier exploité.");
+    } else if (allItems.length === 0) {
+      setError("Aucun article détecté dans les documents importés.");
     }
   }
 
@@ -90,6 +128,12 @@ export function StockImportPanel({ slug, onClose }: Props) {
     setItems((prev) => [...prev, { id: crypto.randomUUID(), name: "", quantity: 1, unit: "unité", status: "ok" }]);
   }
 
+  function clearStaged() {
+    setItems([]);
+    setProcessedFiles([]);
+    setError(null);
+  }
+
   function handleApply() {
     const emptyNames = items.filter((it) => !it.name.trim());
     if (emptyNames.length > 0) {
@@ -98,13 +142,17 @@ export function StockImportPanel({ slug, onClose }: Props) {
       );
       return;
     }
-    setStock(slug, items);
+    if (mergeMode === "merge") {
+      mergeStock(slug, items);
+    } else {
+      setStock(slug, items);
+    }
     onClose();
   }
 
   return (
     <div className="space-y-4">
-      {/* Drop zone */}
+      {/* Drop zone — multi-file */}
       <div
         onClick={() => inputRef.current?.click()}
         className="glass-card border-2 border-dashed border-stroke hover:border-cyan/40 transition-colors rounded-app p-5 flex items-center gap-3 cursor-pointer"
@@ -116,18 +164,48 @@ export function StockImportPanel({ slug, onClose }: Props) {
         )}
         <div>
           <p className="text-sm font-medium text-textSoft">
-            {filename ?? "Importer la feuille de stock"}
+            {loading ? "Analyse en cours…" : "Importer une ou plusieurs feuilles"}
           </p>
-          <p className="text-xs text-muted">PDF, JPG, PNG — max 20 Mo</p>
+          <p className="text-xs text-muted">
+            PDF, JPG, PNG · max 20 Mo · imprimé ou manuscrit
+          </p>
         </div>
         <input
           ref={inputRef}
           type="file"
           accept={ACCEPT}
+          multiple
           className="hidden"
-          onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = ""; }}
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length > 0) {
+              handleFiles(e.target.files);
+              e.target.value = "";
+            }
+          }}
         />
       </div>
+
+      {/* Processed files list */}
+      {processedFiles.length > 0 && (
+        <div className="space-y-1">
+          {processedFiles.map((f, i) => (
+            <div
+              key={i}
+              className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-xl ${
+                f.status === "error"
+                  ? "bg-danger/10 text-danger border border-danger/20"
+                  : "bg-cyan/5 text-textSoft border border-stroke"
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5 shrink-0" />
+              <span className="flex-1 truncate">{f.name}</span>
+              <span className="shrink-0 font-mono text-[10px]">
+                {f.status === "error" ? f.error : `+${f.count}`}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {error && (
         <div className="flex items-start gap-2 p-3 bg-danger/10 border border-danger/20 rounded-2xl">
@@ -136,12 +214,56 @@ export function StockImportPanel({ slug, onClose }: Props) {
         </div>
       )}
 
+      {/* Merge / Replace toggle */}
+      {items.length > 0 && existingCount > 0 && (
+        <div className="glass-card rounded-2xl p-3 space-y-2">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
+            {existingCount} article{existingCount > 1 ? "s" : ""} déjà en stock — que faire ?
+          </p>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => setMergeMode("merge")}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
+                mergeMode === "merge"
+                  ? "bg-cyanSoft text-cyan border border-cyan/30"
+                  : "bg-white/5 text-muted border border-stroke"
+              }`}
+            >
+              Compléter
+            </button>
+            <button
+              onClick={() => setMergeMode("replace")}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
+                mergeMode === "replace"
+                  ? "bg-warning/15 text-warning border border-warning/30"
+                  : "bg-white/5 text-muted border border-stroke"
+              }`}
+            >
+              Remplacer
+            </button>
+          </div>
+          <p className="text-[10px] text-muted leading-relaxed">
+            {mergeMode === "merge"
+              ? "Les nouveaux articles s'ajoutent. Si un nom existe déjà, les quantités s'additionnent et le statut le plus restrictif est gardé."
+              : "Le stock existant sera entièrement remplacé par cette liste."}
+          </p>
+        </div>
+      )}
+
       {/* Extracted items — editable */}
       {items.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted">
-            {items.length} article{items.length > 1 ? "s" : ""} détecté{items.length > 1 ? "s" : ""} — vérifiez avant d'appliquer
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted">
+              {items.length} article{items.length > 1 ? "s" : ""} prêt{items.length > 1 ? "s" : ""} — vérifiez
+            </p>
+            <button
+              onClick={clearStaged}
+              className="text-[11px] text-muted underline"
+            >
+              Tout effacer
+            </button>
+          </div>
 
           {items.map((it) => (
             <div key={it.id} className="glass-card rounded-2xl p-3 space-y-2">
@@ -152,7 +274,11 @@ export function StockImportPanel({ slug, onClose }: Props) {
                   placeholder="Nom de l'équipement"
                   className="flex-1 bg-white/5 border border-stroke rounded-xl px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan/40"
                 />
-                <button onClick={() => removeItem(it.id)} className="text-muted hover:text-danger">
+                <button
+                  onClick={() => removeItem(it.id)}
+                  className="text-muted hover:text-danger"
+                  aria-label="Supprimer cet article de la liste"
+                >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -183,7 +309,7 @@ export function StockImportPanel({ slug, onClose }: Props) {
           ))}
 
           <button onClick={addItem} className="flex items-center gap-1.5 text-xs text-cyan pt-1">
-            <Plus className="w-3.5 h-3.5" /> Ajouter un article
+            <Plus className="w-3.5 h-3.5" /> Ajouter un article manuellement
           </button>
         </div>
       )}
@@ -198,11 +324,13 @@ export function StockImportPanel({ slug, onClose }: Props) {
         </button>
         <button
           onClick={handleApply}
-          disabled={items.length === 0}
+          disabled={items.length === 0 || loading}
           className="flex-1 active-pill rounded-2xl py-3 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-30"
         >
           <Check className="w-4 h-4" />
-          Appliquer ({items.length})
+          {mergeMode === "merge" && existingCount > 0
+            ? `Compléter (+${items.length})`
+            : `Appliquer (${items.length})`}
         </button>
       </div>
     </div>
