@@ -40,8 +40,10 @@ const MOCK_PROFILE = {
   id: MOCK_USER.id,
   display_name: "Démo Utilisateur",
   initials: "DU",
-  department: "camera",
-  role: "3e assistant caméra",
+  // Production = admin in CinéO. Gives full access to the demo mode, including
+  // PDT import + manual day editing on the calendar.
+  department: "production",
+  role: "Directeur de production",
   avatar_id: null,
   created_at: new Date().toISOString(),
 };

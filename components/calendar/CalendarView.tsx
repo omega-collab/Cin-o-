@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
-import { ChevronLeft, ChevronRight, MapPin, Film, Upload, CheckCircle, AlertCircle, Loader } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { ChevronLeft, ChevronRight, MapPin, Film, Upload, CheckCircle, AlertCircle, Loader, Pencil } from "lucide-react";
 import type { ProductionDay } from "@/lib/data/calendar";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useUserStore } from "@/lib/store/useUserStore";
@@ -23,38 +23,47 @@ function toISODate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-interface WeekDay {
-  dayLabel: string;
-  dayNum: number;
-  date: string;
+// One cell in the month grid (can belong to the previous/current/next month).
+interface MonthDay {
+  date: string;     // ISO YYYY-MM-DD
+  dayNum: number;   // 1-31
+  inMonth: boolean; // false → grey out (spillover from prev/next month)
   hasEvent: boolean;
+  isToday: boolean;
 }
 
-function getWeekDays(base: Date, offset: number, days: ProductionDay[] = []): WeekDay[] {
-  const dow = base.getDay();
-  const mondayDelta = dow === 0 ? -6 : 1 - dow;
-  const monday = new Date(base);
-  monday.setDate(base.getDate() + mondayDelta + offset * 7);
-  const eventDates = new Set(days.map((d) => d.date));
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+// Build a 6-row × 7-col grid (42 cells) covering the month of `monthOffset`
+// relative to today's month. Weeks start on Monday (FR convention).
+function getMonthGrid(today: Date, monthOffset: number, eventDates: Set<string>): MonthDay[] {
+  const anchor = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+  const year = anchor.getFullYear();
+  const month = anchor.getMonth();
+
+  const firstOfMonth = new Date(year, month, 1);
+  // Monday = 0, Sunday = 6 (FR week starts Monday)
+  const firstDow = (firstOfMonth.getDay() + 6) % 7;
+  // Start grid on the Monday of the week containing day 1
+  const gridStart = new Date(year, month, 1 - firstDow);
+
+  const todayISO = toISODate(today);
+  const cells: MonthDay[] = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
     const iso = toISODate(d);
-    const idx = (d.getDay() + 6) % 7;
-    return {
-      dayLabel: DAY_LABELS[idx] ?? "LUN",
-      dayNum: d.getDate(),
+    cells.push({
       date: iso,
+      dayNum: d.getDate(),
+      inMonth: d.getMonth() === month,
       hasEvent: eventDates.has(iso),
-    };
-  });
+      isToday: iso === todayISO,
+    });
+  }
+  return cells;
 }
 
-function frMonthYear(date: Date, offset: number): string {
-  const d = new Date(date);
-  const dow = d.getDay();
-  const mondayDelta = dow === 0 ? -6 : 1 - dow;
-  d.setDate(d.getDate() + mondayDelta + offset * 7 + 3); // mid-week
+function frMonthYear(today: Date, monthOffset: number): string {
+  const d = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
   return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 }
 
@@ -84,43 +93,238 @@ const PERIOD_CONFIG: Record<Period, { label: string; bg: string; color: string }
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
-function DayColumn({
-  day, isSelected, isToday, onClick,
+function MonthCell({
+  cell, isSelected, onClick,
 }: {
-  day: WeekDay; isSelected: boolean; isToday: boolean; onClick: () => void;
+  cell: MonthDay; isSelected: boolean; onClick: () => void;
 }) {
+  const baseDayBg = isSelected
+    ? "bg-cyan text-appBg"
+    : cell.isToday
+      ? "bg-cyanSoft text-cyan ring-1 ring-cyan/40"
+      : cell.hasEvent
+        ? "bg-cyan/15 text-cyan font-semibold"
+        : cell.inMonth
+          ? "text-textSoft"
+          : "text-muted/40";
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-1.5 flex-1 py-2 relative"
+      className="aspect-square flex items-center justify-center relative active:scale-95 transition-transform"
       style={{ minWidth: 0 }}
       aria-pressed={isSelected}
+      aria-label={`${cell.dayNum}${cell.hasEvent ? " — événement" : ""}`}
     >
-      <span className={`text-[10px] font-semibold tracking-widest uppercase ${isSelected ? "text-cyan" : "text-muted"}`}>
-        {day.dayLabel}
-      </span>
       <span
-        className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-colors
-          ${isSelected ? "bg-cyan text-appBg" : isToday ? "bg-cyanSoft text-cyan" : "text-textSoft"}`}
+        className={`w-8 h-8 flex items-center justify-center rounded-full text-sm transition-colors ${baseDayBg}`}
       >
-        {day.dayNum}
+        {cell.dayNum}
       </span>
-      {day.hasEvent && (
-        <span className={`w-1.5 h-1.5 rounded-full absolute bottom-1 ${isSelected ? "bg-appBg" : "bg-cyan"}`} />
+      {cell.hasEvent && !isSelected && (
+        <span className="w-1 h-1 rounded-full absolute bottom-0.5 bg-cyan" />
       )}
     </button>
   );
 }
 
-function ProductionDayCard({ day }: { day: ProductionDay }) {
+const INP_CLS = "w-full bg-white/5 border border-stroke rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan/40";
+
+function ProductionDayCard({ day, canEdit }: { day: ProductionDay; canEdit: boolean }) {
+  const updateNextDay = useShootStore((s) => s.updateNextDay);
   const [expanded, setExpanded] = useState(false);
+  const [editing, setEditing] = useState(false);
+
+  // Local form state — reset whenever the day prop changes (e.g. user picks
+  // another date in the grid). Storing as strings is fine; sequences split on
+  // save.
+  const [form, setForm] = useState({
+    location: day.location,
+    callTime: day.startTime,
+    wrapTime: day.endTime,
+    mealTime: day.mealTime ?? "",
+    effects: day.effects ?? "",
+    interior: day.interior ?? "",
+    sets: day.sets ?? "",
+    sequences: day.scenes.join(", "),
+    shootingDay: day.label.replace(/^J/, ""),
+  });
+
+  // Reset form when switching day
+  useEffect(() => {
+    setEditing(false);
+    setForm({
+      location: day.location,
+      callTime: day.startTime,
+      wrapTime: day.endTime,
+      mealTime: day.mealTime ?? "",
+      effects: day.effects ?? "",
+      interior: day.interior ?? "",
+      sets: day.sets ?? "",
+      sequences: day.scenes.join(", "),
+      shootingDay: day.label.replace(/^J/, ""),
+    });
+  }, [day.date, day.label]);
+
   const s = STATUS_CONFIG[day.status];
   const p = PERIOD_CONFIG[day.period];
   const endDisplay = day.endTime && day.endTime !== "00:00" ? day.endTime : null;
   const hasDetails = !!(day.sets || day.scenes.length > 0 || day.mealTime || day.interior);
-  // Day is "empty" when extraction returned only the date/shootingDay header
-  // with no usable details. Happens on dense one-page PDTs where OCR fails.
   const isEmpty = !day.location && !day.startTime && !day.effects && !hasDetails;
+
+  function handleSave() {
+    const sequences = form.sequences
+      .split(/[,;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const parsedDay = parseInt(form.shootingDay, 10);
+    updateNextDay(day.date, {
+      shootingDay: isNaN(parsedDay) ? 0 : parsedDay,
+      location: form.location.trim() || undefined,
+      callTime: form.callTime.trim() || undefined,
+      wrapTime: form.wrapTime.trim() || undefined,
+      mealTime: form.mealTime.trim() || undefined,
+      effects: form.effects.trim() || undefined,
+      interior: form.interior.trim() || undefined,
+      sets: form.sets.trim() || undefined,
+      sequences: sequences.length > 0 ? sequences : undefined,
+    });
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="glass-card rounded-app overflow-hidden border border-cyan/40">
+        <div className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-cyan capitalize flex-1">
+              Modifier · {frDayMonth(day.date)}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="text-[10px] text-muted block mb-0.5">N° jour</label>
+              <input
+                value={form.shootingDay}
+                onChange={(e) => setForm((f) => ({ ...f, shootingDay: e.target.value }))}
+                className={INP_CLS + " font-mono"}
+                placeholder="1"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-[10px] text-muted block mb-0.5">Lieu</label>
+              <input
+                value={form.location}
+                onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                className={INP_CLS}
+                placeholder="LA POTERIE"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="text-[10px] text-muted block mb-0.5">Début</label>
+              <input
+                type="time"
+                value={form.callTime}
+                onChange={(e) => setForm((f) => ({ ...f, callTime: e.target.value }))}
+                className={INP_CLS + " font-mono"}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-muted block mb-0.5">Fin</label>
+              <input
+                type="time"
+                value={form.wrapTime}
+                onChange={(e) => setForm((f) => ({ ...f, wrapTime: e.target.value }))}
+                className={INP_CLS + " font-mono"}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-muted block mb-0.5">Repas</label>
+              <input
+                type="time"
+                value={form.mealTime}
+                onChange={(e) => setForm((f) => ({ ...f, mealTime: e.target.value }))}
+                className={INP_CLS + " font-mono"}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] text-muted block mb-0.5">Ambiance</label>
+              <select
+                value={form.effects}
+                onChange={(e) => setForm((f) => ({ ...f, effects: e.target.value }))}
+                className={INP_CLS}
+              >
+                <option value="">—</option>
+                <option value="JOUR">JOUR</option>
+                <option value="NUIT">NUIT</option>
+                <option value="JOUR/SOIR">JOUR/SOIR</option>
+                <option value="JOUR/NUIT">JOUR/NUIT</option>
+                <option value="AUBE/JOUR">AUBE/JOUR</option>
+                <option value="JOUR/CREP">JOUR/CREP</option>
+                <option value="REPOS">REPOS</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-muted block mb-0.5">Décor</label>
+              <select
+                value={form.interior}
+                onChange={(e) => setForm((f) => ({ ...f, interior: e.target.value }))}
+                className={INP_CLS}
+              >
+                <option value="">—</option>
+                <option value="INT">INT</option>
+                <option value="EXT">EXT</option>
+                <option value="INT/EXT">INT/EXT</option>
+                <option value="EXT/INT">EXT/INT</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] text-muted block mb-0.5">Description des décors</label>
+            <textarea
+              value={form.sets}
+              onChange={(e) => setForm((f) => ({ ...f, sets: e.target.value }))}
+              rows={2}
+              className={INP_CLS + " leading-snug resize-y"}
+              placeholder="MAISON MIGUEL MAJOR / TERRAIN BOISÉ / FORÊT-CHEMIN"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] text-muted block mb-0.5">Séquences (séparées par virgules)</label>
+            <input
+              value={form.sequences}
+              onChange={(e) => setForm((f) => ({ ...f, sequences: e.target.value }))}
+              className={INP_CLS + " font-mono"}
+              placeholder="304, 305, 306"
+            />
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => setEditing(false)}
+              className="flex-1 py-2.5 rounded-xl text-xs font-semibold glass-card text-muted"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex-1 py-2.5 rounded-xl text-xs font-semibold active-pill"
+            >
+              Enregistrer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="glass-card rounded-app overflow-hidden border border-stroke/50">
@@ -142,7 +346,7 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
           )}
         </div>
 
-        {/* Row 2: location — hidden when empty (no fake "—") */}
+        {/* Row 2: location — hidden when empty */}
         {day.location && (
           <div className="flex items-center gap-1.5">
             <MapPin size={13} className="text-muted shrink-0" />
@@ -150,7 +354,7 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
           </div>
         )}
 
-        {/* Row 3: horaires + effets — only when we actually have a value */}
+        {/* Row 3: horaires + effets */}
         {(day.startTime || day.effects) && (
           <div className="flex items-center gap-2 flex-wrap">
             {day.startTime && (
@@ -167,23 +371,24 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
         )}
 
         {/* Helpful message when nothing was extracted for this day */}
-        {isEmpty && (
+        {isEmpty && canEdit && (
           <p className="text-[11px] text-muted italic">
-            Le PDT n&apos;a pas donné de détails pour ce jour. Ré-importez une version moins condensée si possible.
+            Le PDT n&apos;a pas donné de détails. Touchez « Modifier » pour compléter à la main.
+          </p>
+        )}
+        {isEmpty && !canEdit && (
+          <p className="text-[11px] text-muted italic">
+            Détails non disponibles pour ce jour.
           </p>
         )}
 
         {/* Détails dépliables */}
         {expanded && (
           <div className="space-y-2.5 pt-1 border-t border-stroke/30">
-            {/* Décors */}
             {day.sets && (
-              <div className="text-xs text-muted leading-snug">
-                {day.sets}
-              </div>
+              <div className="text-xs text-muted leading-snug">{day.sets}</div>
             )}
 
-            {/* INT/EXT + Repas */}
             <div className="flex items-center gap-2 flex-wrap">
               {day.interior && (
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/8 text-muted tracking-wide">
@@ -197,7 +402,6 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
               )}
             </div>
 
-            {/* Séquences */}
             {day.scenes.length > 0 && (
               <div className="flex items-center gap-1 flex-wrap">
                 <Film size={11} className="text-muted shrink-0" />
@@ -211,15 +415,25 @@ function ProductionDayCard({ day }: { day: ProductionDay }) {
           </div>
         )}
 
-        {/* Voir plus / Voir moins */}
-        {hasDetails && (
-          <button
-            onClick={() => setExpanded((o) => !o)}
-            className="text-[10px] font-semibold text-cyan active:opacity-70 transition-opacity"
-          >
-            {expanded ? "Voir moins ▲" : "Voir plus ▼"}
-          </button>
-        )}
+        {/* Actions */}
+        <div className="flex items-center justify-between gap-2 pt-1">
+          {hasDetails ? (
+            <button
+              onClick={() => setExpanded((o) => !o)}
+              className="text-[10px] font-semibold text-cyan active:opacity-70 transition-opacity"
+            >
+              {expanded ? "Voir moins ▲" : "Voir plus ▼"}
+            </button>
+          ) : <span />}
+          {canEdit && (
+            <button
+              onClick={() => setEditing(true)}
+              className="text-[10px] font-semibold text-cyan glass-card px-2.5 py-1 rounded-lg flex items-center gap-1"
+            >
+              <Pencil size={11} /> Modifier
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -232,12 +446,12 @@ type PdtStatus = "idle" | "loading" | "success" | "warning" | "error";
 // ── main component ────────────────────────────────────────────────────────────
 
 export function CalendarView() {
-  const { shoot, mergeNextDays } = useShootStore();
+  const { shoot, mergeNextDays, updateNextDay } = useShootStore();
   const department = useUserStore((s) => s.department);
   const isAdmin = department === "production";
   const today = useMemo(() => toISODate(new Date()), []);
   const [selectedDate, setSelectedDate] = useState<string>(today);
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
   const [pdtStatus, setPdtStatus] = useState<PdtStatus>("idle");
   const [pdtMessage, setPdtMessage] = useState("");
   const [deptFilter, setDeptFilter] = useState<string>("mine");
@@ -347,8 +561,15 @@ export function CalendarView() {
     return days;
   }, [shoot]);
 
-  const weekDays = useMemo(() => getWeekDays(new Date(), weekOffset, productionDays), [weekOffset, productionDays]);
-  const monthYear = useMemo(() => frMonthYear(new Date(), weekOffset), [weekOffset]);
+  const eventDateSet = useMemo(
+    () => new Set(productionDays.map((d) => d.date)),
+    [productionDays]
+  );
+  const monthGrid = useMemo(
+    () => getMonthGrid(new Date(), monthOffset, eventDateSet),
+    [monthOffset, eventDateSet]
+  );
+  const monthYear = useMemo(() => frMonthYear(new Date(), monthOffset), [monthOffset]);
 
   // Sort all production days chronologically. Past days remain visible —
   // critical for users who import a PDT mid-shoot and want to consult the
@@ -428,37 +649,59 @@ export function CalendarView() {
         </div>
       )}
 
-      {/* Week strip */}
+      {/* Month calendar grid */}
       <div className="glass-card rounded-app p-4">
         <div className="flex items-center justify-between mb-3">
           <button
-            onClick={() => setWeekOffset((o) => o - 1)}
-            className="w-8 h-8 flex items-center justify-center rounded-xl glass-card text-textSoft"
-            aria-label="Semaine précédente"
+            onClick={() => setMonthOffset((o) => o - 1)}
+            className="w-9 h-9 flex items-center justify-center rounded-xl glass-card text-textSoft"
+            aria-label="Mois précédent"
           >
             <ChevronLeft size={16} />
           </button>
           <span className="text-sm font-semibold text-textSoft capitalize">{monthYear}</span>
           <button
-            onClick={() => setWeekOffset((o) => o + 1)}
-            className="w-8 h-8 flex items-center justify-center rounded-xl glass-card text-textSoft"
-            aria-label="Semaine suivante"
+            onClick={() => setMonthOffset((o) => o + 1)}
+            className="w-9 h-9 flex items-center justify-center rounded-xl glass-card text-textSoft"
+            aria-label="Mois suivant"
           >
             <ChevronRight size={16} />
           </button>
         </div>
 
-        <div className="flex">
-          {weekDays.map((day) => (
-            <DayColumn
-              key={day.date}
-              day={day}
-              isSelected={day.date === selectedDate}
-              isToday={day.date === today}
-              onClick={() => setSelectedDate(day.date)}
+        {/* Weekday header — fixed labels above the grid */}
+        <div className="grid grid-cols-7 mb-1">
+          {DAY_LABELS.map((label) => (
+            <div
+              key={label}
+              className="text-[10px] font-semibold tracking-widest uppercase text-muted text-center py-1"
+            >
+              {label}
+            </div>
+          ))}
+        </div>
+
+        {/* 6×7 grid */}
+        <div className="grid grid-cols-7 gap-y-0.5">
+          {monthGrid.map((cell) => (
+            <MonthCell
+              key={cell.date}
+              cell={cell}
+              isSelected={cell.date === selectedDate}
+              onClick={() => setSelectedDate(cell.date)}
             />
           ))}
         </div>
+
+        {/* Today shortcut */}
+        {(monthOffset !== 0 || selectedDate !== today) && (
+          <button
+            onClick={() => { setMonthOffset(0); setSelectedDate(today); }}
+            className="mt-3 w-full py-1.5 text-[11px] text-cyan font-semibold"
+          >
+            Aller à aujourd&apos;hui
+          </button>
+        )}
       </div>
 
       {/* Planning */}
@@ -511,9 +754,17 @@ export function CalendarView() {
                 ? "Aucun tournage prévu ce jour."
                 : "Aucun jour de tournage à venir. Importez le PDT pour peupler le calendrier."}
             </p>
+            {isAdmin && selectedDate !== today && (
+              <button
+                onClick={() => updateNextDay(selectedDate, { shootingDay: 0 })}
+                className="text-xs text-cyan glass-card px-3 py-1.5 rounded-xl flex items-center gap-1.5 mx-auto"
+              >
+                <Pencil size={12} /> Ajouter ce jour au planning
+              </button>
+            )}
           </div>
         ) : (
-          visibleDays.map((day) => <ProductionDayCard key={day.id} day={day} />)
+          visibleDays.map((day) => <ProductionDayCard key={day.id} day={day} canEdit={isAdmin} />)
         )}
       </div>
     </div>
