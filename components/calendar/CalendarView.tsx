@@ -23,38 +23,47 @@ function toISODate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-interface WeekDay {
-  dayLabel: string;
-  dayNum: number;
-  date: string;
+// One cell in the month grid (can belong to the previous/current/next month).
+interface MonthDay {
+  date: string;     // ISO YYYY-MM-DD
+  dayNum: number;   // 1-31
+  inMonth: boolean; // false → grey out (spillover from prev/next month)
   hasEvent: boolean;
+  isToday: boolean;
 }
 
-function getWeekDays(base: Date, offset: number, days: ProductionDay[] = []): WeekDay[] {
-  const dow = base.getDay();
-  const mondayDelta = dow === 0 ? -6 : 1 - dow;
-  const monday = new Date(base);
-  monday.setDate(base.getDate() + mondayDelta + offset * 7);
-  const eventDates = new Set(days.map((d) => d.date));
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+// Build a 6-row × 7-col grid (42 cells) covering the month of `monthOffset`
+// relative to today's month. Weeks start on Monday (FR convention).
+function getMonthGrid(today: Date, monthOffset: number, eventDates: Set<string>): MonthDay[] {
+  const anchor = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+  const year = anchor.getFullYear();
+  const month = anchor.getMonth();
+
+  const firstOfMonth = new Date(year, month, 1);
+  // Monday = 0, Sunday = 6 (FR week starts Monday)
+  const firstDow = (firstOfMonth.getDay() + 6) % 7;
+  // Start grid on the Monday of the week containing day 1
+  const gridStart = new Date(year, month, 1 - firstDow);
+
+  const todayISO = toISODate(today);
+  const cells: MonthDay[] = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
     const iso = toISODate(d);
-    const idx = (d.getDay() + 6) % 7;
-    return {
-      dayLabel: DAY_LABELS[idx] ?? "LUN",
-      dayNum: d.getDate(),
+    cells.push({
       date: iso,
+      dayNum: d.getDate(),
+      inMonth: d.getMonth() === month,
       hasEvent: eventDates.has(iso),
-    };
-  });
+      isToday: iso === todayISO,
+    });
+  }
+  return cells;
 }
 
-function frMonthYear(date: Date, offset: number): string {
-  const d = new Date(date);
-  const dow = d.getDay();
-  const mondayDelta = dow === 0 ? -6 : 1 - dow;
-  d.setDate(d.getDate() + mondayDelta + offset * 7 + 3); // mid-week
+function frMonthYear(today: Date, monthOffset: number): string {
+  const d = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
   return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 }
 
@@ -84,29 +93,35 @@ const PERIOD_CONFIG: Record<Period, { label: string; bg: string; color: string }
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
-function DayColumn({
-  day, isSelected, isToday, onClick,
+function MonthCell({
+  cell, isSelected, onClick,
 }: {
-  day: WeekDay; isSelected: boolean; isToday: boolean; onClick: () => void;
+  cell: MonthDay; isSelected: boolean; onClick: () => void;
 }) {
+  const baseDayBg = isSelected
+    ? "bg-cyan text-appBg"
+    : cell.isToday
+      ? "bg-cyanSoft text-cyan ring-1 ring-cyan/40"
+      : cell.hasEvent
+        ? "bg-cyan/15 text-cyan font-semibold"
+        : cell.inMonth
+          ? "text-textSoft"
+          : "text-muted/40";
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-1.5 flex-1 py-2 relative"
+      className="aspect-square flex items-center justify-center relative active:scale-95 transition-transform"
       style={{ minWidth: 0 }}
       aria-pressed={isSelected}
+      aria-label={`${cell.dayNum}${cell.hasEvent ? " — événement" : ""}`}
     >
-      <span className={`text-[10px] font-semibold tracking-widest uppercase ${isSelected ? "text-cyan" : "text-muted"}`}>
-        {day.dayLabel}
-      </span>
       <span
-        className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-colors
-          ${isSelected ? "bg-cyan text-appBg" : isToday ? "bg-cyanSoft text-cyan" : "text-textSoft"}`}
+        className={`w-8 h-8 flex items-center justify-center rounded-full text-sm transition-colors ${baseDayBg}`}
       >
-        {day.dayNum}
+        {cell.dayNum}
       </span>
-      {day.hasEvent && (
-        <span className={`w-1.5 h-1.5 rounded-full absolute bottom-1 ${isSelected ? "bg-appBg" : "bg-cyan"}`} />
+      {cell.hasEvent && !isSelected && (
+        <span className="w-1 h-1 rounded-full absolute bottom-0.5 bg-cyan" />
       )}
     </button>
   );
@@ -237,7 +252,7 @@ export function CalendarView() {
   const isAdmin = department === "production";
   const today = useMemo(() => toISODate(new Date()), []);
   const [selectedDate, setSelectedDate] = useState<string>(today);
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
   const [pdtStatus, setPdtStatus] = useState<PdtStatus>("idle");
   const [pdtMessage, setPdtMessage] = useState("");
   const [deptFilter, setDeptFilter] = useState<string>("mine");
@@ -347,8 +362,15 @@ export function CalendarView() {
     return days;
   }, [shoot]);
 
-  const weekDays = useMemo(() => getWeekDays(new Date(), weekOffset, productionDays), [weekOffset, productionDays]);
-  const monthYear = useMemo(() => frMonthYear(new Date(), weekOffset), [weekOffset]);
+  const eventDateSet = useMemo(
+    () => new Set(productionDays.map((d) => d.date)),
+    [productionDays]
+  );
+  const monthGrid = useMemo(
+    () => getMonthGrid(new Date(), monthOffset, eventDateSet),
+    [monthOffset, eventDateSet]
+  );
+  const monthYear = useMemo(() => frMonthYear(new Date(), monthOffset), [monthOffset]);
 
   // Sort all production days chronologically. Past days remain visible —
   // critical for users who import a PDT mid-shoot and want to consult the
@@ -428,37 +450,59 @@ export function CalendarView() {
         </div>
       )}
 
-      {/* Week strip */}
+      {/* Month calendar grid */}
       <div className="glass-card rounded-app p-4">
         <div className="flex items-center justify-between mb-3">
           <button
-            onClick={() => setWeekOffset((o) => o - 1)}
-            className="w-8 h-8 flex items-center justify-center rounded-xl glass-card text-textSoft"
-            aria-label="Semaine précédente"
+            onClick={() => setMonthOffset((o) => o - 1)}
+            className="w-9 h-9 flex items-center justify-center rounded-xl glass-card text-textSoft"
+            aria-label="Mois précédent"
           >
             <ChevronLeft size={16} />
           </button>
           <span className="text-sm font-semibold text-textSoft capitalize">{monthYear}</span>
           <button
-            onClick={() => setWeekOffset((o) => o + 1)}
-            className="w-8 h-8 flex items-center justify-center rounded-xl glass-card text-textSoft"
-            aria-label="Semaine suivante"
+            onClick={() => setMonthOffset((o) => o + 1)}
+            className="w-9 h-9 flex items-center justify-center rounded-xl glass-card text-textSoft"
+            aria-label="Mois suivant"
           >
             <ChevronRight size={16} />
           </button>
         </div>
 
-        <div className="flex">
-          {weekDays.map((day) => (
-            <DayColumn
-              key={day.date}
-              day={day}
-              isSelected={day.date === selectedDate}
-              isToday={day.date === today}
-              onClick={() => setSelectedDate(day.date)}
+        {/* Weekday header — fixed labels above the grid */}
+        <div className="grid grid-cols-7 mb-1">
+          {DAY_LABELS.map((label) => (
+            <div
+              key={label}
+              className="text-[10px] font-semibold tracking-widest uppercase text-muted text-center py-1"
+            >
+              {label}
+            </div>
+          ))}
+        </div>
+
+        {/* 6×7 grid */}
+        <div className="grid grid-cols-7 gap-y-0.5">
+          {monthGrid.map((cell) => (
+            <MonthCell
+              key={cell.date}
+              cell={cell}
+              isSelected={cell.date === selectedDate}
+              onClick={() => setSelectedDate(cell.date)}
             />
           ))}
         </div>
+
+        {/* Today shortcut */}
+        {(monthOffset !== 0 || selectedDate !== today) && (
+          <button
+            onClick={() => { setMonthOffset(0); setSelectedDate(today); }}
+            className="mt-3 w-full py-1.5 text-[11px] text-cyan font-semibold"
+          >
+            Aller à aujourd&apos;hui
+          </button>
+        )}
       </div>
 
       {/* Planning */}
