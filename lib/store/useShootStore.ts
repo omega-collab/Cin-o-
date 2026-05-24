@@ -91,6 +91,9 @@ interface ShootStore {
   // excludes the current shoot.date). Use this when importing a PDT so earlier
   // imports of further-out days aren't wiped.
   mergeNextDays: (days: NextDayInfo[]) => void;
+  // Patch a single nextDay entry by date — used by the manual edit flow on
+  // the calendar so the user can complete days that the PDT OCR missed.
+  updateNextDay: (date: string, patch: Partial<NextDayInfo>) => void;
 
   // Publish
   publish: () => void;
@@ -273,6 +276,24 @@ export const useShootStore = create<ShootStore>()(
               ...s.shoot,
               nextDays: merged,
               auditLog: [...s.shoot.auditLog, makeAudit("PDT fusionné", "upload", `${incoming.length} jour(s)`)],
+            },
+          };
+        }),
+
+      updateNextDay: (date, patch) =>
+        set((s) => {
+          const exists = s.shoot.nextDays.some((d) => d.date === date);
+          const updated = exists
+            ? s.shoot.nextDays.map((d) => (d.date === date ? { ...d, ...patch, date } : d))
+            : [
+                ...s.shoot.nextDays,
+                { date, shootingDay: 0, ...patch } as NextDayInfo,
+              ].sort((a, b) => a.date.localeCompare(b.date));
+          return {
+            shoot: {
+              ...s.shoot,
+              nextDays: updated,
+              auditLog: [...s.shoot.auditLog, makeAudit("Jour modifié manuellement", "manual", date)],
             },
           };
         }),
