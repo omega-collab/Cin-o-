@@ -7,19 +7,25 @@ import { useShootStore } from "@/lib/store/useShootStore";
 import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
 
 const DEBOUNCE_MS = 1500;
+// Realtime payloads can arrive slightly after our own upsert response —
+// drop our own events within this window even if isSavingRef has flipped.
+const SELF_ECHO_WINDOW_MS = 3000;
 
 export function useProjectSync(projectId: string | null) {
   const { user, setSyncing, setLastSyncedAt, setSyncError } = useProjectStore();
-  const shootStore = useShootStore();
-  const deptStore = useDepartmentStore();
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRemoteAt = useRef<string | null>(null);
+  const lastLocalSaveAt = useRef<number>(0);
+  // Tracks the last time the user actively edited the store locally. Used to
+  // skip remote loads that would otherwise overwrite unsaved work (e.g. a
+  // freshly uploaded doc whose save is still in the debounce window).
+  const lastLocalChangeAt = useRef<number>(0);
   const isSavingRef = useRef(false);
   const isHydratingRef = useRef(false);
 
   // ── Load project data ────────────────────────────────────────────────────────
-  const loadData = useCallback(async (pid: string) => {
+  const loadData = useCallback(async (pid: string, opts: { fromRealtime?: boolean } = {}) => {
     const { data, error } = await supabase
       .from("project_data")
       .select("*")
@@ -32,28 +38,45 @@ export function useProjectSync(projectId: string | null) {
     }
     useProjectStore.getState().setSyncError(null);
 
-    // No row yet (brand-new project or Supabase hasn't received the first save).
-    // Keep local state — the reset already happened in setActiveProject.
     if (!data) return;
 
-    lastRemoteAt.current = data.updated_at;
-
-    // Suppress the scheduleSave that would otherwise fire from the store
-    // subscribers when we hydrate from Supabase (avoids an immediate
-    // round-trip rewriting the data we just fetched).
-    isHydratingRef.current = true;
-
-    // Hydrate shoot store only when the snapshot actually has shoot data.
-    // If the key is absent or empty, trust the local store (avoid wiping a
-    // just-applied extraction that hasn't been saved to Supabase yet).
-    if (data.shoot_store && typeof data.shoot_store === "object") {
-      const { shoot } = data.shoot_store as { shoot?: unknown };
-      if (shoot) {
-        useShootStore.setState({ shoot: shoot as ReturnType<typeof useShootStore.getState>["shoot"] });
+    // Realtime-triggered loads must not stomp on local edits. If the user
+    // has changed something locally since the remote was last written, keep
+    // local — our pending save will reconcile in a moment.
+    if (opts.fromRealtime) {
+      const remoteAt = new Date(data.updated_at).getTime();
+      if (lastLocalChangeAt.current > remoteAt) {
+        return;
+      }
+      // Also skip if we already applied this exact remote update.
+      if (data.updated_at === lastRemoteAt.current) {
+        return;
       }
     }
 
-    // Hydrate department store
+    lastRemoteAt.current = data.updated_at;
+    isHydratingRef.current = true;
+
+    if (data.shoot_store && typeof data.shoot_store === "object") {
+      const { shoot } = data.shoot_store as { shoot?: unknown };
+      if (shoot) {
+        const remoteShoot = shoot as ReturnType<typeof useShootStore.getState>["shoot"];
+        const localShoot = useShootStore.getState().shoot;
+        // Race protection: if the user uploaded docs locally that haven't
+        // made it into Supabase yet, preserve them. Otherwise the upload
+        // "disappears" on the next mount/realtime tick.
+        const localDocs = localShoot.uploadedDocs ?? [];
+        const remoteDocs = remoteShoot.uploadedDocs ?? [];
+        const preservedDocs =
+          localDocs.length > 0 && remoteDocs.length === 0
+            ? localDocs
+            : remoteDocs;
+        useShootStore.setState({
+          shoot: { ...remoteShoot, uploadedDocs: preservedDocs },
+        });
+      }
+    }
+
     if (data.department_store && typeof data.department_store === "object") {
       const { stock, movements } = data.department_store as {
         stock?: unknown;
@@ -67,8 +90,6 @@ export function useProjectSync(projectId: string | null) {
       }
     }
 
-    // Re-enable saves after the current microtask so any pending subscribe
-    // callbacks (which run synchronously after setState) see the flag set.
     queueMicrotask(() => { isHydratingRef.current = false; });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -98,6 +119,7 @@ export function useProjectSync(projectId: string | null) {
 
     if (!error && data) {
       lastRemoteAt.current = data.updated_at as string;
+      lastLocalSaveAt.current = Date.now();
       setLastSyncedAt(data.updated_at as string);
       setSyncError(null);
     } else if (error) {
@@ -111,20 +133,32 @@ export function useProjectSync(projectId: string | null) {
   // ── Debounced save on store changes ──────────────────────────────────────────
   const scheduleSave = useCallback(() => {
     if (!projectId) return;
-    // Skip the save triggered by our own hydration from Supabase
     if (isHydratingRef.current) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => void saveData(projectId), DEBOUNCE_MS);
+    saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
+      void saveData(projectId);
+    }, DEBOUNCE_MS);
   }, [projectId, saveData]);
 
-  // Watch shoot store
+  // Watch shoot store — flag local edits before scheduling the save
   useEffect(() => {
-    return useShootStore.subscribe(() => scheduleSave());
+    return useShootStore.subscribe(() => {
+      if (!isHydratingRef.current) {
+        lastLocalChangeAt.current = Date.now();
+      }
+      scheduleSave();
+    });
   }, [scheduleSave]);
 
   // Watch department store
   useEffect(() => {
-    return useDepartmentStore.subscribe(() => scheduleSave());
+    return useDepartmentStore.subscribe(() => {
+      if (!isHydratingRef.current) {
+        lastLocalChangeAt.current = Date.now();
+      }
+      scheduleSave();
+    });
   }, [scheduleSave]);
 
   // ── Initial load ─────────────────────────────────────────────────────────────
@@ -148,13 +182,20 @@ export function useProjectSync(projectId: string | null) {
           filter: `project_id=eq.${projectId}`,
         },
         (payload) => {
-          // Skip our own saves
+          // Skip events triggered by our own write — even if isSavingRef has
+          // already flipped, Supabase Realtime can deliver the event a few
+          // hundred ms later. We add a SELF_ECHO_WINDOW grace period.
           if (isSavingRef.current) return;
+          if (Date.now() - lastLocalSaveAt.current < SELF_ECHO_WINDOW_MS) return;
+
           const incoming = payload.new as { updated_by?: string; updated_at?: string };
           if (incoming.updated_by === user.id) return;
 
-          // Remote change from another user — reload
-          void loadData(projectId);
+          // Don't overwrite if there's a pending local save (user is actively
+          // editing). Their save will trump the remote event in a moment.
+          if (saveTimer.current) return;
+
+          void loadData(projectId, { fromRealtime: true });
         }
       )
       .subscribe();
