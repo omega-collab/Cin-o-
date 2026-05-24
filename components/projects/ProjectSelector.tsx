@@ -20,6 +20,9 @@ export function ProjectSelector() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [createdProject, setCreatedProject] = useState<Project | null>(null);
+  // Surfaced when handleCreate hits a name collision — lets the user join
+  // the existing project instead of creating a duplicate.
+  const [duplicate, setDuplicate] = useState<{ id: string; name: string; invite_code: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Delete / leave state
@@ -52,33 +55,27 @@ export function ProjectSelector() {
     e.preventDefault();
     if (!user) return;
     setError("");
+    setDuplicate(null);
     setLoading(true);
 
     try {
-      // Create project
-      const { data: proj, error: e1 } = await supabase
-        .from("projects")
-        .insert({ name: projectName.trim(), owner_id: user.id })
-        .select()
-        .single();
-      if (e1 || !proj) throw e1 ?? new Error("Création échouée");
+      // Single RPC handles dedup check + create + owner membership + project_data
+      // init, all in one round-trip and bypasses RLS for the name lookup.
+      const { data, error: rpcErr } = await supabase
+        .rpc("create_project_with_dedup", { p_name: projectName.trim() });
 
-      // Add creator as owner
-      const { error: e2 } = await supabase
-        .from("project_members")
-        .insert({ project_id: proj.id, user_id: user.id, role: "owner" });
-      if (e2) throw e2;
+      if (rpcErr) throw rpcErr;
 
-      // Init empty data
-      await supabase.from("project_data").insert({
-        project_id: proj.id,
-        shoot_store: {},
-        department_store: {},
-        updated_by: user.id,
-      });
+      const result = data as { exists: boolean; project: Project };
+      if (result.exists) {
+        // Same name already exists — surface the existing invite code so the
+        // user can join it instead of creating a duplicate.
+        setDuplicate(result.project);
+        return;
+      }
 
-      addProject(proj);
-      setCreatedProject(proj);
+      addProject(result.project);
+      setCreatedProject(result.project);
     } catch (err: unknown) {
       const msg = extractMsg(err);
       setError(msg);
@@ -95,30 +92,34 @@ export function ProjectSelector() {
 
     try {
       const code = inviteCode.trim().toUpperCase();
-      const { data: proj, error: e1 } = await supabase
-        .from("projects")
-        .select()
-        .eq("invite_code", code)
-        .single();
-      if (e1 || !proj) throw new Error("Code invalide — vérifiez et réessayez.");
+      // Call the RPC that bypasses RLS — the plain SELECT below failed for
+      // external users because the projects.select policy required existing
+      // membership (chicken-and-egg). The function joins as a member then
+      // returns the project, all in one round-trip.
+      const { data: proj, error: rpcErr } = await supabase
+        .rpc("join_project_by_code", { p_code: code });
 
-      // Check not already member
-      const already = projects.find((p) => p.id === proj.id);
-      if (already) {
-        setActiveProject(proj.id);
-        return;
+      if (rpcErr || !proj) {
+        throw new Error(rpcErr?.message ?? "Code invalide — vérifiez et réessayez.");
       }
 
-      const { error: e2 } = await supabase
-        .from("project_members")
-        .insert({ project_id: proj.id, user_id: user.id, role: "member" });
-      if (e2) throw e2;
+      // proj is a Project row (the function returns public.projects)
+      const project = proj as Project;
 
-      addProject(proj);
-      setActiveProject(proj.id);
+      // Idempotent in our local state: if already member, just activate.
+      const already = projects.find((p) => p.id === project.id);
+      if (!already) addProject(project);
+      setActiveProject(project.id);
     } catch (err: unknown) {
       const msg = extractMsg(err);
-      setError(msg);
+      // Map known Postgres error codes to a friendlier message.
+      if (/22023|Code invalide/.test(msg)) {
+        setError("Code invalide — vérifiez avec l'admin du projet.");
+      } else if (/42501|Non authentifié/.test(msg)) {
+        setError("Vous devez être connecté pour rejoindre un projet.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -352,17 +353,55 @@ export function ProjectSelector() {
                 type="text"
                 placeholder="ex. Tropiques Criminels S7"
                 value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
+                onChange={(e) => { setProjectName(e.target.value); setDuplicate(null); }}
                 required
                 className={INPUT}
               />
             </div>
+
+            {/* Duplicate detected: surface invite_code so user joins instead */}
+            {duplicate && (
+              <div className="rounded-xl p-3 space-y-2 border border-warning/30 bg-warning/5">
+                <p className="text-xs text-warning font-semibold">
+                  Un projet « {duplicate.name} » existe déjà.
+                </p>
+                <p className="text-[11px] text-muted leading-relaxed">
+                  Pour éviter les doublons, rejoignez le projet existant avec son code d&apos;invitation :
+                </p>
+                <div className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
+                  <span className="font-mono text-lg font-bold text-cyan tracking-widest flex-1">
+                    {duplicate.invite_code}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => copyCode(duplicate.invite_code)}
+                    aria-label="Copier le code"
+                  >
+                    {copied
+                      ? <Check className="w-4 h-4 text-green-400" />
+                      : <Copy className="w-4 h-4 text-muted" />}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInviteCode(duplicate.invite_code);
+                    setTab("join");
+                    setDuplicate(null);
+                  }}
+                  className="w-full mt-1 py-2 rounded-xl text-xs font-semibold bg-cyan/15 text-cyan border border-cyan/30"
+                >
+                  Rejoindre ce projet
+                </button>
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={loading || !projectName.trim()}
+              disabled={loading || !projectName.trim() || !!duplicate}
               className="active-pill w-full py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Créer le projet"}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : duplicate ? "Choisir un autre nom" : "Créer le projet"}
             </button>
           </form>
         )}

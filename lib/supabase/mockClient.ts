@@ -211,6 +211,69 @@ export function createMockClient() {
     from(table: string) {
       return fromBuilder(table);
     },
+    // Mock RPC — currently only implements join_project_by_code so the
+    // ProjectSelector flow works without a backend.
+    async rpc(fn: string, args?: Record<string, unknown>) {
+      if (fn === "join_project_by_code") {
+        const code = String((args?.p_code ?? "")).trim().toUpperCase();
+        if (code.length < 4) return { data: null, error: { message: "Code invalide" } };
+        const project = (tables.projects ?? []).find(
+          (p) => (p as { invite_code: string }).invite_code === code
+        );
+        if (!project) return { data: null, error: { message: "Code invalide" } };
+        const members = (tables.project_members ??= []);
+        const already = members.find(
+          (m) => (m as { project_id: string }).project_id === (project as { id: string }).id
+            && (m as { user_id: string }).user_id === MOCK_USER.id
+        );
+        if (!already) {
+          members.push({
+            project_id: (project as { id: string }).id,
+            user_id: MOCK_USER.id,
+            role: "member",
+            joined_at: new Date().toISOString(),
+          });
+        }
+        return { data: project, error: null };
+      }
+
+      if (fn === "create_project_with_dedup") {
+        const name = String(args?.p_name ?? "").trim();
+        if (!name) return { data: null, error: { message: "Nom requis" } };
+        const projects = (tables.projects ??= []);
+        const existing = projects.find(
+          (p) => (p as { name: string }).name.toLowerCase() === name.toLowerCase()
+        );
+        if (existing) {
+          return {
+            data: {
+              exists: true,
+              project: {
+                id: (existing as { id: string }).id,
+                name: (existing as { name: string }).name,
+                invite_code: (existing as { invite_code: string }).invite_code,
+              },
+            },
+            error: null,
+          };
+        }
+        const newProj = {
+          id: crypto.randomUUID(),
+          name,
+          invite_code: Math.random().toString(36).slice(2, 8).toUpperCase(),
+          owner_id: MOCK_USER.id,
+          created_at: new Date().toISOString(),
+        };
+        projects.push(newProj);
+        (tables.project_members ??= []).push({
+          project_id: newProj.id, user_id: MOCK_USER.id, role: "owner",
+          joined_at: new Date().toISOString(),
+        });
+        return { data: { exists: false, project: newProj }, error: null };
+      }
+
+      return { data: null, error: { message: `RPC inconnue: ${fn}` } };
+    },
     channel(_name: string) {
       return {
         on() { return this; },
