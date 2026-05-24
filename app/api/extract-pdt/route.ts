@@ -55,7 +55,29 @@ RÈGLES STRICTES :
 - summary : si des notes supplémentaires existent (H.Supp, remarques), les mettre ici.
 - Inclure TOUS les jours du PDT, même les jours REPOS (effects: "REPOS", sequences: []).
 - CRITIQUE : le PDT est souvent un document de plusieurs pages avec 40 à 60 colonnes-jours. Tu DOIS traiter chaque colonne de chaque page sans en omettre aucune.
-- Ne jamais inventer de données.`;
+- Ne jamais inventer de données.
+
+INSTRUCTIONS DE COMPLÉTUDE (très important — la complétude est non négociable) :
+1. AVANT d'extraire, compte le nombre total de colonnes-jours visibles dans le document (toutes pages confondues, formats condensés inclus). Pour un PDT "1 page" condensé, attends-toi à 30-60 colonnes serrées horizontalement.
+2. Si tu vois une ligne "J.1, J.2, J.3, … J.N" ou des numéros de jour consécutifs, ton tableau DOIT contenir un objet par numéro de jour, sans saut.
+3. Quand le tableau OCR est partiel/mal formaté, infère les jours manquants par interpolation des dates (si J.1=4 juin et J.5=8 juin, alors J.2=5 juin, J.3=6 juin, J.4=7 juin — sauf jour férié explicite).
+4. Ne tronque JAMAIS la sortie. Si la liste est longue, continue jusqu'au bout — c'est mieux d'avoir des champs vides que des jours manquants.
+5. Si le document est dense et illisible sur certaines colonnes, retourne quand même un objet minimal pour chaque jour : { shootingDay, date } au moins, avec une note dans summary si l'info est incomplète.
+
+EXTRACTION COMPLÈTE PAR JOUR (deuxième priorité, après la complétude des jours) :
+Pour CHAQUE jour, parcours l'OCR ligne par ligne et extrais TOUS les champs disponibles :
+- LIEUX → location (souvent en gras en haut de la colonne, ou répété entre groupes de jours)
+- HORAIRES → callTime + wrapTime (format "8H00-17H00" ou "08:00 / 17:00")
+- REPAS → mealTime (12H00, 12:30, etc.)
+- EFFETS (ligne ambiance) → effects (JOUR/NUIT/JOUR-SOIR…)
+- EFFETS (ligne décor) → interior (INT/EXT/INT-EXT)
+- DÉCORS → sets (texte du décor pour ce jour, peut être vertical dans le PDF)
+- SÉQUENCES → sequences (liste des numéros de scène)
+
+IMPORTANT : il est COURANT que plusieurs jours consécutifs partagent les mêmes LIEUX et HORAIRES (regroupés par bloc dans le PDT). Si tu ne vois pas explicitement le lieu pour le jour J.7 mais que J.5 à J.10 sont visiblement dans le même bloc "POTERIE", alors J.7 hérite de "POTERIE". Même règle pour les horaires.
+
+Une cellule vide RÉELLE (pas un manque d'OCR) → omets le champ pour ce jour.
+Une cellule qui devrait avoir une valeur mais l'OCR a échoué → infère depuis les voisins ou omets le champ (jamais "08:00" ou "JOUR" par défaut).`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -122,7 +144,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Aucun jour de tournage détecté dans ce document" }, { status: 422 });
     }
 
-    return NextResponse.json({ days });
+    // Heuristic warning: a real PDT almost always has > 10 days. Below that
+    // is suspicious and likely an extraction failure on a dense one-page PDT.
+    // We return the days anyway but flag it so the UI can warn the user.
+    const ocrCharCount = text.length;
+    const ocrPageCount = ocrResult.pages.length;
+    const warning = days.length < 10
+      ? `Extraction sous-dimensionnée : seulement ${days.length} jour(s) détecté(s) sur ${ocrPageCount} page(s) OCR (${ocrCharCount} caractères). Le PDT est probablement trop dense ou mal scanné — essayez la version multi-pages ou une meilleure résolution.`
+      : null;
+
+    return NextResponse.json({ days, ocrPageCount, ocrCharCount, warning });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[extract-pdt] error:", msg);
