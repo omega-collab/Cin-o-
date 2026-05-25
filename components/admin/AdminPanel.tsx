@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Film, LayoutDashboard, Upload, ClipboardList, Radio, Lock } from "lucide-react";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { useShootStore } from "@/lib/store/useShootStore";
+import { useUserStore } from "@/lib/store/useUserStore";
 import { AdminDashboard } from "./AdminDashboard";
 import { AdminUploadPanel } from "./AdminUploadPanel";
 import { AdminExtractionReview } from "./AdminExtractionReview";
@@ -72,6 +73,9 @@ function AdminDashboardContainer({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>("dashboard");
   const extractionStatus = useShootStore((s) => s.shoot.extractionStatus);
   const hasUploadedDocs = useShootStore((s) => s.shoot.uploadedDocs.length > 0);
+  const department = useUserStore((s) => s.department);
+  // Production users have implicit admin access — no logout button needed
+  const isProductionUser = department === "production";
 
   const tabDisabled = (id: Tab): boolean => {
     if (id === "review") return !hasUploadedDocs && extractionStatus === "idle";
@@ -83,9 +87,11 @@ function AdminDashboardContainer({ onLogout }: { onLogout: () => void }) {
     <div className="space-y-5 max-w-2xl">
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-white text-xl">Administration</h2>
-        <button onClick={onLogout} className="glass-card text-muted text-xs px-3 py-1.5 rounded-full">
-          Déconnexion
-        </button>
+        {!isProductionUser && (
+          <button onClick={onLogout} className="glass-card text-muted text-xs px-3 py-1.5 rounded-full">
+            Déconnexion
+          </button>
+        )}
       </div>
 
       <div className="glass-card rounded-app p-1 flex gap-1">
@@ -119,6 +125,7 @@ function AdminDashboardContainer({ onLogout }: { onLogout: () => void }) {
 
 export function AdminPanel() {
   const hydrated = useHydrated();
+  const department = useUserStore((s) => s.department);
   const [authenticated, setAuthenticated] = useState(false);
 
   if (!hydrated) {
@@ -131,6 +138,13 @@ export function AdminPanel() {
     );
   }
 
-  if (!authenticated) return <AuthForm onSuccess={() => setAuthenticated(true)} />;
+  // Bypass the code gate for users whose profile is the Production department —
+  // they are the project admins by definition. The code is still required for
+  // anyone else who reaches /admin (HMC, regie, etc.) since the route is open.
+  const isProductionUser = department === "production";
+
+  if (!authenticated && !isProductionUser) {
+    return <AuthForm onSuccess={() => setAuthenticated(true)} />;
+  }
   return <AdminDashboardContainer onLogout={() => setAuthenticated(false)} />;
 }
