@@ -72,7 +72,23 @@ export function CanteenStaffInterface() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
+    <div className="relative min-h-screen flex flex-col items-center justify-center px-5 py-10 overflow-hidden">
+      {/* Background : photo de cantine de tournage en darkening overlay */}
+      <div className="absolute inset-0 -z-10" aria-hidden="true">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/cantine-bg.jpg')" }}
+        />
+        {/* Overlay sombre pour garder la lisibilité du formulaire */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(7,16,24,0.55) 0%, rgba(7,16,24,0.78) 40%, rgba(7,16,24,0.92) 100%)",
+          }}
+        />
+      </div>
+
       <div className="flex items-center gap-2 mb-2">
         <UtensilsCrossed className="w-6 h-6 text-cyan" />
         <span className="text-lg font-bold text-white">CinéO · Cantine</span>
