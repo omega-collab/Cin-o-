@@ -78,6 +78,37 @@ export interface UploadedDoc {
   ocrText?: string;
 }
 
+// ── Project customization ────────────────────────────────────────────────────
+// All toggles default to "show everything to everyone" — same behaviour as
+// pre-permissions versions of the app. The admin opts INTO restrictions, they
+// don't apply automatically.
+
+// Pieces of information whose visibility can be restricted. Keep this list
+// minimal — only sensitive fields. The "main" content (sequences, locations,
+// weather, call times) is always visible.
+export type RestrictableInfo =
+  | "castContacts"     // Cast phone numbers + loge details
+  | "deptCallTimes"    // Per-department call time table
+  | "fraisDashboard"   // Aggregate frais view (financial)
+  | "auditLog"         // Full audit log of changes
+  | "wrapTime"         // Predicted end time (sensible info pour certains)
+  ;
+
+// Visibility level per info piece. "everyone" = current behaviour.
+export type VisibilityLevel = "everyone" | "department" | "production";
+
+export interface ProjectCustomization {
+  // Master switch: when false, all the granular permissions below are
+  // ignored and everyone sees everything (= app behaviour before this
+  // feature was added). Default false → app stays identical until admin
+  // explicitly opts in.
+  restrictionsEnabled: boolean;
+  // Per-info visibility — only consulted when restrictionsEnabled is true.
+  permissions: Partial<Record<RestrictableInfo, VisibilityLevel>>;
+  // Custom accent colour (CSS hex). Falls back to the cyan #00E0D0 when null.
+  accentColor: string | null;
+}
+
 export interface FullShoot {
   date: string;
   projectTitle: string;
@@ -106,6 +137,9 @@ export interface FullShoot {
   extractionError?: string;
   codesEnabled: boolean;
   deptCodes: Partial<Record<DepartmentSlug, string>>;
+  // Project-level customization (permissions, accent colour). Optional with
+  // sensible defaults so older saved states stay compatible.
+  customization?: ProjectCustomization;
 }
 
 export type ExtractionConfidence = "high" | "medium" | "low";

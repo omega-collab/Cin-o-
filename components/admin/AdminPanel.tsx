@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Film, LayoutDashboard, Upload, ClipboardList, Radio, Lock } from "lucide-react";
+import { Film, LayoutDashboard, Upload, ClipboardList, Radio, Lock, Settings } from "lucide-react";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useUserStore } from "@/lib/store/useUserStore";
@@ -10,10 +10,11 @@ import { AdminUploadPanel } from "./AdminUploadPanel";
 import { AdminExtractionReview } from "./AdminExtractionReview";
 import { AdminPublishPanel } from "./AdminPublishPanel";
 import { AdminCodesPanel } from "./AdminCodesPanel";
+import { AdminProjectPanel } from "./AdminProjectPanel";
 
 const ADMIN_CODE = process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000";
 
-type Tab = "dashboard" | "upload" | "review" | "publish" | "codes";
+type Tab = "dashboard" | "upload" | "review" | "publish" | "codes" | "project";
 
 const TABS: { id: Tab; label: string; Icon: React.ElementType }[] = [
   { id: "dashboard", label: "Accueil",  Icon: LayoutDashboard },
@@ -21,6 +22,7 @@ const TABS: { id: Tab; label: string; Icon: React.ElementType }[] = [
   { id: "review",    label: "Révision", Icon: ClipboardList    },
   { id: "publish",   label: "Publier",  Icon: Radio            },
   { id: "codes",     label: "Codes",    Icon: Lock             },
+  { id: "project",   label: "Projet",   Icon: Settings         },
 ];
 
 function AuthForm({ onSuccess }: { onSuccess: () => void }) {
@@ -119,6 +121,7 @@ function AdminDashboardContainer({ onLogout }: { onLogout: () => void }) {
       {tab === "review"    && <AdminExtractionReview onApply={() => setTab("publish")} />}
       {tab === "publish"   && <AdminPublishPanel onDone={() => setTab("dashboard")} />}
       {tab === "codes"     && <AdminCodesPanel />}
+      {tab === "project"   && <AdminProjectPanel />}
     </div>
   );
 }
