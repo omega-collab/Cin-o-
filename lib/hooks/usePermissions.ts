@@ -23,7 +23,10 @@ export function usePermissions() {
     if (level === "production") return department === "production";
     if (level === "department") {
       if (department === "production") return true; // admin always sees all
-      if (!infoDept) return true; // no dept tag = unrestricted at this level
+      // Sans dept tag, on respecte l'intention de l'admin (restriction
+      // explicite) → on cache. Le composant appelant doit fournir un
+      // infoDept pertinent quand l'info est rattachée à un département.
+      if (!infoDept) return false;
       return department === infoDept;
     }
     return true;

@@ -32,7 +32,12 @@ const ACCENT_PALETTE = [
 ];
 
 export function AdminProjectPanel() {
-  const { user, setActiveProject, projects, addProject } = useProjectStore();
+  // Sélecteurs ciblés : évite les re-renders sur chaque mutation du store
+  // (auth, sync, profile…).
+  const user = useProjectStore((s) => s.user);
+  const projects = useProjectStore((s) => s.projects);
+  const setActiveProject = useProjectStore((s) => s.setActiveProject);
+  const addProject = useProjectStore((s) => s.addProject);
   const activeProject = useProjectStore(getActiveProject);
   const customization = useShootStore((s) => s.shoot.customization);
   const setCustomization = useShootStore((s) => s.setCustomization);
@@ -40,7 +45,9 @@ export function AdminProjectPanel() {
   const [copied, setCopied] = useState(false);
   const [rotating, setRotating] = useState(false);
   const [renaming, setRenaming] = useState(false);
-  const [renameValue, setRenameValue] = useState(activeProject?.name ?? "");
+  // Pré-rempli au clic « Renommer », pas au mount — évite le state figé
+  // si l'utilisateur change de projet sans démonter le composant.
+  const [renameValue, setRenameValue] = useState("");
   const [renameError, setRenameError] = useState<string | null>(null);
   const [rotateError, setRotateError] = useState<string | null>(null);
 
@@ -243,7 +250,7 @@ export function AdminProjectPanel() {
             </p>
           </div>
           <button
-            onClick={() => setCustomization({ restrictionsEnabled: !customization?.restrictionsEnabled })}
+            onClick={() => setCustomization((cur) => ({ restrictionsEnabled: !cur.restrictionsEnabled }))}
             className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${
               customization?.restrictionsEnabled ? "bg-cyan" : "bg-white/15"
             }`}
@@ -270,9 +277,9 @@ export function AdminProjectPanel() {
                     {LEVELS.map((l) => (
                       <button
                         key={l.value}
-                        onClick={() => setCustomization({
-                          permissions: { ...customization.permissions, [info.id]: l.value },
-                        })}
+                        onClick={() => setCustomization((cur) => ({
+                          permissions: { ...cur.permissions, [info.id]: l.value },
+                        }))}
                         className={`py-1.5 rounded-lg text-[11px] font-medium transition-all ${
                           current === l.value
                             ? "bg-cyanSoft text-cyan border border-cyan/30"

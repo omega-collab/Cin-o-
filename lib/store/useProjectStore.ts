@@ -64,7 +64,19 @@ export const useProjectStore = create<ProjectState>()(
       setSyncing: (v) => set({ isSyncing: v }),
       setLastSyncedAt: (v) => set({ lastSyncedAt: v }),
       setSyncError: (v) => set({ syncError: v }),
-      addProject: (project) => set((s) => ({ projects: [...s.projects, project] })),
+      addProject: (project) =>
+        set((s) => {
+          // Upsert : remplace si l'id existe déjà (cas renommage/rotation du code),
+          // sinon append. Évite les doublons qui faisaient que find() renvoyait
+          // toujours la première entrée stale.
+          const idx = s.projects.findIndex((p) => p.id === project.id);
+          if (idx >= 0) {
+            const next = s.projects.slice();
+            next[idx] = project;
+            return { projects: next };
+          }
+          return { projects: [...s.projects, project] };
+        }),
       removeProject: (id) =>
         set((s) => {
           const wasActive = s.activeProjectId === id;

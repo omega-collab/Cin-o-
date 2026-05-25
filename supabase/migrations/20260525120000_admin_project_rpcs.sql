@@ -31,7 +31,7 @@ begin
     raise exception 'Seul le propriétaire peut régénérer le code' using errcode = '42501';
   end if;
 
-  -- Generate a 6-char uppercase alphanumeric code, retry on collision (very rare)
+  -- Generate a 6-char uppercase hex code (0-9A-F), retry on collision (très rare avant ~1000 projets)
   loop
     new_code := upper(left(replace(gen_random_uuid()::text, '-', ''), 6));
     exit when not exists (select 1 from public.projects where invite_code = new_code);

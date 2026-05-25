@@ -103,8 +103,13 @@ interface ShootStore {
   setCodesEnabled: (v: boolean) => void;
   setDeptCodes: (codes: Partial<Record<DepartmentSlug, string>>) => void;
 
-  // Project customization (permissions + accent colour)
-  setCustomization: (patch: Partial<NonNullable<FullShoot["customization"]>>) => void;
+  // Project customization (permissions + accent colour). Accepte un patch
+  // ou une fonction (current → patch) pour les updates atomiques (matrice).
+  setCustomization: (
+    patch:
+      | Partial<NonNullable<FullShoot["customization"]>>
+      | ((current: NonNullable<FullShoot["customization"]>) => Partial<NonNullable<FullShoot["customization"]>>)
+  ) => void;
 
   // Reset
   resetToMock: () => void;
@@ -333,17 +338,17 @@ export const useShootStore = create<ShootStore>()(
         set((s) => ({ shoot: { ...s.shoot, deptCodes: codes } })),
 
       setCustomization: (patch) =>
-        set((s) => ({
-          shoot: {
-            ...s.shoot,
-            customization: {
-              restrictionsEnabled: s.shoot.customization?.restrictionsEnabled ?? false,
-              permissions: s.shoot.customization?.permissions ?? {},
-              accentColor: s.shoot.customization?.accentColor ?? null,
-              ...patch,
-            },
-          },
-        })),
+        set((s) => {
+          const current = {
+            restrictionsEnabled: s.shoot.customization?.restrictionsEnabled ?? false,
+            permissions: s.shoot.customization?.permissions ?? {},
+            accentColor: s.shoot.customization?.accentColor ?? null,
+          };
+          const resolved = typeof patch === "function" ? patch(current) : patch;
+          return {
+            shoot: { ...s.shoot, customization: { ...current, ...resolved } },
+          };
+        }),
 
       resetToMock: () =>
         set({ shoot: { ...MOCK_SHOOT, isPublished: false }, pendingExtraction: null }),
