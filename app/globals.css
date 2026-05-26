@@ -40,6 +40,10 @@ body {
     linear-gradient(180deg, #09141f 0%, #060b12 100%);
   background-attachment: fixed;
   color: white;
+  /* isolation:isolate crée un stacking context root sur le body — permet
+     aux portails en z-index:-1 (ex: background cantine) de rester derrière
+     le contenu tout en restant devant le bg du body. */
+  isolation: isolate;
 }
 
 body::-webkit-scrollbar {
