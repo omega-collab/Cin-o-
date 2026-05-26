@@ -1,0 +1,48 @@
+{
+  "schema": "ruflo-memory-export/v1",
+  "exportedAt": "2026-05-26T17:02:19.055Z",
+  "namespace": "cin-o",
+  "count": 4,
+  "entries": [
+    {
+      "key": "permissions_default_behavior",
+      "namespace": "cin-o",
+      "value": "ProjectCustomization.restrictionsEnabled est false par defaut. usePermissions.canSee() early-return true quand master switch off, GARANTISSANT que le comportement par defaut reste identique a avant la feature (tout le monde voit tout). Admin opt-in explicite obligatoire.",
+      "createdAt": 1779814860428,
+      "updatedAt": 1779814860428,
+      "accessCount": 0,
+      "hasEmbedding": true,
+      "size": 271
+    },
+    {
+      "key": "bug_addproject_upsert",
+      "namespace": "cin-o",
+      "value": "Bug critique: useProjectStore.addProject etait un append pur ([...projects, project]). Quand AdminProjectPanel rename/rotate, ajoutait une 2e ligne avec meme id → getActiveProject().find() retournait la premiere (stale). Fix: convertir en upsert (findIndex puis slice/replace). Voir lib/store/useProjectStore.ts ligne 67.",
+      "createdAt": 1779814859445,
+      "updatedAt": 1779814859445,
+      "accessCount": 0,
+      "hasEmbedding": true,
+      "size": 321
+    },
+    {
+      "key": "ruflo_setup_web_env",
+      "namespace": "cin-o",
+      "value": "Sur Claude Code Web, ruflo MCP n'est pas chargé (la config /tmp/mcp-config-*.json est generee par Anthropic et n'inclut pas le .mcp.json du repo). Utiliser ruflo via CLI bash directement: ruflo memory store|list|retrieve|search --namespace cin-o. Search semantique cassé (blocage HuggingFace dl). list/retrieve par key fonctionnent. Install via 'npm install -g ruflo' au demarrage si absent (binaire à /opt/node22/bin/ruflo). Base = .swarm/memory.db (tracké git malgré .gitignore).",
+      "createdAt": 1779814858523,
+      "updatedAt": 1779814858523,
+      "accessCount": 0,
+      "hasEmbedding": true,
+      "size": 481
+    },
+    {
+      "key": "session_restore_marker",
+      "namespace": "cin-o",
+      "value": "Session restaurée 2026-05-26. Projet CinéO Next.js 14 + TS strict + Tailwind + Supabase + Zustand + lucide-react. Repo omega-collab/Cin-o-. Branche claude/admin-project-panel. Version courante v0.4.0 (admin: panneau Projet + matrice permissions opt-in).",
+      "createdAt": 1779814747451,
+      "updatedAt": 1779814747451,
+      "accessCount": 1,
+      "hasEmbedding": true,
+      "size": 253
+    }
+  ]
+}

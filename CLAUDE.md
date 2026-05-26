@@ -35,7 +35,10 @@ Version actuelle : **v0.2.3**
 
 ### Ruflo — obligatoire pour la performance
 
-**Utiliser systématiquement Ruflo** via les outils MCP `mcp__ruflo__*` :
+**Utiliser systématiquement Ruflo** pour la mémoire persistante du projet.
+
+#### Sur Claude Code Desktop / CLI local
+Le `.mcp.json` du repo est lu automatiquement → outils MCP `mcp__ruflo__*` disponibles :
 
 | Outil Ruflo | Quand l'utiliser |
 |-------------|-----------------|
@@ -43,6 +46,41 @@ Version actuelle : **v0.2.3**
 | `memory_store` | **APRÈS chaque tâche** — mémoriser patterns, bugs, décisions |
 | `agent_spawn` | Tâches touchant 3+ fichiers ou domaines — paralléliser |
 | `swarm_init` | Orchestration multi-agents pour features complexes |
+
+#### Sur Claude Code Web (claude.ai/code)
+La config MCP est gérée par Anthropic et n'inclut PAS le `.mcp.json` du repo.
+Les outils `mcp__ruflo__*` ne sont donc **pas disponibles**. Utiliser à la place
+la **CLI Ruflo via Bash** (équivalent fonctionnel) :
+
+```bash
+# Installer si absent (binaire à /opt/node22/bin/ruflo)
+which ruflo || npm install -g ruflo
+
+# DÉBUT de session — importer la mémoire depuis le repo
+ruflo memory import --input /home/user/Cin-o-/.claude-memory/cin-o.json
+
+# Lire la mémoire
+ruflo memory list --namespace cin-o
+ruflo memory retrieve --key <clé> --namespace cin-o
+
+# Stocker (en RAM seulement — voir export ci-dessous)
+ruflo memory store --namespace cin-o --key "<clé>" --value "<résumé>"
+
+# FIN de session OU avant commit — exporter pour persister
+ruflo memory export -o /home/user/Cin-o-/.claude-memory/cin-o.json -n cin-o -f json
+# puis commiter .claude-memory/cin-o.json
+
+# Stats / santé
+ruflo memory stats
+ruflo doctor
+```
+
+> ⚠️ **Backend = sql.js + HNSW** : la base est en RAM (WASM SQLite), pas sur disque.
+> Les `store` ne survivent **pas** au container éphémère. **Export JSON obligatoire**
+> avant la fin de session, et import obligatoire au début.
+> Le fichier `.claude-memory/cin-o.json` est commité dans le repo pour persister.
+>
+> ⚠️ Search sémantique cassé sur Web (blocage HuggingFace download). Utiliser `list` + `retrieve` par clé.
 
 Namespace Ruflo du projet : **`cin-o`**
 
