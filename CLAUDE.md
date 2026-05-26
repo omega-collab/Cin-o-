@@ -35,7 +35,10 @@ Version actuelle : **v0.2.3**
 
 ### Ruflo — obligatoire pour la performance
 
-**Utiliser systématiquement Ruflo** via les outils MCP `mcp__ruflo__*` :
+**Utiliser systématiquement Ruflo** pour la mémoire persistante du projet.
+
+#### Sur Claude Code Desktop / CLI local
+Le `.mcp.json` du repo est lu automatiquement → outils MCP `mcp__ruflo__*` disponibles :
 
 | Outil Ruflo | Quand l'utiliser |
 |-------------|-----------------|
@@ -43,6 +46,68 @@ Version actuelle : **v0.2.3**
 | `memory_store` | **APRÈS chaque tâche** — mémoriser patterns, bugs, décisions |
 | `agent_spawn` | Tâches touchant 3+ fichiers ou domaines — paralléliser |
 | `swarm_init` | Orchestration multi-agents pour features complexes |
+
+#### Sur Claude Code Web (claude.ai/code)
+La config MCP est gérée par Anthropic et n'inclut PAS le `.mcp.json` du repo.
+Les outils `mcp__ruflo__*` ne sont donc **pas disponibles**. Utiliser à la place
+la **CLI Ruflo via Bash** (équivalent fonctionnel) :
+
+```bash
+# Installer si absent (binaire à /opt/node22/bin/ruflo)
+which ruflo || npm install -g ruflo
+
+# DÉBUT de session — importer la mémoire depuis le repo
+ruflo memory import --input /home/user/Cin-o-/.claude-memory/cin-o.json
+
+# Lire la mémoire
+ruflo memory list --namespace cin-o
+ruflo memory retrieve --key <clé> --namespace cin-o
+
+# Stocker (en RAM seulement — voir export ci-dessous)
+ruflo memory store --namespace cin-o --key "<clé>" --value "<résumé>"
+
+# FIN de session OU avant commit — exporter pour persister
+ruflo memory export -o /home/user/Cin-o-/.claude-memory/cin-o.json -n cin-o -f json
+# puis commiter .claude-memory/cin-o.json
+
+# Stats / santé
+ruflo memory stats
+ruflo doctor
+```
+
+> ⚠️ **Backend = sql.js + HNSW** : la base est en RAM (WASM SQLite), pas sur disque.
+> Les `store` ne survivent **pas** au container éphémère. **Export JSON obligatoire**
+> avant la fin de session, et import obligatoire au début.
+> Le fichier `.claude-memory/cin-o.json` est commité dans le repo pour persister.
+>
+> ⚠️ Search sémantique cassé sur Web (blocage HuggingFace + download modèles ONNX
+> bloqué par network policy). **Workaround** : un script lexical local couvre le besoin.
+
+#### Search lexical (fallback fonctionnel)
+
+```bash
+# Cherche dans key + value de toutes les entrées du namespace cin-o
+./.claude-memory/search.sh "addproject"
+./.claude-memory/search.sh "permissions" --keys-only
+```
+
+Le script lit `.claude-memory/cin-o.json` (export commité), donc il fonctionne
+**sans** import préalable. Idéal pour le tout début de session.
+
+#### agent_spawn / swarm_init — équivalent natif Claude Code
+
+`ruflo agent spawn` et `ruflo swarm init` lancent des process indépendants
+qui ne partagent pas le contexte de session. Préférer les outils natifs Claude
+Code qui font le même travail dans le contexte partagé :
+
+| Besoin | Ruflo CLI (indépendant) | Claude Code natif (intégré, recommandé) |
+|--------|-------------------------|------------------------------------------|
+| Lancer un agent spécialisé | `ruflo agent spawn -t coder` | `Agent({ subagent_type: "coder", prompt: "..." })` |
+| Parallel multi-agents | `ruflo swarm coordinate --agents N` | Plusieurs `Agent()` dans le même message |
+| Background long-runner | `ruflo agent spawn` + `agent logs` | `Agent({ run_in_background: true })` |
+
+Les agents Claude Code natifs ont **accès au repo et au contexte de session**,
+ce que `ruflo agent spawn` n'a pas → choix par défaut.
 
 Namespace Ruflo du projet : **`cin-o`**
 
@@ -52,7 +117,11 @@ Namespace Ruflo du projet : **`cin-o`**
 
 ## Skills disponibles — utiliser systématiquement
 
-**Obligatoire** : invoquer via `Skill({ skill: "nom" })` dès que la tâche correspond. Ne jamais faire manuellement ce qu'un skill couvre.
+> **ORDRE PERMANENT** (stocké aussi dans mémoire Ruflo `cin-o/ordre_skills_obligatoires`) :
+> avant chaque tâche, invoquer le ou les skills pertinents via `Skill({ skill: "<nom>" })`.
+> **Ne jamais reproduire manuellement ce qu'un skill couvre.**
+> Si plusieurs s'appliquent, **paralléliser** les invocations.
+> Si aucun ne matche, **le dire explicitement** avant d'agir manuellement.
 
 | Skill | Quand l'utiliser |
 |-------|-----------------|

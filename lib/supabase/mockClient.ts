@@ -272,6 +272,32 @@ export function createMockClient() {
         return { data: { exists: false, project: newProj }, error: null };
       }
 
+      if (fn === "rotate_invite_code") {
+        const id = String(args?.p_project_id ?? "");
+        const proj = (tables.projects ?? []).find((p) => (p as { id: string }).id === id);
+        if (!proj) return { data: null, error: { message: "Projet introuvable" } };
+        const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+        (proj as { invite_code: string }).invite_code = code;
+        return { data: code, error: null };
+      }
+
+      if (fn === "update_project_name") {
+        const id = String(args?.p_project_id ?? "");
+        const name = String(args?.p_new_name ?? "").trim();
+        if (!name) return { data: null, error: { message: "Nom requis" } };
+        const projects = tables.projects ?? [];
+        const proj = projects.find((p) => (p as { id: string }).id === id);
+        if (!proj) return { data: null, error: { message: "Projet introuvable" } };
+        const collision = projects.find(
+          (p) =>
+            (p as { id: string }).id !== id &&
+            (p as { name: string }).name.toLowerCase() === name.toLowerCase()
+        );
+        if (collision) return { data: null, error: { message: "Un autre projet porte déjà ce nom" } };
+        (proj as { name: string }).name = name;
+        return { data: proj, error: null };
+      }
+
       return { data: null, error: { message: `RPC inconnue: ${fn}` } };
     },
     channel(_name: string) {
