@@ -78,10 +78,11 @@ export function CanteenStaffInterface() {
   // Background image portail vers document.body : échappe à tous les
   // containing blocks du Shell (<main max-w-2xl>, etc.) et couvre vraiment
   // tout le viewport derrière header + nav.
+  // zIndex: -1 → peint sous le contenu Shell (qui est sans stacking context).
   const bgPortal = mounted && createPortal(
     <div
       className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 0 }}
+      style={{ zIndex: -1 }}
       aria-hidden="true"
     >
       <div
