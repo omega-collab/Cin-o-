@@ -80,7 +80,34 @@ ruflo doctor
 > avant la fin de session, et import obligatoire au début.
 > Le fichier `.claude-memory/cin-o.json` est commité dans le repo pour persister.
 >
-> ⚠️ Search sémantique cassé sur Web (blocage HuggingFace download). Utiliser `list` + `retrieve` par clé.
+> ⚠️ Search sémantique cassé sur Web (blocage HuggingFace + download modèles ONNX
+> bloqué par network policy). **Workaround** : un script lexical local couvre le besoin.
+
+#### Search lexical (fallback fonctionnel)
+
+```bash
+# Cherche dans key + value de toutes les entrées du namespace cin-o
+./.claude-memory/search.sh "addproject"
+./.claude-memory/search.sh "permissions" --keys-only
+```
+
+Le script lit `.claude-memory/cin-o.json` (export commité), donc il fonctionne
+**sans** import préalable. Idéal pour le tout début de session.
+
+#### agent_spawn / swarm_init — équivalent natif Claude Code
+
+`ruflo agent spawn` et `ruflo swarm init` lancent des process indépendants
+qui ne partagent pas le contexte de session. Préférer les outils natifs Claude
+Code qui font le même travail dans le contexte partagé :
+
+| Besoin | Ruflo CLI (indépendant) | Claude Code natif (intégré, recommandé) |
+|--------|-------------------------|------------------------------------------|
+| Lancer un agent spécialisé | `ruflo agent spawn -t coder` | `Agent({ subagent_type: "coder", prompt: "..." })` |
+| Parallel multi-agents | `ruflo swarm coordinate --agents N` | Plusieurs `Agent()` dans le même message |
+| Background long-runner | `ruflo agent spawn` + `agent logs` | `Agent({ run_in_background: true })` |
+
+Les agents Claude Code natifs ont **accès au repo et au contexte de session**,
+ce que `ruflo agent spawn` n'a pas → choix par défaut.
 
 Namespace Ruflo du projet : **`cin-o`**
 
