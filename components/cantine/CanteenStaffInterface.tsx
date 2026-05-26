@@ -72,9 +72,10 @@ export function CanteenStaffInterface() {
   }
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center px-5 py-10 overflow-hidden">
-      {/* Background : photo de cantine de tournage en darkening overlay */}
-      <div className="absolute inset-0 -z-10" aria-hidden="true">
+    <div className="relative min-h-screen flex flex-col items-center justify-center px-5 py-10">
+      {/* Background : photo de cantine de tournage en darkening overlay,
+          fixed sur tout le viewport (pas seulement la zone du composant). */}
+      <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden="true">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url('/cantine-bg.jpg')" }}
