@@ -1,48 +1,58 @@
 {
   "schema": "ruflo-memory-export/v1",
-  "exportedAt": "2026-05-26T17:02:19.055Z",
+  "exportedAt": "2026-05-26T17:18:35.793Z",
   "namespace": "cin-o",
-  "count": 4,
+  "count": 5,
   "entries": [
     {
-      "key": "permissions_default_behavior",
+      "key": "ordre_skills_obligatoires",
       "namespace": "cin-o",
-      "value": "ProjectCustomization.restrictionsEnabled est false par defaut. usePermissions.canSee() early-return true quand master switch off, GARANTISSANT que le comportement par defaut reste identique a avant la feature (tout le monde voit tout). Admin opt-in explicite obligatoire.",
-      "createdAt": 1779814860428,
-      "updatedAt": 1779814860428,
+      "value": "RÈGLE ABSOLUE : avant chaque tâche, invoquer SYSTÉMATIQUEMENT le ou les skills pertinents via Skill({ skill: '<nom>' }). Ne jamais reproduire manuellement ce qu'un skill couvre déjà. Mapping obligatoire : (1) toute tâche Supabase → 'supabase' ; (2) SQL/schéma → 'supabase-postgres-best-practices' ; (3) UI/design/audit visuel → 'impeccable' ; (4) tester l'app en navigateur → 'gstack' ; (5) confirmer qu'un fix marche → 'verify' ; (6) lancer l'app → 'run' ; (7) revue du diff avant PR → 'code-review' ; (8) après touche à auth/permissions/données → 'security-review' ; (9) TDD strict → 'sparc:tdd' ; (10) implémentation complexe avec spec → 'sparc:coder' ; (11) revue qualité post-impl → 'sparc:reviewer' ; (12) lifecycle PR → 'github:pr-manager' ; (13) review multi-agents auto → 'github:code-review' ; (14) regression perf → 'analysis:performance-report' ; (15) après chaque tâche réussie → 'hooks:post-task'. Si plusieurs s'appliquent, paralléliser. Si aucun ne matche, le dire explicitement avant d'agir manuellement.",
+      "createdAt": 1779815884732,
+      "updatedAt": 1779815884732,
       "accessCount": 0,
       "hasEmbedding": true,
-      "size": 271
-    },
-    {
-      "key": "bug_addproject_upsert",
-      "namespace": "cin-o",
-      "value": "Bug critique: useProjectStore.addProject etait un append pur ([...projects, project]). Quand AdminProjectPanel rename/rotate, ajoutait une 2e ligne avec meme id → getActiveProject().find() retournait la premiere (stale). Fix: convertir en upsert (findIndex puis slice/replace). Voir lib/store/useProjectStore.ts ligne 67.",
-      "createdAt": 1779814859445,
-      "updatedAt": 1779814859445,
-      "accessCount": 0,
-      "hasEmbedding": true,
-      "size": 321
-    },
-    {
-      "key": "ruflo_setup_web_env",
-      "namespace": "cin-o",
-      "value": "Sur Claude Code Web, ruflo MCP n'est pas chargé (la config /tmp/mcp-config-*.json est generee par Anthropic et n'inclut pas le .mcp.json du repo). Utiliser ruflo via CLI bash directement: ruflo memory store|list|retrieve|search --namespace cin-o. Search semantique cassé (blocage HuggingFace dl). list/retrieve par key fonctionnent. Install via 'npm install -g ruflo' au demarrage si absent (binaire à /opt/node22/bin/ruflo). Base = .swarm/memory.db (tracké git malgré .gitignore).",
-      "createdAt": 1779814858523,
-      "updatedAt": 1779814858523,
-      "accessCount": 0,
-      "hasEmbedding": true,
-      "size": 481
+      "size": 1021
     },
     {
       "key": "session_restore_marker",
       "namespace": "cin-o",
       "value": "Session restaurée 2026-05-26. Projet CinéO Next.js 14 + TS strict + Tailwind + Supabase + Zustand + lucide-react. Repo omega-collab/Cin-o-. Branche claude/admin-project-panel. Version courante v0.4.0 (admin: panneau Projet + matrice permissions opt-in).",
-      "createdAt": 1779814747451,
-      "updatedAt": 1779814747451,
-      "accessCount": 1,
+      "createdAt": 1779815884025,
+      "updatedAt": 1779815884025,
+      "accessCount": 0,
       "hasEmbedding": true,
       "size": 253
+    },
+    {
+      "key": "ruflo_setup_web_env",
+      "namespace": "cin-o",
+      "value": "Sur Claude Code Web, ruflo MCP n'est pas chargé (la config /tmp/mcp-config-*.json est generee par Anthropic et n'inclut pas le .mcp.json du repo). Utiliser ruflo via CLI bash directement: ruflo memory store|list|retrieve|search --namespace cin-o. Search semantique cassé (blocage HuggingFace dl). list/retrieve par key fonctionnent. Install via 'npm install -g ruflo' au demarrage si absent (binaire à /opt/node22/bin/ruflo). Base = .swarm/memory.db (tracké git malgré .gitignore).",
+      "createdAt": 1779815884024,
+      "updatedAt": 1779815884024,
+      "accessCount": 0,
+      "hasEmbedding": true,
+      "size": 481
+    },
+    {
+      "key": "bug_addproject_upsert",
+      "namespace": "cin-o",
+      "value": "Bug critique: useProjectStore.addProject etait un append pur ([...projects, project]). Quand AdminProjectPanel rename/rotate, ajoutait une 2e ligne avec meme id → getActiveProject().find() retournait la premiere (stale). Fix: convertir en upsert (findIndex puis slice/replace). Voir lib/store/useProjectStore.ts ligne 67.",
+      "createdAt": 1779815884023,
+      "updatedAt": 1779815884023,
+      "accessCount": 0,
+      "hasEmbedding": true,
+      "size": 321
+    },
+    {
+      "key": "permissions_default_behavior",
+      "namespace": "cin-o",
+      "value": "ProjectCustomization.restrictionsEnabled est false par defaut. usePermissions.canSee() early-return true quand master switch off, GARANTISSANT que le comportement par defaut reste identique a avant la feature (tout le monde voit tout). Admin opt-in explicite obligatoire.",
+      "createdAt": 1779815884022,
+      "updatedAt": 1779815884022,
+      "accessCount": 0,
+      "hasEmbedding": true,
+      "size": 271
     }
   ]
 }

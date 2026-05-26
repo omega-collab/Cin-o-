@@ -117,7 +117,11 @@ Namespace Ruflo du projet : **`cin-o`**
 
 ## Skills disponibles — utiliser systématiquement
 
-**Obligatoire** : invoquer via `Skill({ skill: "nom" })` dès que la tâche correspond. Ne jamais faire manuellement ce qu'un skill couvre.
+> **ORDRE PERMANENT** (stocké aussi dans mémoire Ruflo `cin-o/ordre_skills_obligatoires`) :
+> avant chaque tâche, invoquer le ou les skills pertinents via `Skill({ skill: "<nom>" })`.
+> **Ne jamais reproduire manuellement ce qu'un skill couvre.**
+> Si plusieurs s'appliquent, **paralléliser** les invocations.
+> Si aucun ne matche, **le dire explicitement** avant d'agir manuellement.
 
 | Skill | Quand l'utiliser |
 |-------|-----------------|
