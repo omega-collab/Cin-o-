@@ -42,3 +42,7 @@ next-env.d.ts
 ruvector.db
 ruvector.db-shm
 ruvector.db-wal
+
+# SQLite WAL/SHM artefacts (générés à l'ouverture de memory.db)
+.claude/memory.db-shm
+.claude/memory.db-wal
