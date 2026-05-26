@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { CheckCircle2, MapPin, UtensilsCrossed } from "lucide-react";
 import { useCanteenStore } from "@/lib/store/useCanteenStore";
 
@@ -31,6 +32,9 @@ export function CanteenStaffInterface() {
   const updateMenu = useCanteenStore((s) => s.updateMenu);
 
   const [screen, setScreen] = useState<Screen>("form");
+  // Portail uniquement après mount (SSR-safe)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const [form, setForm] = useState({
     shootingLocation: menu.shootingLocation ?? "",
@@ -71,24 +75,33 @@ export function CanteenStaffInterface() {
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
   }
 
+  // Background image portail vers document.body : échappe à tous les
+  // containing blocks du Shell (<main max-w-2xl>, etc.) et couvre vraiment
+  // tout le viewport derrière header + nav.
+  const bgPortal = mounted && createPortal(
+    <div
+      className="fixed inset-0 pointer-events-none"
+      style={{ zIndex: 0 }}
+      aria-hidden="true"
+    >
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/cantine-bg.jpg')" }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(7,16,24,0.55) 0%, rgba(7,16,24,0.78) 40%, rgba(7,16,24,0.92) 100%)",
+        }}
+      />
+    </div>,
+    document.body
+  );
+
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-5 py-10">
-      {/* Background : photo de cantine de tournage en darkening overlay,
-          fixed sur tout le viewport (pas seulement la zone du composant). */}
-      <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden="true">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/cantine-bg.jpg')" }}
-        />
-        {/* Overlay sombre pour garder la lisibilité du formulaire */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(7,16,24,0.55) 0%, rgba(7,16,24,0.78) 40%, rgba(7,16,24,0.92) 100%)",
-          }}
-        />
-      </div>
+      {bgPortal}
 
       <div className="flex items-center gap-2 mb-2">
         <UtensilsCrossed className="w-6 h-6 text-cyan" />
