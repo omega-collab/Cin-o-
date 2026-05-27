@@ -1,14 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Radio, FileText, Users, AlertTriangle, MapPin, Calendar, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { Radio, FileText, Users, AlertTriangle, MapPin, Calendar, RotateCcw, UtensilsCrossed, Copy, Check, ExternalLink } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useCanteenStore } from "@/lib/store/useCanteenStore";
 
 export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
   const { shoot, publish, unpublish, resetFull } = useShootStore();
+  const menu = useCanteenStore((s) => s.menu);
   const resetMenu = useCanteenStore((s) => s.resetMenu);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [canteenLinkCopied, setCanteenLinkCopied] = useState(false);
+
+  function copyCanteenLink() {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}/cantine`;
+    void navigator.clipboard.writeText(url);
+    setCanteenLinkCopied(true);
+    setTimeout(() => setCanteenLinkCopied(false), 2000);
+  }
 
   const isReady = shoot.extractionStatus === "done" || shoot.sequences.length > 0;
 
@@ -86,6 +97,53 @@ export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
           ))}
         </div>
       )}
+
+      {/* Cantine — lien partageable + accès direct */}
+      <div className="glass-card rounded-app p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <UtensilsCrossed className="w-4 h-4 text-cyan" />
+          <span className="text-xs font-semibold text-textSoft uppercase tracking-widest">Cantine</span>
+        </div>
+        <p className="text-[11px] text-muted leading-relaxed">
+          Le menu du jour est rempli par le staff cantine via le lien ci-dessous.
+          Copie-le pour le partager (SMS, WhatsApp&hellip;), ou clique pour y accéder
+          directement.
+        </p>
+        <div className="flex gap-2">
+          <Link
+            href="/cantine"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold active-pill"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Ouvrir la cantine
+          </Link>
+          <button
+            onClick={copyCanteenLink}
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold glass-card text-textSoft"
+            aria-label="Copier le lien de la cantine"
+          >
+            {canteenLinkCopied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-green-400" />
+                Copié
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                Copier
+              </>
+            )}
+          </button>
+        </div>
+        {(menu.starter || menu.main || menu.dessert) && (
+          <div className="border-t border-stroke/40 pt-3 space-y-1">
+            <p className="text-[10px] text-muted uppercase tracking-widest">Menu du jour</p>
+            {menu.starter && <p className="text-xs text-textSoft truncate">Entrée : {menu.starter}</p>}
+            {menu.main && <p className="text-xs text-textSoft truncate">Plat : {menu.main}</p>}
+            {menu.dessert && <p className="text-xs text-textSoft truncate">Dessert : {menu.dessert}</p>}
+          </div>
+        )}
+      </div>
 
       {/* Prochains jours */}
       {shoot.nextDays.length > 0 && (
