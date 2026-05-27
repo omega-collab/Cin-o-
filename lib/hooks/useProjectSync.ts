@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase/client";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useDepartmentStore } from "@/lib/store/useDepartmentStore";
+import { useCanteenStore } from "@/lib/store/useCanteenStore";
 
 const DEBOUNCE_MS = 1500;
 // Realtime payloads can arrive slightly after our own upsert response —
@@ -90,6 +91,15 @@ export function useProjectSync(projectId: string | null) {
       }
     }
 
+    if (data.canteen_store && typeof data.canteen_store === "object") {
+      const { menu } = data.canteen_store as { menu?: unknown };
+      if (menu && typeof menu === "object") {
+        useCanteenStore.setState({
+          menu: menu as ReturnType<typeof useCanteenStore.getState>["menu"],
+        });
+      }
+    }
+
     queueMicrotask(() => { isHydratingRef.current = false; });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -107,6 +117,7 @@ export function useProjectSync(projectId: string | null) {
         stock: useDepartmentStore.getState().stock,
         movements: useDepartmentStore.getState().movements,
       },
+      canteen_store: { menu: useCanteenStore.getState().menu },
       updated_at: new Date().toISOString(),
       updated_by: user.id,
     };
@@ -154,6 +165,16 @@ export function useProjectSync(projectId: string | null) {
   // Watch department store
   useEffect(() => {
     return useDepartmentStore.subscribe(() => {
+      if (!isHydratingRef.current) {
+        lastLocalChangeAt.current = Date.now();
+      }
+      scheduleSave();
+    });
+  }, [scheduleSave]);
+
+  // Watch canteen store (menu du jour partagé entre tous les membres du projet)
+  useEffect(() => {
+    return useCanteenStore.subscribe(() => {
       if (!isHydratingRef.current) {
         lastLocalChangeAt.current = Date.now();
       }
