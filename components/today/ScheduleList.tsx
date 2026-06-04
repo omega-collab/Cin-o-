@@ -5,27 +5,7 @@ import { ChevronDown, Users, FileText, Info, AlertTriangle, AlertCircle } from "
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useUserStore } from "@/lib/store/useUserStore";
 import type { DeptNote } from "@/lib/types/shoot";
-
-// Maps department slug → keywords to match deptNotes.department
-const DEPT_KEYWORDS: Record<string, string[]> = {
-  camera:     ["caméra", "camera", "image"],
-  electro:    ["électro", "electro", "électricité", "electricite"],
-  machino:    ["machino", "machinerie"],
-  son:        ["son"],
-  regie:      ["régie", "regie", "production", "régi"],
-  deco:       ["déco", "deco", "décoration", "decoration"],
-  hmc:        ["hmc", "maquillage", "coiffure", "costume", "habill"],
-  cantine:    ["cantine"],
-  production: [], // admin — sees all
-};
-
-function matchesDept(note: DeptNote, slug: string | null): boolean {
-  if (!slug || slug === "production") return true;
-  const keywords = DEPT_KEYWORDS[slug] ?? [];
-  const dept = note.department?.toLowerCase() ?? "";
-  if (dept === "tous" || dept === "all") return true;
-  return keywords.some((k) => dept.includes(k));
-}
+import { matchesDept } from "@/lib/utils/deptNoteMatching";
 
 function activeIndex(rows: { time: string }[]): number {
   const now = new Date().toTimeString().slice(0, 5);

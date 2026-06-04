@@ -16,27 +16,7 @@ import { useUserStore } from "@/lib/store/useUserStore";
 import { useDeptNotesStore } from "@/lib/store/useDeptNotesStore";
 import type { ShootSequence, DeptNote } from "@/lib/types/shoot";
 import type { DepartmentSlug } from "@/lib/types";
-
-const DEPT_KEYWORDS: Record<string, string[]> = {
-  camera: ["caméra", "camera", "image"],
-  electro: ["électro", "electro", "électricité"],
-  machino: ["machino", "machinerie"],
-  son: ["son"],
-  regie: ["régie", "regie", "production"],
-  deco: ["déco", "deco", "décoration"],
-  hmc: ["hmc", "maquillage", "coiffure", "costume"],
-  cantine: ["cantine"],
-  direction: ["direction", "réal", "real"],
-  production: [],
-};
-
-function matchesDept(note: DeptNote, slug: string | null): boolean {
-  if (!slug || slug === "production") return true;
-  const keywords = DEPT_KEYWORDS[slug] ?? [];
-  const dept = note.department?.toLowerCase() ?? "";
-  if (dept === "tous" || dept === "all") return true;
-  return keywords.some((k) => dept.includes(k));
-}
+import { matchesDept } from "@/lib/utils/deptNoteMatching";
 
 function PriorityIcon({ p }: { p: "info" | "warning" | "critical" }) {
   if (p === "critical")
