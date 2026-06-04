@@ -7,6 +7,7 @@ import { DEPT_ICONS } from "@/lib/data/departmentIcons";
 import { useAccessStore } from "@/lib/store/useAccessStore";
 
 const DEPT_ROLES: Record<string, string> = {
+  direction: "Réalisateur",
   camera: "Chef opérateur",
   electro: "Chef électricien",
   machino: "Chef machiniste",

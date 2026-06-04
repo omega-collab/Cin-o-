@@ -354,8 +354,20 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
       <Section title="Heures de convocation par département">
         <p className="text-xs text-muted">Laisser vide pour utiliser le Call Time global.</p>
         <div className="grid grid-cols-2 gap-2">
-          {(["camera", "electro", "machino", "son", "regie", "deco", "hmc", "cantine", "direction"] as const).map((slug) => (
-            <Row key={slug} label={slug.charAt(0).toUpperCase() + slug.slice(1)}>
+          {(() => {
+            const DEPT_LABEL: Record<string, string> = {
+              camera: "Caméra",
+              electro: "Électro",
+              machino: "Machino",
+              son: "Son",
+              regie: "Régie",
+              deco: "Déco",
+              hmc: "HMC",
+              cantine: "Cantine",
+              direction: "Mise en scène",
+            };
+            return (["direction", "camera", "electro", "machino", "son", "regie", "deco", "hmc", "cantine"] as const).map((slug) => (
+            <Row key={slug} label={DEPT_LABEL[slug] ?? slug}>
               <input
                 type="time"
                 value={shoot.deptCallTimes?.[slug] ?? ""}
@@ -367,7 +379,8 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
                 className={INPUT}
               />
             </Row>
-          ))}
+          ));
+          })()}
         </div>
       </Section>
 

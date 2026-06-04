@@ -146,8 +146,8 @@ export function catColor(cat: DocCategory): string {
   const m: Record<DocCategory, string> = {
     planning:       "text-amber-400 bg-amber-400/10",
     scenario:       "text-cyan bg-cyan/10",
-    administration: "text-blueSoft bg-blueSoft/10",
-    templates:      "text-orangeSoft bg-orangeSoft/10",
+    administration: "text-info bg-info/10",
+    templates:      "text-warning bg-warning/10",
   };
   return m[cat];
 }
