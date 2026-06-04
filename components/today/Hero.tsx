@@ -15,23 +15,38 @@ import type { DepartmentSlug } from "@/lib/types";
 import type { DeptNote } from "@/lib/types/shoot";
 
 const DEPT_KEYWORDS: Record<string, string[]> = {
-  camera: ["caméra", "camera", "image"],
-  electro: ["électro", "electro", "électricité"],
-  machino: ["machino", "machinerie"],
-  son: ["son"],
-  regie: ["régie", "regie", "production"],
-  deco: ["déco", "deco", "décoration"],
-  hmc: ["hmc", "maquillage", "coiffure", "costume"],
-  cantine: ["cantine"],
-  direction: ["direction", "réal", "real"],
-  production: [],
+  camera: ["caméra", "camera", "image", "chef op", "cadreur", "steadi"],
+  electro: ["électro", "electro", "électricité", "electricite", "gaffer", "groupe"],
+  machino: ["machino", "machinerie", "grip", "machiniste"],
+  son: ["son", "perchman", "perche", "prise de son"],
+  // "production" retiré (ambigu) — la régie ne doit pas s'arroger les notes
+  // production. Ajouté "1er ad", "scripte" qui sont rattachés à la régie.
+  regie: ["régie", "regie", "régisseur", "regisseur", "scripte", "1er ad", "2e ad"],
+  deco: ["déco", "deco", "décoration", "decoration", "accessoir", "ensembl"],
+  hmc: ["hmc", "maquillage", "coiffure", "costume", "habillage", "perruque"],
+  cantine: ["cantine", "catering", "restauration", "traiteur"],
+  // Renommé en interne "Mise en scène" — accepte toujours "réal" pour les
+  // feuilles legacy + variantes.
+  direction: ["direction", "mise en scène", "mise en scene", "réal", "real", "metteur en scène"],
+  production: ["production", "directeur de prod", "chargé de prod", "secrétaire de prod"],
 };
 
+// Production voit toujours tout. Les autres ne voient que les notes
+// matchant leurs mots-clés OU les notes flaggées "tous" / "all" / vides.
+// Cas vide / non mappable : la note est traitée comme "Pour tous" et reste
+// visible pour tous (préférable au silence qui fait disparaître l'info).
 function matchesDept(note: DeptNote, slug: string | null): boolean {
   if (!slug || slug === "production") return true;
-  const dept = note.department?.toLowerCase() ?? "";
-  if (dept === "tous" || dept === "all") return true;
-  return (DEPT_KEYWORDS[slug] ?? []).some((k) => dept.includes(k));
+  const dept = note.department?.toLowerCase().trim() ?? "";
+  if (!dept || dept === "tous" || dept === "all" || dept === "toutes" || dept === "tout") return true;
+  // Si le slug est listé dans les clés et qu'un keyword match → OK
+  if ((DEPT_KEYWORDS[slug] ?? []).some((k) => dept.includes(k))) return true;
+  // Fallback : si la note ne match AUCUN département connu, on l'affiche
+  // pour tout le monde (mieux que de la cacher).
+  const matchesAny = Object.values(DEPT_KEYWORDS).some((keys) =>
+    keys.some((k) => dept.includes(k))
+  );
+  return !matchesAny;
 }
 
 function timeToMinutes(t: string): number {
