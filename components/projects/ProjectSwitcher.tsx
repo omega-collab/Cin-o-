@@ -42,18 +42,29 @@ export function ProjectSwitcher() {
     setLoading(true);
     setError("");
     try {
-      const { data: proj, error: e1 } = await supabase
-        .from("projects")
-        .insert({ name: name.trim(), owner_id: user.id })
-        .select()
-        .single();
-      if (e1 || !proj) throw e1 ?? new Error("Erreur");
+      // Utilise la RPC dédup (idem ProjectSelector) — évite les doublons
+      // entre membres d'équipe + initialise project_data + ajoute le owner
+      // en project_members en une seule transaction côté DB.
+      const { data, error: rpcErr } = await supabase
+        .rpc("create_project_with_dedup", { p_name: name.trim() });
+      if (rpcErr) throw rpcErr;
 
-      await supabase.from("project_members").insert({ project_id: proj.id, user_id: user.id, role: "owner" });
-      await supabase.from("project_data").insert({ project_id: proj.id, shoot_store: {}, department_store: {}, updated_by: user.id });
-
-      addProject(proj);
-      setActiveProject(proj.id);
+      const result = data as { exists: boolean; project: Project };
+      if (result.exists) {
+        // Projet déjà créé par un autre membre → on le rejoint directement
+        const existing = projects.find((p) => p.id === result.project.id);
+        if (!existing) {
+          await supabase
+            .from("project_members")
+            .insert({ project_id: result.project.id, user_id: user.id, role: "member" })
+            .then(() => undefined, () => undefined);
+          addProject(result.project);
+        }
+        setActiveProject(result.project.id);
+      } else {
+        addProject(result.project);
+        setActiveProject(result.project.id);
+      }
       reset();
       setOpen(false);
     } catch (err) {
@@ -68,23 +79,29 @@ export function ProjectSwitcher() {
     setLoading(true);
     setError("");
     try {
-      const { data: proj, error: e1 } = await supabase
-        .from("projects")
-        .select()
-        .eq("invite_code", code.trim().toUpperCase())
-        .single();
-      if (e1 || !proj) throw new Error("Code invalide");
+      // Utilise la RPC dédiée (bypasse la RLS qui bloque les non-membres
+      // de voir un projet par son invite_code). Fait l'insert dans
+      // project_members puis renvoie la ligne projects en une transaction.
+      const { data: proj, error: rpcErr } = await supabase
+        .rpc("join_project_by_code", { p_code: code.trim().toUpperCase() });
+      if (rpcErr || !proj) throw new Error(rpcErr?.message ?? "Code invalide");
 
-      const existing = projects.find((p) => p.id === proj.id);
-      if (existing) { setActiveProject(proj.id); reset(); setOpen(false); return; }
-
-      await supabase.from("project_members").insert({ project_id: proj.id, user_id: user.id, role: "member" });
-      addProject(proj);
-      setActiveProject(proj.id);
+      const project = proj as Project;
+      const existing = projects.find((p) => p.id === project.id);
+      if (!existing) addProject(project);
+      setActiveProject(project.id);
       reset();
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
+      const msg = err instanceof Error ? err.message : "Erreur";
+      // Mappe les codes Postgres connus pour un message lisible
+      if (/22023|Code invalide/.test(msg)) {
+        setError("Code invalide — vérifiez avec l'admin du projet.");
+      } else if (/42501|Non authentifié/.test(msg)) {
+        setError("Vous devez être connecté pour rejoindre un projet.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
