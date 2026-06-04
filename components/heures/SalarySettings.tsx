@@ -265,7 +265,7 @@ function departmentLabel(slug: DepartmentSlug): string {
     hmc: "HMC",
     production: "Production",
     cantine: "Cantine",
-    direction: "Réalisation",
+    direction: "Mise en scène",
   };
   return labels[slug] ?? slug;
 }
