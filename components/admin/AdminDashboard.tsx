@@ -29,8 +29,35 @@ export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
     setConfirmReset(false);
   }
 
+  // Feuille extraite et avec contenu, mais pas encore publiée → l'équipe ne
+  // verra rien sur la page d'accueil. C'est la cause la plus fréquente du
+  // "ma feuille a disparu" rapportée par les admins.
+  const needsPublish =
+    !shoot.isPublished &&
+    !!shoot.projectTitle &&
+    shoot.sequences.length > 0;
+
   return (
     <div className="space-y-4">
+      {/* Avertissement publication manquante */}
+      {needsPublish && (
+        <button
+          onClick={() => onTab("publish")}
+          className="w-full glass-card rounded-app p-4 flex items-start gap-3 text-left border border-warning/30 bg-warning/5 active:opacity-80 transition-opacity"
+        >
+          <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-warning">
+              Feuille prête mais non publiée
+            </p>
+            <p className="text-xs text-muted mt-0.5">
+              Votre équipe ne la voit pas encore sur la page d&apos;accueil.
+              Touchez ici pour la publier.
+            </p>
+          </div>
+        </button>
+      )}
+
       {/* Status card */}
       <div className="glass-card-strong rounded-app p-5">
         <div className="flex items-center justify-between mb-4">
