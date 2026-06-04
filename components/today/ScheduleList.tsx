@@ -6,25 +6,31 @@ import { useShootStore } from "@/lib/store/useShootStore";
 import { useUserStore } from "@/lib/store/useUserStore";
 import type { DeptNote } from "@/lib/types/shoot";
 
-// Maps department slug → keywords to match deptNotes.department
+// Maps department slug → keywords to match deptNotes.department.
+// Aligné avec Hero.tsx (même règle de matching pour cohérence UX).
 const DEPT_KEYWORDS: Record<string, string[]> = {
-  camera:     ["caméra", "camera", "image"],
-  electro:    ["électro", "electro", "électricité", "electricite"],
-  machino:    ["machino", "machinerie"],
-  son:        ["son"],
-  regie:      ["régie", "regie", "production", "régi"],
-  deco:       ["déco", "deco", "décoration", "decoration"],
-  hmc:        ["hmc", "maquillage", "coiffure", "costume", "habill"],
-  cantine:    ["cantine"],
-  production: [], // admin — sees all
+  camera:     ["caméra", "camera", "image", "chef op", "cadreur", "steadi"],
+  electro:    ["électro", "electro", "électricité", "electricite", "gaffer", "groupe"],
+  machino:    ["machino", "machinerie", "grip", "machiniste"],
+  son:        ["son", "perchman", "perche", "prise de son"],
+  regie:      ["régie", "regie", "régisseur", "regisseur", "scripte", "1er ad", "2e ad"],
+  deco:       ["déco", "deco", "décoration", "decoration", "accessoir", "ensembl"],
+  hmc:        ["hmc", "maquillage", "coiffure", "costume", "habillage", "perruque"],
+  cantine:    ["cantine", "catering", "restauration", "traiteur"],
+  direction:  ["direction", "mise en scène", "mise en scene", "réal", "real", "metteur en scène"],
+  production: ["production", "directeur de prod", "chargé de prod", "secrétaire de prod"],
 };
 
 function matchesDept(note: DeptNote, slug: string | null): boolean {
   if (!slug || slug === "production") return true;
-  const keywords = DEPT_KEYWORDS[slug] ?? [];
-  const dept = note.department?.toLowerCase() ?? "";
-  if (dept === "tous" || dept === "all") return true;
-  return keywords.some((k) => dept.includes(k));
+  const dept = note.department?.toLowerCase().trim() ?? "";
+  if (!dept || dept === "tous" || dept === "all" || dept === "toutes" || dept === "tout") return true;
+  if ((DEPT_KEYWORDS[slug] ?? []).some((k) => dept.includes(k))) return true;
+  // Fallback : note avec dept non mappable → affichée pour tous.
+  const matchesAny = Object.values(DEPT_KEYWORDS).some((keys) =>
+    keys.some((k) => dept.includes(k))
+  );
+  return !matchesAny;
 }
 
 function activeIndex(rows: { time: string }[]): number {
