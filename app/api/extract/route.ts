@@ -50,7 +50,7 @@ Sur une FDS, chaque département a sa propre heure de convocation (souvent list�
 • "deco"      → Décoration, Déco, Direction artistique, Accessoiristes, Ensembliers, Chef déco
 • "hmc"       → HMC, Habillage, Maquillage, Coiffure, Costumiers, Perruques
 • "cantine"   → Cantine, Catering, Restauration, Traiteur, Café-croissants
-• "direction" → Réalisateur, Réalisation, Metteur en scène
+• "direction" → Réalisateur, Réalisation, Mise en scène, Metteur en scène
 
 Si un département n'est pas mentionné, omets sa clé. La convocation la plus basse (la plus tôt) est souvent HMC/Maquillage.
 

@@ -2,6 +2,17 @@ import type { Department, StockItem } from "@/lib/types";
 
 export const DEPARTMENTS: Department[] = [
   {
+    // Le slug reste "direction" pour préserver toutes les données et
+    // permissions existantes (deptCodes, deptCallTimes, profile.department,
+    // permissions matrice, etc.). Seul le libellé public change.
+    slug: "direction",
+    name: "Mise en scène",
+    icon: "🎥",
+    color: "text-cyan-700",
+    bgColor: "bg-cyan-50 border-cyan-200",
+    code: process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000",
+  },
+  {
     slug: "camera",
     name: "Caméra",
     icon: "🎬",
@@ -71,14 +82,6 @@ export const DEPARTMENTS: Department[] = [
     icon: "🍽️",
     color: "text-teal-700",
     bgColor: "bg-teal-50 border-teal-200",
-    code: process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000",
-  },
-  {
-    slug: "direction",
-    name: "Réalisation",
-    icon: "🎥",
-    color: "text-cyan-700",
-    bgColor: "bg-cyan-50 border-cyan-200",
     code: process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000",
   },
 ];

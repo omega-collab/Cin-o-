@@ -63,7 +63,7 @@ export const ROLE_PRESETS: Record<string, RolePreset> = {
   "Secrétaire de production": { tauxHoraireMin: 22, tauxHoraireMax: 32, tauxHoraireSuggere: 26, mgJournalier: 210, convention: "cinema" },
   "Stagiaire":                { tauxHoraireMin: 12, tauxHoraireMax: 15, tauxHoraireSuggere: 13, mgJournalier: 100, convention: "les deux", note: "Gratification légale minimum" },
 
-  // ── Réalisation ────────────────────────────────────────────────────────────
+  // ── Mise en scène ──────────────────────────────────────────────────────────
   "Réalisateur":                { tauxHoraireMin: 80, tauxHoraireMax: 200, tauxHoraireSuggere: 110, mgJournalier: 800, convention: "cinema", note: "Variable selon notoriété et budget production" },
   "Réalisatrice":               { tauxHoraireMin: 80, tauxHoraireMax: 200, tauxHoraireSuggere: 110, mgJournalier: 800, convention: "cinema", note: "Variable selon notoriété et budget production" },
   "Stagiaire mise en scène":    { tauxHoraireMin: 12, tauxHoraireMax: 15,  tauxHoraireSuggere: 13,  mgJournalier: 100, convention: "cinema", note: "Gratification légale minimum" },

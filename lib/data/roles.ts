@@ -80,7 +80,7 @@ export const DEPT_ROLES: Record<DepartmentSlug, string[]> = {
     "Aide-cuisinier",
   ],
 
-  // Réalisation / Direction
+  // Mise en scène / Direction
   direction: [
     "Réalisateur",
     "Réalisatrice",
