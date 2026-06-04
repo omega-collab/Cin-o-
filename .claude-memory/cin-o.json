@@ -1,58 +1,98 @@
 {
   "schema": "ruflo-memory-export/v1",
-  "exportedAt": "2026-05-26T17:18:35.793Z",
+  "exportedAt": "2026-06-04T03:54:42.768Z",
   "namespace": "cin-o",
-  "count": 5,
+  "count": 9,
   "entries": [
     {
-      "key": "ordre_skills_obligatoires",
+      "key": "audit_jminus1_prs_creees",
       "namespace": "cin-o",
-      "value": "RÈGLE ABSOLUE : avant chaque tâche, invoquer SYSTÉMATIQUEMENT le ou les skills pertinents via Skill({ skill: '<nom>' }). Ne jamais reproduire manuellement ce qu'un skill couvre déjà. Mapping obligatoire : (1) toute tâche Supabase → 'supabase' ; (2) SQL/schéma → 'supabase-postgres-best-practices' ; (3) UI/design/audit visuel → 'impeccable' ; (4) tester l'app en navigateur → 'gstack' ; (5) confirmer qu'un fix marche → 'verify' ; (6) lancer l'app → 'run' ; (7) revue du diff avant PR → 'code-review' ; (8) après touche à auth/permissions/données → 'security-review' ; (9) TDD strict → 'sparc:tdd' ; (10) implémentation complexe avec spec → 'sparc:coder' ; (11) revue qualité post-impl → 'sparc:reviewer' ; (12) lifecycle PR → 'github:pr-manager' ; (13) review multi-agents auto → 'github:code-review' ; (14) regression perf → 'analysis:performance-report' ; (15) après chaque tâche réussie → 'hooks:post-task'. Si plusieurs s'appliquent, paralléliser. Si aucun ne matche, le dire explicitement avant d'agir manuellement.",
-      "createdAt": 1779815884732,
-      "updatedAt": 1779815884732,
+      "value": "Audit J-1 nocturne : 4 PRs créées et toutes mergées. #37 fix(sync) feuille disparaît, #38 feat(ui) Mise en scène + notes, #39 chore(ui) labels divers, #40 fix(projects+notes) RPCs ProjectSwitcher + matchesDept centralisé. Tous typecheck + build verts, CI Netlify verte avant merge.",
+      "createdAt": 1780545273438,
+      "updatedAt": 1780545273438,
       "accessCount": 0,
       "hasEmbedding": true,
-      "size": 1021
+      "size": 281
     },
     {
-      "key": "session_restore_marker",
+      "key": "audit_jminus1_phase5_bugs",
       "namespace": "cin-o",
-      "value": "Session restaurée 2026-05-26. Projet CinéO Next.js 14 + TS strict + Tailwind + Supabase + Zustand + lucide-react. Repo omega-collab/Cin-o-. Branche claude/admin-project-panel. Version courante v0.4.0 (admin: panneau Projet + matrice permissions opt-in).",
-      "createdAt": 1779815884025,
-      "updatedAt": 1779815884025,
+      "value": "Phase 5 — 2 bugs trouvés en review code, fixés en PR #40 : (1) ProjectSwitcher faisait des INSERT/SELECT directs au lieu des RPCs sécurisées (idem PR #28 sur ProjectSelector). Conséquence: createProject sans dédup + joinProject bloqué par RLS. Aligné sur create_project_with_dedup + join_project_by_code. (2) DEPT_KEYWORDS dupliqué dans Hero/ScheduleList/SequenceSheet -> divergent après phase 3. Refactor en lib/utils/deptNoteMatching.ts.",
+      "createdAt": 1780545270563,
+      "updatedAt": 1780545270563,
       "accessCount": 0,
       "hasEmbedding": true,
-      "size": 253
+      "size": 439
     },
     {
-      "key": "ruflo_setup_web_env",
+      "key": "audit_jminus1_phase2_renommage",
       "namespace": "cin-o",
-      "value": "Sur Claude Code Web, ruflo MCP n'est pas chargé (la config /tmp/mcp-config-*.json est generee par Anthropic et n'inclut pas le .mcp.json du repo). Utiliser ruflo via CLI bash directement: ruflo memory store|list|retrieve|search --namespace cin-o. Search semantique cassé (blocage HuggingFace dl). list/retrieve par key fonctionnent. Install via 'npm install -g ruflo' au demarrage si absent (binaire à /opt/node22/bin/ruflo). Base = .swarm/memory.db (tracké git malgré .gitignore).",
-      "createdAt": 1779815884024,
-      "updatedAt": 1779815884024,
+      "value": "Phase 2 — renommage 'Réalisation' -> 'Mise en scène' en PR #38. Slug interne 'direction' inchangé (pas de migration). Repositionné en première position dans DEPARTMENTS. Prompt LLM (route.ts) accepte les 2 termes. Phase 3 incluse: DEPT_KEYWORDS améliorés (regie n'inclut plus 'production', direction reconnaît 'mise en scène', fallback note sans dept mappable -> visible pour tous).",
+      "createdAt": 1780545266669,
+      "updatedAt": 1780545266669,
       "accessCount": 0,
       "hasEmbedding": true,
-      "size": 481
+      "size": 382
     },
     {
-      "key": "bug_addproject_upsert",
+      "key": "audit_jminus1_phase1_fix",
       "namespace": "cin-o",
-      "value": "Bug critique: useProjectStore.addProject etait un append pur ([...projects, project]). Quand AdminProjectPanel rename/rotate, ajoutait une 2e ligne avec meme id → getActiveProject().find() retournait la premiere (stale). Fix: convertir en upsert (findIndex puis slice/replace). Voir lib/store/useProjectStore.ts ligne 67.",
-      "createdAt": 1779815884023,
-      "updatedAt": 1779815884023,
+      "value": "Phase 1 (urgence) — bug 'feuille disparaît' fixé en PR #37. 3 corrections: (1) loadData useProjectSync étend la protection des champs locaux non-vides à tous les champs significatifs (pas juste uploadedDocs) ; (2) isPublished préservé si local publié + contenu cohérent ; (3) UX: bouton 'Valider et publier maintenant' sur AdminExtractionReview + bandeau avertissement orange sur AdminDashboard quand feuille prête mais non publiée.",
+      "createdAt": 1780545261967,
+      "updatedAt": 1780545261967,
       "accessCount": 0,
       "hasEmbedding": true,
-      "size": 321
+      "size": 432
     },
     {
       "key": "permissions_default_behavior",
       "namespace": "cin-o",
       "value": "ProjectCustomization.restrictionsEnabled est false par defaut. usePermissions.canSee() early-return true quand master switch off, GARANTISSANT que le comportement par defaut reste identique a avant la feature (tout le monde voit tout). Admin opt-in explicite obligatoire.",
-      "createdAt": 1779815884022,
-      "updatedAt": 1779815884022,
+      "createdAt": 1780544152436,
+      "updatedAt": 1780544152436,
       "accessCount": 0,
       "hasEmbedding": true,
       "size": 271
+    },
+    {
+      "key": "bug_addproject_upsert",
+      "namespace": "cin-o",
+      "value": "Bug critique: useProjectStore.addProject etait un append pur ([...projects, project]). Quand AdminProjectPanel rename/rotate, ajoutait une 2e ligne avec meme id → getActiveProject().find() retournait la premiere (stale). Fix: convertir en upsert (findIndex puis slice/replace). Voir lib/store/useProjectStore.ts ligne 67.",
+      "createdAt": 1780544152433,
+      "updatedAt": 1780544152433,
+      "accessCount": 0,
+      "hasEmbedding": true,
+      "size": 321
+    },
+    {
+      "key": "ruflo_setup_web_env",
+      "namespace": "cin-o",
+      "value": "Sur Claude Code Web, ruflo MCP n'est pas chargé (la config /tmp/mcp-config-*.json est generee par Anthropic et n'inclut pas le .mcp.json du repo). Utiliser ruflo via CLI bash directement: ruflo memory store|list|retrieve|search --namespace cin-o. Search semantique cassé (blocage HuggingFace dl). list/retrieve par key fonctionnent. Install via 'npm install -g ruflo' au demarrage si absent (binaire à /opt/node22/bin/ruflo). Base = .swarm/memory.db (tracké git malgré .gitignore).",
+      "createdAt": 1780544152430,
+      "updatedAt": 1780544152430,
+      "accessCount": 0,
+      "hasEmbedding": true,
+      "size": 481
+    },
+    {
+      "key": "session_restore_marker",
+      "namespace": "cin-o",
+      "value": "Session restaurée 2026-05-26. Projet CinéO Next.js 14 + TS strict + Tailwind + Supabase + Zustand + lucide-react. Repo omega-collab/Cin-o-. Branche claude/admin-project-panel. Version courante v0.4.0 (admin: panneau Projet + matrice permissions opt-in).",
+      "createdAt": 1780544152428,
+      "updatedAt": 1780544152428,
+      "accessCount": 0,
+      "hasEmbedding": true,
+      "size": 253
+    },
+    {
+      "key": "ordre_skills_obligatoires",
+      "namespace": "cin-o",
+      "value": "RÈGLE ABSOLUE : avant chaque tâche, invoquer SYSTÉMATIQUEMENT le ou les skills pertinents via Skill({ skill: '<nom>' }). Ne jamais reproduire manuellement ce qu'un skill couvre déjà. Mapping obligatoire : (1) toute tâche Supabase → 'supabase' ; (2) SQL/schéma → 'supabase-postgres-best-practices' ; (3) UI/design/audit visuel → 'impeccable' ; (4) tester l'app en navigateur → 'gstack' ; (5) confirmer qu'un fix marche → 'verify' ; (6) lancer l'app → 'run' ; (7) revue du diff avant PR → 'code-review' ; (8) après touche à auth/permissions/données → 'security-review' ; (9) TDD strict → 'sparc:tdd' ; (10) implémentation complexe avec spec → 'sparc:coder' ; (11) revue qualité post-impl → 'sparc:reviewer' ; (12) lifecycle PR → 'github:pr-manager' ; (13) review multi-agents auto → 'github:code-review' ; (14) regression perf → 'analysis:performance-report' ; (15) après chaque tâche réussie → 'hooks:post-task'. Si plusieurs s'appliquent, paralléliser. Si aucun ne matche, le dire explicitement avant d'agir manuellement.",
+      "createdAt": 1780544152427,
+      "updatedAt": 1780544152427,
+      "accessCount": 0,
+      "hasEmbedding": true,
+      "size": 1021
     }
   ]
 }
