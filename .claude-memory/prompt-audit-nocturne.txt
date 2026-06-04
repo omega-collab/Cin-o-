@@ -1,0 +1,418 @@
+════════════════════════════════════════════════════════════════════════════
+MISSION — AUDIT COMPLET + FIX BLOQUANTS CinéO — VEILLE DE J1 DE TOURNAGE
+════════════════════════════════════════════════════════════════════════════
+
+Tu es Claude Code dans un container Linux éphémère, clone frais de
+omega-collab/Cin-o-. Le tournage commence DEMAIN. Tu as toute la nuit pour
+fiabiliser l'app. À 7h du matin, tout doit fonctionner.
+
+LANGUE : exclusivement français dans tes messages, l'UI et les commits.
+
+────────────────────────────────────────────────────────────────────────────
+RÈGLES D'AUTONOMIE
+────────────────────────────────────────────────────────────────────────────
+
+1. SKILLS OBLIGATOIRES — avant chaque tâche, invoque le skill pertinent via
+   Skill({ skill: "..." }). Mapping :
+   - Toute tâche Supabase (RLS, migration, RPC, schéma)  → `supabase`
+   - Écriture/review SQL                                 → `supabase-postgres-best-practices`
+   - Design UI/UX, polish, audit visuel                  → `impeccable`
+   - Vérifier en navigateur                              → `gstack`
+   - Confirmer qu'un fix marche réellement               → `verify`
+   - Lancer l'app                                        → `run`
+   - Review du diff avant PR                             → `code-review`
+   - Toute touche auth/permissions/données               → `security-review`
+   - Lifecycle PR / merge                                → `github:pr-manager`
+   - Après chaque tâche réussie                          → `hooks:post-task`
+   Si plusieurs s'appliquent : parallélise. Si aucun ne matche : dis-le
+   avant d'agir manuellement.
+
+2. MÉMOIRE RUFLO — ouvre la session avec :
+     which ruflo || npm install -g ruflo
+     ruflo memory import --input /home/user/Cin-o-/.claude-memory/cin-o.json
+     ruflo memory list --namespace cin-o
+     ./.claude-memory/search.sh "<mot-clé>"  # quand tu cherches du contexte
+   Stocke après chaque tâche significative :
+     ruflo memory store --namespace cin-o --key "<clé_descriptive>" --value "..."
+   Avant de t'arrêter, EXPORTE :
+     ruflo memory export -o /home/user/Cin-o-/.claude-memory/cin-o.json -n cin-o -f json
+     git add .claude-memory/cin-o.json
+   La base ruflo est en RAM (sql.js), elle ne survit pas au container.
+
+3. AGENTS PARALLÈLES — pour les phases d'investigation indépendantes,
+   spawne plusieurs Agent() simultanés (researcher, code-analyzer, tester).
+   Pas de ruflo agent spawn — utilise les agents natifs Claude Code qui
+   partagent le contexte.
+
+4. GIT — toujours sur branches `claude/audit-jminus1-<phase>`. Une PR par
+   lot logique cohérent (ne pas tout mettre dans une seule PR géante).
+   Squash-merge sur main après que la CI Netlify soit verte.
+   `git push -u origin <branche>` puis créer PR en draft puis ready.
+
+5. NE JAMAIS CASSER le comportement par défaut
+   (rappel : restrictionsEnabled=false → tout visible pour tous).
+
+6. ARRÊT-CONDITIONS — pose UNE question seulement si tu rencontres :
+   - Une décision produit ambiguë (ex: "renommer X en Y ou Z ?")
+   - Une opération destructive non triviale (drop column, delete data)
+   - Un fix qui modifierait l'architecture (ex: changer un store)
+   Sinon, décide et avance. Pose la question via AskUserQuestion.
+
+────────────────────────────────────────────────────────────────────────────
+PHASE 0 — RESTAURATION DE CONTEXTE (≤ 5 min)
+────────────────────────────────────────────────────────────────────────────
+
+a) Lire CLAUDE.md en entier.
+b) `ruflo memory list --namespace cin-o` et lire chaque entry pertinente
+   (notamment session_restore_marker, bug_addproject_upsert, et tout
+   "audit_*" qui aurait pu être stocké par une session précédente).
+c) `git log main --oneline -20` pour voir l'historique récent.
+d) `git status` et `npx tsc --noEmit` pour partir d'une base propre.
+e) Lire les fichiers clés :
+   - lib/store/useShootStore.ts
+   - lib/store/useProjectStore.ts
+   - lib/store/useCanteenStore.ts
+   - lib/store/useDepartmentStore.ts
+   - lib/hooks/useProjectSync.ts
+   - lib/data/departments.ts
+   - components/today/Hero.tsx
+   - components/admin/AdminUploadPanel.tsx
+   - components/admin/AdminExtractionReview.tsx
+   - components/admin/AdminPublishPanel.tsx
+
+────────────────────────────────────────────────────────────────────────────
+PHASE 1 — BUG BLOQUANT : FEUILLE DE SERVICE QUI DISPARAÎT (PRIORITÉ MAX)
+────────────────────────────────────────────────────────────────────────────
+
+SYMPTÔME EXACT (rapporté par le user)
+  Le user a créé un nouveau projet (celui du vrai tournage de demain).
+  Il a importé la nouvelle feuille de service. Elle disparaît ensuite
+  dans la page d'accueil (/today).
+
+HYPOTHÈSES À INVESTIGUER DANS L'ORDRE
+  H1 — `shoot.isPublished` reste false après upload+extraction → le Hero
+       montre "Aucune feuille publiée" (Hero.tsx ligne 61 :
+       `isLive = shoot.isPublished && !!shoot.projectTitle`).
+       → Reproduis : upload + extraction + retour sur /today sans avoir
+         cliqué "Publier" dans AdminPublishPanel.
+       → Vérifie si le bouton Publier est bien visible et fonctionnel
+         après l'extraction.
+
+  H2 — Race condition useProjectSync : sur création d'un NOUVEAU projet,
+       `setActiveProject(newId)` déclenche `resetProjectScopedStores()`
+       (lib/store/useProjectStore.ts:54-62). Puis loadData charge le
+       nouveau project_data depuis Supabase. Si l'utilisateur upload
+       PENDANT cette fenêtre, l'upload local peut être écrasé par le
+       chargement initial (lastLocalChangeAt vs remote updated_at).
+       → Trace les timestamps dans la console (ajoute logs si besoin).
+
+  H3 — La protection uploadedDocs (useProjectSync.ts:67-76) garde les
+       docs locaux MAIS écrase le reste (sequences, projectTitle, etc.)
+       avec le remote. Si l'extraction a terminé mais n'a pas encore
+       été pushée vers Supabase (debounce 1.5s), et qu'un Realtime
+       UPDATE arrive d'un autre user, on ressort `projectTitle: ""`.
+       → Étendre la protection : préserver TOUT champ local non-vide
+         dont la remote est vide.
+
+  H4 — Le shoot est bien sauvé mais publish() ne s'écrit pas en remote.
+       publish() fait `set((s) => ({ shoot: { ...s.shoot, isPublished:
+       true, auditLog: [...] } }))`. Le subscribe useShootStore (sync)
+       doit déclencher scheduleSave. Vérifier.
+
+ACTIONS
+  1. Reproduire le bug en environnement de dev (npm run dev) ou via le
+     deploy Netlify (celebrated-nasturtium-de0545.netlify.app).
+  2. Identifier la racine du bug (instrumenter avec logs si besoin).
+  3. Implémenter le fix le plus minimal qui résout le bug ET ne
+     régresse pas les autres flows (les 4 bugs déjà fixés sur les PRs
+     #28-#35 — voir git log).
+  4. Sur la branche `claude/audit-jminus1-feuille-disparait` :
+     - typecheck + build verts
+     - PR ready immédiatement (pas draft, c'est urgent)
+     - squash-merge dès CI verte
+  5. Vérifier en production après deploy (≤ 2 min après merge).
+
+CHECKPOINT
+  Le user fait : créer projet → uploader feuille → extraction → publier
+  → page d'accueil. La feuille reste affichée APRÈS rechargement de la
+  page ET sur un second appareil (autre membre du même projet).
+
+────────────────────────────────────────────────────────────────────────────
+PHASE 2 — RENOMMAGE "RÉALISATION" → "MISE EN SCÈNE" + MISE EN AVANT
+────────────────────────────────────────────────────────────────────────────
+
+CONTEXTE
+  Le département slug "direction" porte actuellement le nom "Réalisation"
+  (lib/data/departments.ts:78). Il est en dernière position (10/10) dans
+  la grille DEPARTMENTS.
+
+OBJECTIF
+  1. Renommer "Réalisation" en "Mise en scène" PARTOUT dans l'UI.
+     Garder le slug "direction" inchangé pour éviter une migration data.
+  2. Déplacer ce département en première position dans `DEPARTMENTS`
+     (avant Caméra), pour qu'il soit le plus en avant visuellement.
+  3. Vérifier tous les libellés associés :
+     - lib/data/departments.ts:78           ← `name: "Réalisation"`
+     - components/heures/SalarySettings.tsx:268 ← `direction: "Réalisation"`
+     - lib/data/roles.ts ligne 83            ← commentaire de section
+     - lib/data/salaryPresets.ts ligne 66    ← idem
+     - app/api/extract/route.ts ligne 53     ← prompt LLM (laisser
+       "Réalisation" dans le prompt car certaines feuilles utilisent
+       ce vocabulaire et l'extracteur doit reconnaître les deux)
+  4. Chercher d'autres références : `grep -rn "Réalisation"` dans lib/,
+     components/, app/.
+
+DÉCISIONS PRODUIT (si ambigu, AskUserQuestion)
+  - Faut-il aussi renommer "Directeur de production" si c'est lié ? NON,
+    c'est un poste de la dept "production", pas de "direction".
+  - Garder l'icône Camera-Movie actuelle ? OUI sauf si `impeccable` skill
+    suggère mieux.
+
+ACTIONS
+  1. Patch + build vert
+  2. Migration data ? NON nécessaire car on garde le slug "direction".
+  3. Branche `claude/audit-jminus1-mise-en-scene`, PR, squash-merge.
+
+────────────────────────────────────────────────────────────────────────────
+PHASE 3 — AUDIT DES NOTES FILTRÉES PAR DÉPARTEMENT (Hero.tsx)
+────────────────────────────────────────────────────────────────────────────
+
+SYMPTÔME RAPPORTÉ (par le user)
+  "J'ai l'impression qu'il manque des notes selon certaines sections."
+
+CODE CONCERNÉ
+  components/today/Hero.tsx lignes 17-35 : DEPT_KEYWORDS + matchesDept().
+  Filtre : `shoot.deptNotes.filter((n) => matchesDept(n, department))`.
+
+POINTS À VÉRIFIER
+  1. Le DEPT_KEYWORDS est-il complet ?
+     - regie : ["régie", "regie", "production"] ← "production" est
+       dangereux, ça mélange régie et prod. À investiguer.
+     - direction : ["direction", "réal", "real"] ← si on renomme en
+       "Mise en scène", ajouter "mise en scène", "mise-en-scene", "ms".
+     - hmc : ["hmc", "maquillage", "coiffure", "costume"] ← OK
+     - production : [] ← VIDE ! Le filtrage `slug === "production"`
+       traite ce dept comme voyant TOUT (matchesDept return true à la
+       ligne 31). C'est volontaire (la prod doit tout voir), mais à
+       confirmer.
+  2. Les notes extraites par le LLM (api/extract/route.ts) renseignent
+     bien le champ `department` avec les bons mots-clés ?
+     → Lire le prompt d'extraction et la liste des dépts qu'il fournit.
+     → S'assurer que le prompt instruit le LLM d'utiliser EXACTEMENT
+       les slugs ou des mots-clés mappables.
+  3. Que se passe-t-il pour les notes avec `department === ""` ou
+     `null` ou un texte non mappable ? Le matchesDept renvoie false →
+     la note est invisible pour tout le monde sauf production.
+     → Ajouter un fallback : si la note n'a pas de department
+       reconnaissable, l'afficher comme "Pour tous" et la mettre dans
+       le filtre "Ma section" + tous les filtres de dept.
+
+ACTIONS
+  1. Recenser sur le déploiement actuel les notes affichées vs
+     manquantes (l'utilisateur a déjà uploadé la feuille de demain →
+     comparer manuellement le contenu de la FDS papier vs ce que /today
+     montre par dept).
+  2. Améliorer DEPT_KEYWORDS et le fallback "Pour tous".
+  3. Améliorer le prompt LLM si nécessaire.
+  4. Branche `claude/audit-jminus1-notes-filtrage`, PR.
+
+────────────────────────────────────────────────────────────────────────────
+PHASE 4 — AUDIT VISUEL GLOBAL (skill impeccable)
+────────────────────────────────────────────────────────────────────────────
+
+PAGES À AUDITER en mode mobile-first (390×844, iPhone 13/14/15) :
+  /                  Aujourd'hui
+  /departments       Grille des sections
+  /departments/[slug]  Détail section + stock
+  /heures            Heures intermittentes + frais
+  /calendrier        Planning mensuel
+  /cantine           Form staff cantine
+  /documents         Documents
+  /history           Historique
+  /admin             Administration (tous les onglets)
+
+POUR CHAQUE PAGE
+  - Lance le déploiement en local (npm run dev) ou Netlify
+  - Capture (skill gstack)
+  - Vérifie :
+    * Lisibilité (contraste suffisant pour daylight outdoor)
+    * Tap targets ≥ 44px sur mobile
+    * États vides bien rendus (pas de "undefined" qui leak)
+    * États de chargement (skeleton ou spinner cohérent)
+    * Errors network (banner WifiOff)
+    * Tronquage de texte (no overflow horizontal en 320px)
+    * Safe-area iOS (notch, home indicator)
+    * Dark theme cohérent (pas de light mode résiduel)
+    * Tokens couleurs respectés (cyan/danger/warning/info/success/night)
+    * Zéro emoji dans le code (lucide-react uniquement)
+
+DÉFAUTS CONNUS À NE PAS REFAIRE
+  - Pas de gradient bleu sur Hero (vérifier)
+  - Pas de borderTop coloré sur calendrier
+  - "Réalisation" → "Mise en scène" (phase 2)
+  - Pas de PIN cantine (auth Supabase suffit)
+
+LIVRABLE
+  - Capture before/after pour chaque ajustement
+  - Branche `claude/audit-jminus1-visuel-<page>` (une PR par page si
+    gros changements, sinon une PR groupée pour toutes les petits
+    ajustements)
+
+────────────────────────────────────────────────────────────────────────────
+PHASE 5 — AUDIT FONCTIONNEL (flow par flow)
+────────────────────────────────────────────────────────────────────────────
+
+FLOWS À TESTER DE BOUT EN BOUT (Playwright + chromium preinstallé)
+
+A. AUTH + PROJET
+   - Login email/mdp Supabase
+   - Création de projet (avec dédup nom)
+   - Rejoindre par code d'invitation
+   - Renommer projet (RPC update_project_name)
+   - Régénérer code (RPC rotate_invite_code, owner-only)
+   - Changer de projet → resetProjectScopedStores OK
+
+B. ONBOARDING
+   - Choix département (les 10, dont Mise en scène en premier)
+   - Choix rôle (selon département)
+   - Choix avatar
+   - Persistence onboardingDone
+
+C. ADMIN / FEUILLE DE SERVICE
+   - Upload PDF/DOCX
+   - Extraction OCR Mistral (vérifier la qualité sur la VRAIE feuille de
+     demain — la lire et comparer aux séquences/cast/notes extraits)
+   - Révision manuelle
+   - Publication
+   - Re-publication après modification
+   - Le bouton "Hors ligne" depublishes correctement
+
+D. NOTES DÉPARTEMENT
+   - Filtre "Ma section" affiche bien les notes du dept connecté
+   - Filtre par dept fonctionne
+   - Notes critiques (priority: critical) affichées avec icône rouge
+
+E. SYNC TEMPS RÉEL
+   - User A modifie quelque chose sur device A
+   - User B sur device B voit la modif sans recharger
+   - Pas de race condition (test : upload doc sur A pendant que B est
+     sur le projet → doc apparaît sur B)
+   - Test menu cantine : staff cantine remplit → admin voit le menu
+
+F. CODES DÉPARTEMENT
+   - Activer codesEnabled
+   - Définir code par dept
+   - User d'un dept sans code accède direct
+   - User d'un dept avec code doit le saisir
+
+G. HEURES INTERMITTENTES
+   - Saisie d'une journée standard
+   - Heures de nuit (23:00→06:00) — calcul correct via
+     intermittent.ts (passage minuit)
+   - Validation pause déjeuner (fin > début)
+   - Convention IDCC 2642 vs 3097
+   - Salaire calculé correctement
+
+H. NOTES DE FRAIS
+   - Upload ticket → OCR Mistral
+   - Plaque immat détectée
+   - Bypass non-véhicule
+   - Matrice PDF générée (printReleve)
+   - Sync Supabase de frais_entries
+
+I. CANTINE
+   - Staff remplit le menu (lieu tournage, lieu cantine, heure, plats)
+   - Enregistrer → menu visible sur l'accueil de TOUS les membres du
+     projet (FIX appliqué en PR #35 — vérifier qu'il marche encore
+     après le fix de la phase 1)
+   - Bouton "Ouvrir la cantine" depuis admin
+   - Bouton "Copier" met l'URL dans le presse-papier
+
+J. PERMISSIONS / MATRICE
+   - restrictionsEnabled=false par défaut → comportement identique à avant
+   - Activer restrictions + restreindre castContacts à "department"
+     → user d'un autre dept ne voit pas les contacts comédiens
+   - Production voit toujours tout
+
+LIVRABLES PHASE 5
+  - Pour chaque flow : statut OK/KO/À-corriger
+  - Script Playwright dans tools/e2e/ par flow (si pertinent)
+  - Bugs trouvés → PR ciblé par bug (PAS DE FIX SAUVAGE TOUT-EN-UN)
+
+────────────────────────────────────────────────────────────────────────────
+PHASE 6 — CHECKLIST J-1 (rapport final, lundi matin)
+────────────────────────────────────────────────────────────────────────────
+
+À 7h du matin, produis un fichier `.claude-memory/audit-jminus1-report.md`
+commité avec :
+
+| Élément                  | Statut  | Note                              |
+|--------------------------|---------|------------------------------------|
+| Bug feuille disparaît    | OK / KO | Lien PR                            |
+| Renommage Mise en scène  | OK / KO | Lien PR                            |
+| Filtrage notes par dept  | OK / KO | Lien PR                            |
+| Audit visuel /today      | OK / KO | Captures avant/après               |
+| Audit visuel /departments| OK / KO | ...                                |
+| ... (toutes les pages)   | ...     | ...                                |
+| Sync temps réel          | OK / KO | Test reproductible                 |
+| OCR feuille du jour      | OK / KO | Qualité extraction (%)             |
+| Cantine sync             | OK / KO | Vérifié sur 2 devices              |
+| Permissions opt-in       | OK / KO | Confirmé non-régression            |
+| Heures intermittentes    | OK / KO | Cas test : 23:00→06:00 OK          |
+| Notes de frais           | OK / KO | OCR ticket + matrice PDF           |
+| Tokens couleurs          | OK / KO | grep redSoft/orangeSoft = 0        |
+
+Liste les bugs **non résolus** (s'il en reste) en bas du rapport avec :
+  - Sévérité (critique / bloquant / mineur)
+  - Workaround connu
+  - Effort estimé pour fixer
+
+────────────────────────────────────────────────────────────────────────────
+RÈGLES DE COMMIT / PR
+────────────────────────────────────────────────────────────────────────────
+
+- Format commit : `fix|feat|chore|refactor(scope): description courte`
+  puis corps détaillé. Cf historique git pour exemples.
+- Une PR par lot cohérent. Pas de PR géante.
+- Toujours faire passer `npx tsc --noEmit` ET `npm run build` AVANT push.
+- Sur la dernière ligne du body de PR, mettre la liste des PRs reliées
+  s'il y a une chaîne logique.
+- Squash-merge dès CI Netlify verte (3 checks attendus, conclusion
+  success / neutral).
+
+────────────────────────────────────────────────────────────────────────────
+STRATÉGIE EN CAS DE BLOCAGE
+────────────────────────────────────────────────────────────────────────────
+
+Si tu es bloqué après 2 itérations sur le même bug :
+  1. Stocke le diagnostic en mémoire ruflo :
+     ruflo memory store --namespace cin-o --key "bloque_<sujet>" --value "..."
+  2. Skip ce bug et passe au suivant.
+  3. Reviens dessus en fin de nuit avec un regard frais.
+  4. En dernier recours, documente le workaround dans le rapport final
+     et notifie l'utilisateur via une issue GitHub draft.
+
+NE JAMAIS push --force sur main. Ne jamais bypasser un hook pre-commit.
+Ne jamais commiter des secrets.
+
+────────────────────────────────────────────────────────────────────────────
+FIN DE SESSION
+────────────────────────────────────────────────────────────────────────────
+
+Avant de t'arrêter :
+  ruflo memory export -o /home/user/Cin-o-/.claude-memory/cin-o.json -n cin-o -f json
+  git add .claude-memory/cin-o.json .claude-memory/audit-jminus1-report.md
+  git commit -m "chore: rapport audit J-1 + mémoire ruflo"
+  git push
+
+Réponds-moi avec UN seul message final qui contient :
+  1. Résumé exécutif (3-5 lignes)
+  2. Tableau de la phase 6
+  3. Liste des PRs créées/mergées avec leur n° et titre
+  4. Bugs résiduels (si présents)
+  5. Recommandations pour le J1 (ce que l'utilisateur doit savoir
+     AVANT d'arriver sur le plateau demain matin)
+
+GO. Travaille de manière autonome, en français, jusqu'à ce que la
+checklist phase 6 soit verte ou que tu aies fait tout ce qui est
+techniquement possible. Bon courage.
