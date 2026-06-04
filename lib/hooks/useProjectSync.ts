@@ -63,17 +63,92 @@ export function useProjectSync(projectId: string | null) {
       if (shoot) {
         const remoteShoot = shoot as ReturnType<typeof useShootStore.getState>["shoot"];
         const localShoot = useShootStore.getState().shoot;
-        // Race protection: if the user uploaded docs locally that haven't
-        // made it into Supabase yet, preserve them. Otherwise the upload
-        // "disappears" on the next mount/realtime tick.
-        const localDocs = localShoot.uploadedDocs ?? [];
-        const remoteDocs = remoteShoot.uploadedDocs ?? [];
+        // Race protection : si l'utilisateur a un shoot local "plus riche"
+        // que le remote (ex: il vient d'uploader/extraire/publier et le
+        // debounce save de 1.5s n'a pas encore eu lieu), on préserve les
+        // champs locaux non vides. Sinon la feuille "disparaît" à chaque
+        // mount/realtime tick juste après un changement local.
+        const isEmptyArr = (v: unknown) => !Array.isArray(v) || v.length === 0;
+        const isEmptyStr = (v: unknown) => typeof v !== "string" || v.trim() === "";
+
         const preservedDocs =
-          localDocs.length > 0 && remoteDocs.length === 0
-            ? localDocs
-            : remoteDocs;
+          (localShoot.uploadedDocs?.length ?? 0) > 0 && isEmptyArr(remoteShoot.uploadedDocs)
+            ? localShoot.uploadedDocs
+            : remoteShoot.uploadedDocs;
+
+        const preservedSequences =
+          (localShoot.sequences?.length ?? 0) > 0 && isEmptyArr(remoteShoot.sequences)
+            ? localShoot.sequences
+            : remoteShoot.sequences;
+
+        const preservedCast =
+          (localShoot.cast?.length ?? 0) > 0 && isEmptyArr(remoteShoot.cast)
+            ? localShoot.cast
+            : remoteShoot.cast;
+
+        const preservedDeptNotes =
+          (localShoot.deptNotes?.length ?? 0) > 0 && isEmptyArr(remoteShoot.deptNotes)
+            ? localShoot.deptNotes
+            : remoteShoot.deptNotes;
+
+        const preservedPlaces =
+          (localShoot.places?.length ?? 0) > 0 && isEmptyArr(remoteShoot.places)
+            ? localShoot.places
+            : remoteShoot.places;
+
+        const preservedAlerts =
+          (localShoot.alerts?.length ?? 0) > 0 && isEmptyArr(remoteShoot.alerts)
+            ? localShoot.alerts
+            : remoteShoot.alerts;
+
+        const preservedNextDays =
+          (localShoot.nextDays?.length ?? 0) > 0 && isEmptyArr(remoteShoot.nextDays)
+            ? localShoot.nextDays
+            : remoteShoot.nextDays;
+
+        const preservedTitle =
+          !isEmptyStr(localShoot.projectTitle) && isEmptyStr(remoteShoot.projectTitle)
+            ? localShoot.projectTitle
+            : remoteShoot.projectTitle;
+
+        const preservedLocation =
+          !isEmptyStr(localShoot.location) && isEmptyStr(remoteShoot.location)
+            ? localShoot.location
+            : remoteShoot.location;
+
+        const preservedDate =
+          !isEmptyStr(localShoot.date) && isEmptyStr(remoteShoot.date)
+            ? localShoot.date
+            : remoteShoot.date;
+
+        // isPublished : si le local est publié et que le remote ne l'est
+        // pas, on préserve le local UNIQUEMENT si le contenu local est
+        // significatif (titre + séquences). Sinon on fait confiance au
+        // remote (un autre user a pu dépublier).
+        const localIsPublishedWithContent =
+          localShoot.isPublished &&
+          !isEmptyStr(localShoot.projectTitle) &&
+          (localShoot.sequences?.length ?? 0) > 0;
+        const preservedIsPublished =
+          localIsPublishedWithContent && !remoteShoot.isPublished
+            ? true
+            : remoteShoot.isPublished;
+
         useShootStore.setState({
-          shoot: { ...remoteShoot, uploadedDocs: preservedDocs },
+          shoot: {
+            ...remoteShoot,
+            uploadedDocs: preservedDocs,
+            sequences: preservedSequences,
+            cast: preservedCast,
+            deptNotes: preservedDeptNotes,
+            places: preservedPlaces,
+            alerts: preservedAlerts,
+            nextDays: preservedNextDays,
+            projectTitle: preservedTitle,
+            location: preservedLocation,
+            date: preservedDate,
+            isPublished: preservedIsPublished,
+          },
         });
       }
     }

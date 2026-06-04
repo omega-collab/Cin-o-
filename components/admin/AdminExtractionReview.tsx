@@ -93,9 +93,11 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
     setDeptNotes,
     setPlaces,
     setAlerts,
+    publish,
   } = useShootStore();
 
   const [applied, setApplied] = useState(false);
+  const [publishedNow, setPublishedNow] = useState(false);
   const [scriptLoading, setScriptLoading] = useState(false);
   const [scriptMessage, setScriptMessage] = useState<{ kind: "ok" | "error" | "warn"; text: string } | null>(null);
   const appliedRef = useRef(false);
@@ -123,6 +125,21 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
       onApply();
     }, 1200);
   }
+
+  // Raccourci : valider la révision ET publier en une seule action. Évite
+  // l'oubli classique "j'ai extrait mais pas publié" qui fait que la feuille
+  // reste invisible sur la page d'accueil de l'équipe.
+  function handlePublishNow() {
+    if (!hasContentForPublish) return;
+    publish();
+    setPublishedNow(true);
+    timerRef.current = setTimeout(() => {
+      setPublishedNow(false);
+      onApply();
+    }, 1200);
+  }
+
+  const hasContentForPublish = !!shoot.projectTitle && shoot.sequences.length > 0;
 
   // Re-extract the narrative text from the cached jour-à-jour OCR. Useful
   // when the initial extraction missed scenes, or when the admin edits
@@ -519,15 +536,37 @@ export function AdminExtractionReview({ onApply }: { onApply: () => void }) {
         </button>
       </Section>
 
-      {/* Apply — extraction is auto-applied on mount so the data is already
-          merged into the shoot. This button only validates the review and
-          moves the user to the publish step. */}
-      <button
-        onClick={handleApply}
-        className={`active-pill w-full py-3 rounded-2xl font-semibold text-sm transition-opacity ${applied ? "opacity-60" : ""}`}
-      >
-        {applied ? "Validé ✓" : "Valider et continuer"}
-      </button>
+      {/* Apply / Publish — extraction is auto-applied on mount so the data
+          is already merged into the shoot. Le bouton primaire publie
+          directement (le cas le plus courant : "je viens d'importer et je
+          veux que mon équipe la voie tout de suite"). Le bouton secondaire
+          permet de juste valider et publier plus tard depuis l'onglet
+          Publier. */}
+      <div className="space-y-2">
+        <button
+          onClick={handlePublishNow}
+          disabled={!hasContentForPublish || publishedNow}
+          className={`active-pill w-full py-3 rounded-2xl font-semibold text-sm transition-opacity disabled:opacity-30 ${publishedNow ? "opacity-60" : ""}`}
+        >
+          {publishedNow
+            ? "Publié — feuille en ligne ✓"
+            : shoot.isPublished
+              ? "Valider et republier"
+              : "Valider et publier maintenant"}
+        </button>
+        <button
+          onClick={handleApply}
+          disabled={applied}
+          className={`glass-card w-full py-2.5 rounded-2xl text-xs font-medium text-muted transition-opacity ${applied ? "opacity-60" : ""}`}
+        >
+          {applied ? "Validé ✓" : "Valider sans publier (publier plus tard)"}
+        </button>
+        {!hasContentForPublish && (
+          <p className="text-[11px] text-warning text-center">
+            Titre du projet et au moins une séquence requis pour publier.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
