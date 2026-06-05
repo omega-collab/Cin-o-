@@ -9,6 +9,10 @@ import {
   Clock,
   CheckCircle2,
   ArrowRight,
+  Moon,
+  Sunrise,
+  Hourglass,
+  AlertTriangle,
 } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useUserStore } from "@/lib/store/useUserStore";
@@ -17,6 +21,8 @@ import { useIntermittentStore } from "@/lib/store/useIntermittentStore";
 import { useShiftPointageStore } from "@/lib/store/useShiftPointageStore";
 import { useWorkDaysSync } from "@/lib/hooks/useWorkDaysSync";
 import { useHydrated } from "@/lib/hooks/useHydrated";
+import { computeDay, fmtMinutes } from "@/lib/utils/intermittent";
+import type { WorkDay } from "@/lib/types/intermittent";
 import type { DepartmentSlug } from "@/lib/types";
 
 function todayISO(): string {
@@ -83,6 +89,11 @@ export function ShiftPointageCard() {
     return () => clearInterval(id);
   }, []);
 
+  // Recap avant confirmation finale : affiche le détail des heures
+  // calculées (sup, anticipées, nuit, journée continue) pour contrôle
+  // automatique avant que la WorkDay soit insérée.
+  const [recap, setRecap] = useState<Omit<WorkDay, "id"> | null>(null);
+
   // Gating : ne pas afficher la carte si conditions non remplies
   // (pas connecté, dept = production / direction, pas de FDS publiée).
   const isProd = department === "production" || department === "direction";
@@ -119,7 +130,7 @@ export function ShiftPointageCard() {
   }
 
   function handleEndOfDay() {
-    const draft = {
+    const draft: Omit<WorkDay, "id"> = {
       date: todayISO(),
       startTime: callTime || "08:00",
       endTime: nowHHMM(),
@@ -131,14 +142,150 @@ export function ShiftPointageCard() {
       // store intermittent est mono-utilisateur côté local.)
       notes: userRole ? userRole : undefined,
     };
+    // Affiche d'abord le récap pour contrôle automatique
+    setRecap(draft);
+  }
+
+  function confirmEndOfDay() {
+    if (!recap) return;
     // Optimiste : on remplit le store local immédiatement pour que la page
     // /heures affiche la nouvelle entrée sans flash. addRemote fait un
     // upsert Supabase (RLS user-scope) et remplace ensuite l'entrée
     // locale par celle persistée (avec son id serveur).
-    addWorkDay(draft);
-    void addRemote(draft);
+    addWorkDay(recap);
+    void addRemote(recap);
     resetPointage();
+    setRecap(null);
     router.push("/heures");
+  }
+
+  function cancelRecap() {
+    setRecap(null);
+  }
+
+  // Mode récap : affiche les calculs automatiques avant confirmation
+  if (recap) {
+    const computed = computeDay({ ...recap, id: "preview" });
+    const warnings: string[] = [];
+    // Contrôles automatiques de cohérence
+    if (computed.effectiveMinutes < 60) {
+      warnings.push("Durée travaillée très courte (< 1h). Vérifier les horaires.");
+    }
+    if (computed.effectiveMinutes > 360 && !recap.lunchStart && !recap.lunchEnd) {
+      warnings.push("Plus de 6h travaillées sans pause déjeuner enregistrée.");
+    }
+    if (recap.lunchStart && !recap.lunchEnd) {
+      warnings.push("Coupure déjeuner démarrée mais non clôturée. La pause n'est pas comptée.");
+    }
+    return (
+      <div className="glass-card-strong rounded-app p-4 space-y-3 border border-cyan/20">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <CheckCircle2 className="w-4 h-4 text-cyan shrink-0" />
+            <span className="text-sm font-semibold text-white truncate">
+              Récap du jour
+            </span>
+          </div>
+          <span className="text-[10px] font-mono text-muted shrink-0">
+            {recap.startTime} → {recap.endTime}
+          </span>
+        </div>
+
+        {/* Métrique principale : heures effectives */}
+        <div className="bg-white/5 rounded-2xl p-3 text-center">
+          <p className="text-[10px] text-muted uppercase tracking-widest mb-0.5">Travaillé</p>
+          <p className="text-2xl font-bold text-cyan font-mono">
+            {fmtMinutes(computed.effectiveMinutes)}
+          </p>
+          {recap.lunchStart && recap.lunchEnd && (
+            <p className="text-[10px] text-muted mt-1">
+              Pause {recap.lunchStart}–{recap.lunchEnd} ({fmtMinutes(computed.lunchMinutes)})
+            </p>
+          )}
+        </div>
+
+        {/* Calculs auto : sup / anticipées / nuit / journée continue */}
+        <div className="grid grid-cols-2 gap-2">
+          {computed.heuresSup > 0 && (
+            <div className="flex items-center gap-2 bg-cyanSoft/40 border border-cyan/20 rounded-xl px-3 py-2">
+              <Hourglass className="w-3.5 h-3.5 text-cyan shrink-0" />
+              <div>
+                <p className="text-[10px] text-muted uppercase tracking-wide">Heures sup.</p>
+                <p className="text-sm font-mono font-semibold text-cyan">
+                  +{computed.heuresSup.toFixed(1)}h
+                </p>
+              </div>
+            </div>
+          )}
+          {computed.heuresAnticipees > 0 && (
+            <div className="flex items-center gap-2 bg-info/10 border border-info/20 rounded-xl px-3 py-2">
+              <Sunrise className="w-3.5 h-3.5 text-info shrink-0" />
+              <div>
+                <p className="text-[10px] text-muted uppercase tracking-wide">Anticipées</p>
+                <p className="text-sm font-mono font-semibold text-info">
+                  {computed.heuresAnticipees.toFixed(1)}h
+                </p>
+              </div>
+            </div>
+          )}
+          {computed.heuresDeNuit > 0 && (
+            <div className="flex items-center gap-2 bg-nightSoft/30 border border-night/20 rounded-xl px-3 py-2">
+              <Moon className="w-3.5 h-3.5 text-night shrink-0" />
+              <div>
+                <p className="text-[10px] text-muted uppercase tracking-wide">De nuit</p>
+                <p className="text-sm font-mono font-semibold text-night">
+                  {computed.heuresDeNuit.toFixed(1)}h
+                </p>
+              </div>
+            </div>
+          )}
+          {computed.isJourneeContinue && (
+            <div className="flex items-center gap-2 bg-warning/10 border border-warning/20 rounded-xl px-3 py-2">
+              <Hourglass className="w-3.5 h-3.5 text-warning shrink-0" />
+              <div>
+                <p className="text-[10px] text-muted uppercase tracking-wide">Mode</p>
+                <p className="text-sm font-semibold text-warning">Journée continue</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Alertes de cohérence */}
+        {warnings.length > 0 && (
+          <div className="space-y-1.5">
+            {warnings.map((w, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-2 bg-warning/8 border border-warning/20 rounded-xl px-3 py-2"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
+                <p className="text-[11px] text-textSoft leading-snug">{w}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Confirmation / annulation */}
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={cancelRecap}
+            className="flex-1 py-2.5 rounded-xl text-xs font-medium glass-card text-muted"
+          >
+            Retour
+          </button>
+          <button
+            onClick={confirmEndOfDay}
+            className="flex-1 py-2.5 rounded-xl text-xs font-semibold active-pill flex items-center justify-center gap-1.5"
+          >
+            Confirmer
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <p className="text-[10px] text-muted text-center">
+          Confirmer ajoute la journée à tes heures et synchronise dans ton compte.
+        </p>
+      </div>
+    );
   }
 
   return (
