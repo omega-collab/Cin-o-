@@ -140,6 +140,50 @@ export interface FullShoot {
   // Project-level customization (permissions, accent colour). Optional with
   // sensible defaults so older saved states stay compatible.
   customization?: ProjectCustomization;
+  // Journées archivées via "Fin de journée" dans l'admin. Préservé lors du
+  // resetFull et du endDay : seules les journées explicitement archivées y
+  // figurent. Triées du plus récent au plus ancien à l'affichage.
+  archivedShoots?: ArchivedShoot[];
+}
+
+// Snapshot d'une feuille de service archivée à la fin d'une journée de
+// tournage. On garde tous les champs informatifs (pas uploadedDocs pour ne
+// pas alourdir le storage). L'admin peut ensuite consulter la journée
+// archivée depuis /history.
+export interface ArchivedShoot {
+  id: string;                     // uuid de l'archive
+  archivedAt: string;             // ISO timestamp de l'archivage
+  archivedBy?: string;            // user id de l'admin qui a cliqué "Fin de journée"
+  date: string;                   // date du jour archivé (champ du shoot)
+  projectTitle: string;
+  series?: string;
+  shootingDay: number;
+  totalDays?: number;
+  location: string;
+  callTime: string;
+  mealTime: string;
+  wrapTime?: string;
+  patTime?: string;
+  weather?: string;
+  logeLocation?: string;
+  canteenLocation?: string;
+  deptCallTimes?: Partial<Record<DepartmentSlug, string>>;
+  sequences: ShootSequence[];
+  cast: CastMember[];
+  deptNotes: DeptNote[];
+  places: PlacePoint[];
+  alerts: ShootAlert[];
+  nextDays: NextDayInfo[];
+  auditLog: AuditEntry[];
+  // Snapshot du menu cantine du jour (si rempli)
+  canteenMenu?: {
+    starter: string;
+    main: string;
+    dessert: string;
+    special?: string;
+    mealTime?: string;
+    mealEndTime?: string;
+  };
 }
 
 export type ExtractionConfidence = "high" | "medium" | "low";
