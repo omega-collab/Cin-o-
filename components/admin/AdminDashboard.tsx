@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Radio, FileText, Users, AlertTriangle, MapPin, Calendar, RotateCcw, UtensilsCrossed, Copy, Check, ExternalLink } from "lucide-react";
+import { Radio, FileText, Users, AlertTriangle, MapPin, Calendar, RotateCcw, UtensilsCrossed, Copy, Check, ExternalLink, MoonStar } from "lucide-react";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useCanteenStore } from "@/lib/store/useCanteenStore";
+import { useProjectStore } from "@/lib/store/useProjectStore";
 
 export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
-  const { shoot, publish, unpublish, resetFull } = useShootStore();
+  const { shoot, publish, unpublish, resetFull, endDay } = useShootStore();
   const menu = useCanteenStore((s) => s.menu);
   const resetMenu = useCanteenStore((s) => s.resetMenu);
+  const userId = useProjectStore((s) => s.user?.id);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmEndDay, setConfirmEndDay] = useState(false);
   const [canteenLinkCopied, setCanteenLinkCopied] = useState(false);
 
   function copyCanteenLink() {
@@ -28,6 +31,17 @@ export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
     resetMenu();
     setConfirmReset(false);
   }
+
+  function handleEndDay() {
+    endDay(userId);
+    setConfirmEndDay(false);
+  }
+
+  // "Fin de journée" archive le shoot dans archivedShoots et reset la FDS.
+  // On ne propose le bouton que si une vraie feuille est en cours (titre +
+  // au moins une séquence) pour éviter d'archiver un état vide.
+  const canEndDay =
+    !!shoot.projectTitle && shoot.sequences.length > 0;
 
   // Feuille extraite et avec contenu, mais pas encore publiée → l'équipe ne
   // verra rien sur la page d'accueil. C'est la cause la plus fréquente du
@@ -208,6 +222,46 @@ export function AdminDashboard({ onTab }: { onTab: (t: string) => void }) {
           >
             Vérifier et publier
           </button>
+        )}
+
+        {/* Fin de journée — archive la FDS et reset pour le lendemain */}
+        {canEndDay && !confirmEndDay && (
+          <button
+            onClick={() => setConfirmEndDay(true)}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-semibold glass-card border border-cyan/25 text-cyan"
+          >
+            <MoonStar className="w-4 h-4" />
+            Fin de journée
+          </button>
+        )}
+        {confirmEndDay && (
+          <div className="glass-card rounded-app p-4 space-y-3">
+            <p className="text-sm text-white text-center font-medium">
+              Clôturer la journée ?
+            </p>
+            <p className="text-xs text-muted text-center leading-relaxed">
+              La feuille du jour <span className="text-textSoft font-semibold">J{shoot.shootingDay}</span>
+              {" "}sera archivée dans l&apos;historique et remise à zéro pour permettre
+              l&apos;import de la feuille de demain. Le menu cantine sera aussi vidé.
+            </p>
+            <p className="text-[10px] text-muted text-center">
+              Codes département, permissions et stocks sont conservés.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmEndDay(false)}
+                className="flex-1 py-2 rounded-xl glass-card text-sm text-muted"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleEndDay}
+                className="flex-1 py-2 rounded-xl bg-cyanSoft text-cyan border border-cyan/30 text-sm font-semibold"
+              >
+                Archiver et clôturer
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Nouveau projet / reset */}

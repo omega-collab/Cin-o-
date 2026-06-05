@@ -1,13 +1,123 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, CheckCircle2, FileText, TriangleAlert, Clock3, Pin } from "lucide-react";
+import { Search, CheckCircle2, FileText, TriangleAlert, Clock3, Pin, ChevronDown, ChevronUp, MapPin, Film, Users, UtensilsCrossed } from "lucide-react";
 import { useHistoryStore } from "@/lib/store/useHistoryStore";
+import { useShootStore } from "@/lib/store/useShootStore";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { formatTime } from "@/lib/utils";
 import { DEPARTMENTS } from "@/lib/data/departments";
 import { DeptIcon } from "@/components/ui/DeptIcon";
 import type { HistoryEntry } from "@/lib/types";
+import type { ArchivedShoot } from "@/lib/types/shoot";
+
+// ── Section journées archivées (Fin de journée admin) ─────────────────────────
+
+function formatArchiveDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function ArchivedShootCard({ shoot }: { shoot: ArchivedShoot }) {
+  const [open, setOpen] = useState(false);
+  const archivedDate = formatArchiveDate(shoot.archivedAt);
+
+  return (
+    <div className="glass-card rounded-app overflow-hidden">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full px-4 py-3 flex items-center gap-3 text-left active:bg-white/5 transition-colors"
+      >
+        <Film className="w-4 h-4 text-cyan shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-white truncate">
+            {shoot.projectTitle || "Sans titre"} · J{shoot.shootingDay}
+            {shoot.totalDays ? `/${shoot.totalDays}` : ""}
+          </p>
+          <p className="text-[11px] text-muted truncate">
+            {archivedDate} · {shoot.sequences.length} séq. · {shoot.cast.length} comédien(s)
+          </p>
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 text-muted shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted shrink-0" />}
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-stroke/30">
+          {shoot.location && (
+            <div className="flex items-start gap-2 pt-3">
+              <MapPin className="w-3.5 h-3.5 text-muted shrink-0 mt-0.5" />
+              <p className="text-xs text-textSoft">{shoot.location}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-white/5 rounded-lg px-2.5 py-1.5">
+              <p className="text-[10px] text-muted uppercase tracking-wider">Call time</p>
+              <p className="text-cyan font-mono font-semibold">{shoot.callTime || "—"}</p>
+            </div>
+            <div className="bg-white/5 rounded-lg px-2.5 py-1.5">
+              <p className="text-[10px] text-muted uppercase tracking-wider">Repas</p>
+              <p className="text-textSoft font-mono">{shoot.mealTime || "—"}</p>
+            </div>
+            {shoot.wrapTime && (
+              <div className="bg-white/5 rounded-lg px-2.5 py-1.5 col-span-2">
+                <p className="text-[10px] text-muted uppercase tracking-wider">Fin prévue</p>
+                <p className="text-textSoft font-mono">{shoot.wrapTime}</p>
+              </div>
+            )}
+          </div>
+
+          {shoot.sequences.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-semibold text-muted uppercase tracking-wider flex items-center gap-1.5">
+                <Film className="w-3 h-3" />
+                Séquences ({shoot.sequences.length})
+              </p>
+              <ul className="space-y-1">
+                {shoot.sequences.map((s) => (
+                  <li key={s.id} className="text-xs text-textSoft flex items-start gap-2">
+                    <span className="font-mono text-cyan shrink-0">{s.time}</span>
+                    <span className="truncate">{s.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {shoot.cast.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold text-muted uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-3 h-3" />
+                Casting
+              </p>
+              <p className="text-xs text-textSoft leading-relaxed">
+                {shoot.cast.map((c) => c.name).join(" · ")}
+              </p>
+            </div>
+          )}
+
+          {shoot.canteenMenu && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold text-muted uppercase tracking-wider flex items-center gap-1.5">
+                <UtensilsCrossed className="w-3 h-3" />
+                Menu du jour
+              </p>
+              <div className="text-xs text-textSoft space-y-0.5">
+                {shoot.canteenMenu.starter && <p>Entrée : {shoot.canteenMenu.starter}</p>}
+                {shoot.canteenMenu.main && <p>Plat : {shoot.canteenMenu.main}</p>}
+                {shoot.canteenMenu.dessert && <p>Dessert : {shoot.canteenMenu.dessert}</p>}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -47,6 +157,7 @@ export function HistoryList() {
   const hydrated = useHydrated();
   const entries = useHistoryStore((s) => s.entries);
   const clearHistory = useHistoryStore((s) => s.clearHistory);
+  const archivedShoots = useShootStore((s) => s.shoot.archivedShoots ?? []);
   const [search, setSearch] = useState("");
   const [confirmClear, setConfirmClear] = useState(false);
 
@@ -73,7 +184,10 @@ export function HistoryList() {
     );
   }
 
-  const joursTournes = new Set(entries.map((e) => e.timestamp.slice(0, 10))).size;
+  // "Jours terminés" = nombre de feuilles archivées via "Fin de journée"
+  // dans l'admin. C'est plus fiable que de déduire depuis les actions stock
+  // (qui pouvait compter à 0 si aucun dept n'avait fait d'action ce jour-là).
+  const joursTournes = archivedShoots.length;
   const incidents = entries.filter((e) => e.action.toLowerCase().includes("incident")).length;
   const rapports = entries.filter((e) => e.action.toLowerCase().includes("rapport")).length;
 
@@ -99,6 +213,20 @@ export function HistoryList() {
           </button>
         )}
       </div>
+
+      {/* Journées archivées via "Fin de journée" Admin */}
+      {archivedShoots.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted px-1">
+            Journées de tournage
+          </p>
+          <div className="space-y-2">
+            {archivedShoots.map((shoot) => (
+              <ArchivedShootCard key={shoot.id} shoot={shoot} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stats glass-card */}
       <div className="glass-card rounded-app p-4 grid grid-cols-3 gap-3 text-center">

@@ -2,9 +2,10 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { FullShoot, ShootSequence, CastMember, DeptNote, PlacePoint, ShootAlert, AuditEntry, UploadedDoc, ExtractionResult, NextDayInfo } from "@/lib/types/shoot";
+import type { FullShoot, ShootSequence, CastMember, DeptNote, PlacePoint, ShootAlert, AuditEntry, UploadedDoc, ExtractionResult, NextDayInfo, ArchivedShoot } from "@/lib/types/shoot";
 import type { DepartmentSlug } from "@/lib/types";
 import { MOCK_SHOOT } from "@/lib/data/mockShoot";
+import { useCanteenStore } from "@/lib/store/useCanteenStore";
 
 function makeAudit(action: string, source: AuditEntry["source"], details?: string): AuditEntry {
   return {
@@ -114,6 +115,12 @@ interface ShootStore {
   // Reset
   resetToMock: () => void;
   resetFull: () => void;
+
+  // Fin de journée : archive le shoot courant et reset les champs FDS
+  // (séquences, cast, notes, alertes, lieux, dates, etc.) tout en préservant
+  // archivedShoots, customization, codesEnabled, deptCodes et les stocks.
+  // Reset aussi le menu cantine via useCanteenStore.
+  endDay: (userId?: string) => void;
 }
 
 const INITIAL: FullShoot = {
@@ -141,6 +148,7 @@ const INITIAL: FullShoot = {
     permissions: {},
     accentColor: null,
   },
+  archivedShoots: [],
 };
 
 export const useShootStore = create<ShootStore>()(
@@ -354,7 +362,90 @@ export const useShootStore = create<ShootStore>()(
         set({ shoot: { ...MOCK_SHOOT, isPublished: false }, pendingExtraction: null }),
 
       resetFull: () =>
-        set({ shoot: INITIAL, pendingExtraction: null }),
+        set((s) => ({
+          // Préserve l'historique des journées archivées même lors d'un
+          // resetFull (ex: "Nouveau projet (tout effacer)" garde quand même
+          // les jours déjà clôturés s'il y en a).
+          shoot: { ...INITIAL, archivedShoots: s.shoot.archivedShoots ?? [] },
+          pendingExtraction: null,
+        })),
+
+      endDay: (userId) =>
+        set((s) => {
+          const current = s.shoot;
+          // Rien à archiver si pas de feuille → no-op
+          if (!current.projectTitle && current.sequences.length === 0) {
+            return s;
+          }
+
+          // Snapshot du menu cantine du jour (lu via getState pour éviter
+          // d'introduire une dépendance circulaire entre les stores).
+          const canteenState = useCanteenStore.getState();
+          const m = canteenState.menu;
+          const canteenMenu =
+            m.starter || m.main || m.dessert || m.special
+              ? {
+                  starter: m.starter,
+                  main: m.main,
+                  dessert: m.dessert,
+                  special: m.special,
+                  mealTime: m.mealTime,
+                  mealEndTime: m.mealEndTime,
+                }
+              : undefined;
+
+          const archive: ArchivedShoot = {
+            id: crypto.randomUUID(),
+            archivedAt: new Date().toISOString(),
+            archivedBy: userId,
+            date: current.date,
+            projectTitle: current.projectTitle,
+            series: current.series,
+            shootingDay: current.shootingDay,
+            totalDays: current.totalDays,
+            location: current.location,
+            callTime: current.callTime,
+            mealTime: current.mealTime,
+            wrapTime: current.wrapTime,
+            patTime: current.patTime,
+            weather: current.weather,
+            logeLocation: current.logeLocation,
+            canteenLocation: current.canteenLocation,
+            deptCallTimes: current.deptCallTimes,
+            sequences: current.sequences,
+            cast: current.cast,
+            deptNotes: current.deptNotes,
+            places: current.places,
+            alerts: current.alerts,
+            nextDays: current.nextDays,
+            auditLog: current.auditLog,
+            canteenMenu,
+          };
+
+          // Reset cantine pour le lendemain
+          canteenState.resetMenu();
+
+          return {
+            shoot: {
+              // Repart depuis INITIAL pour la FDS, mais préserve tout ce
+              // qui est "configuration projet" (permissions, codes,
+              // historique archivé).
+              ...INITIAL,
+              archivedShoots: [archive, ...(current.archivedShoots ?? [])],
+              customization: current.customization,
+              codesEnabled: current.codesEnabled,
+              deptCodes: current.deptCodes,
+              auditLog: [
+                makeAudit(
+                  "Fin de journée — feuille archivée",
+                  "manual",
+                  `${current.projectTitle || "Sans titre"} · J${current.shootingDay}`
+                ),
+              ],
+            },
+            pendingExtraction: null,
+          };
+        }),
     }),
     {
       name: "cin-o-shoot",
