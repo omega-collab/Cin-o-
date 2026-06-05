@@ -15,6 +15,7 @@ import { useUserStore } from "@/lib/store/useUserStore";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import { useIntermittentStore } from "@/lib/store/useIntermittentStore";
 import { useShiftPointageStore } from "@/lib/store/useShiftPointageStore";
+import { useWorkDaysSync } from "@/lib/hooks/useWorkDaysSync";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import type { DepartmentSlug } from "@/lib/types";
 
@@ -63,6 +64,10 @@ export function ShiftPointageCard() {
 
   const addWorkDay = useIntermittentStore((s) => s.addWorkDay);
   const settings = useIntermittentStore((s) => s.settings);
+
+  // Sync Supabase user-scope : pull au mount + expose addRemote (upsert).
+  // Persiste le pointage de manière personnelle (RLS auth.uid = user_id).
+  const { addRemote } = useWorkDaysSync();
 
   // Reset auto à minuit / si la date stockée n'est plus aujourd'hui
   useEffect(() => {
@@ -126,7 +131,12 @@ export function ShiftPointageCard() {
       // store intermittent est mono-utilisateur côté local.)
       notes: userRole ? userRole : undefined,
     };
+    // Optimiste : on remplit le store local immédiatement pour que la page
+    // /heures affiche la nouvelle entrée sans flash. addRemote fait un
+    // upsert Supabase (RLS user-scope) et remplace ensuite l'entrée
+    // locale par celle persistée (avec son id serveur).
     addWorkDay(draft);
+    void addRemote(draft);
     resetPointage();
     router.push("/heures");
   }

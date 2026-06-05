@@ -8,11 +8,15 @@ import { SalarySettings } from "./SalarySettings";
 import { LegalInfo } from "./LegalInfo";
 import { FraisView } from "./FraisView";
 import { useExpenseStore } from "@/lib/store/useExpenseStore";
+import { useWorkDaysSync } from "@/lib/hooks/useWorkDaysSync";
 
 type Tab = "saisie" | "historique" | "salaire" | "frais" | "juridique";
 
 export function HeuresView() {
   const [tab, setTab] = useState<Tab>("saisie");
+  // Pull les workdays du user au mount de la page (RLS user-scope).
+  // Les insertions hors-ligne dans le store local sont préservées par le merge.
+  useWorkDaysSync();
   const errorCount = useExpenseStore((s) =>
     s.entries.reduce((n, e) => n + e.flags.filter((f) => f.severity === "error").length, 0)
   );
