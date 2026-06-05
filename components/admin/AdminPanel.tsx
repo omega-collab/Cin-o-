@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Film, LayoutDashboard, Upload, ClipboardList, Radio, Lock, Settings } from "lucide-react";
+import { Film, LayoutDashboard, Upload, ClipboardList, Radio, Lock, Settings, Clock } from "lucide-react";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { useShootStore } from "@/lib/store/useShootStore";
 import { useUserStore } from "@/lib/store/useUserStore";
@@ -11,16 +11,18 @@ import { AdminExtractionReview } from "./AdminExtractionReview";
 import { AdminPublishPanel } from "./AdminPublishPanel";
 import { AdminCodesPanel } from "./AdminCodesPanel";
 import { AdminProjectPanel } from "./AdminProjectPanel";
+import { AdminTeamHours } from "./AdminTeamHours";
 
 const ADMIN_CODE = process.env.NEXT_PUBLIC_DEFAULT_DEPT_CODE ?? "0000";
 
-type Tab = "dashboard" | "upload" | "review" | "publish" | "codes" | "project";
+type Tab = "dashboard" | "upload" | "review" | "publish" | "codes" | "project" | "hours";
 
 const TABS: { id: Tab; label: string; Icon: React.ElementType }[] = [
   { id: "dashboard", label: "Accueil",  Icon: LayoutDashboard },
   { id: "upload",    label: "Import",   Icon: Upload           },
   { id: "review",    label: "Révision", Icon: ClipboardList    },
   { id: "publish",   label: "Publier",  Icon: Radio            },
+  { id: "hours",     label: "Heures",   Icon: Clock            },
   { id: "codes",     label: "Codes",    Icon: Lock             },
   { id: "project",   label: "Projet",   Icon: Settings         },
 ];
@@ -120,6 +122,7 @@ function AdminDashboardContainer({ onLogout }: { onLogout: () => void }) {
       {tab === "upload"    && <AdminUploadPanel onNext={() => setTab("review")} />}
       {tab === "review"    && <AdminExtractionReview onApply={() => setTab("publish")} />}
       {tab === "publish"   && <AdminPublishPanel onDone={() => setTab("dashboard")} />}
+      {tab === "hours"     && <AdminTeamHours />}
       {tab === "codes"     && <AdminCodesPanel />}
       {tab === "project"   && <AdminProjectPanel />}
     </div>
