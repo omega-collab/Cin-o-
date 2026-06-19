@@ -33,6 +33,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# remotion
+.remotion/
+
 # claude-flow tooling artifacts
 .claude-flow/
 **/.claude-flow/
