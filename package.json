@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "video:render": "node scripts/render-video.mjs",
+    "video:studio": "remotion studio remotion/index.ts"
   },
   "dependencies": {
     "@mistralai/mistralai": "^2.2.1",
@@ -18,11 +20,15 @@
     "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@remotion/bundler": "^4.0.481",
+    "@remotion/cli": "^4.0.481",
+    "@remotion/renderer": "^4.0.481",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.39",
+    "remotion": "^4.0.481",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.5.3"
   }
