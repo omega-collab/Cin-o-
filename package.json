@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "video:render": "node scripts/render-video.mjs",
     "video:render:full": "node scripts/render-video.mjs public/cineo-promo-full.mp4 CineoVideoFull",
+    "video:render:light": "node scripts/render-video-light.mjs",
     "video:capture": "node scripts/capture-screens.mjs",
     "video:studio": "remotion studio remotion/index.ts"
   },
